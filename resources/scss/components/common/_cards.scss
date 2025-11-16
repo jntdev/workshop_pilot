@@ -6,7 +6,7 @@
 
 .dashboard-card {
   display: block;
-  padding: $spacing-xl;
+  padding: $spacing-2xl;
   background-color: $color-bg-white;
   border: 1px solid $color-border-light;
   border-radius: $radius-lg;
@@ -21,14 +21,19 @@
   }
 
   &__content {
-    h2 {
-      margin-bottom: $spacing-sm;
-      color: $color-neutral-dark;
-    }
+    // Content wrapper
+  }
 
-    p {
-      color: $color-neutral-medium;
-      line-height: $line-height-normal;
-    }
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__description {
+    color: $color-neutral-medium;
+    line-height: $line-height-normal;
+    margin: 0;
   }
 }

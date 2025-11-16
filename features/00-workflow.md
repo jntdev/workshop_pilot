@@ -7,7 +7,7 @@ Pour chaque feature décrite dans ce dossier :
    - Toujours partir de `develop` (sauf mention contraire explicite dans la feature).
    - Commande : `git checkout develop && git pull && git checkout -b feature/<numero>-<slug>`.
 2. **Travailler uniquement dans cette branche** jusqu’au merge : migrations, tests, Livewire, SCSS, etc.
-3. **Produire des commits atomiques**, dans l’ordre des étapes documentées (un commit par étape lorsque possible).
+3. **Produire des commits atomiques**, dans l’ordre des étapes documentées (un commit par étape lorsque possible) en respectant strictement `features/CONVENTIONS.md`.
 4. **Processus obligatoire avant chaque commit/push** :
    - Relire intégralement le dossier de la feature (tous les fichiers `0X-*.md`).
    - Pour chaque étape listée : vérifier concrètement que le code réalisé correspond (1 point par étape).

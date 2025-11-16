@@ -17,3 +17,7 @@ Route::get('/atelier', function () {
 Route::get('/location', function () {
     return view('location.index');
 })->name('location.index');
+
+Route::get('/counter', function () {
+    return view('counter-demo');
+})->name('counter');
