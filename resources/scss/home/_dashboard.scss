@@ -1,0 +1,20 @@
+@import '../base/colors';
+@import '../base/rules';
+
+// Page Dashboard
+
+.dashboard {
+  h1 {
+    color: $color-neutral-dark;
+  }
+
+  &-cards {
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+}

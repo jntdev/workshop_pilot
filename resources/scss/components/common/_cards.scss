@@ -1,0 +1,33 @@
+@import '../../base/colors';
+@import '../../base/rules';
+
+// Cards dashboard
+
+.dashboard-card {
+  display: block;
+  padding: $spacing-xl;
+  background-color: $color-bg-white;
+  border: 1px solid $color-border-light;
+  border-radius: $radius-lg;
+  transition: all $transition-base;
+  text-decoration: none;
+  color: inherit;
+
+  &:hover {
+    border-color: $color-border-medium;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+  }
+
+  &__content {
+    h2 {
+      margin-bottom: $spacing-sm;
+      color: $color-neutral-dark;
+    }
+
+    p {
+      color: $color-neutral-medium;
+      line-height: $line-height-normal;
+    }
+  }
+}
