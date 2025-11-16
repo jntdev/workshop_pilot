@@ -92,7 +92,7 @@ class Form extends Component
         $this->validateOnly($propertyName);
     }
 
-    public function save(): void
+    public function save()
     {
         $validated = $this->validate();
 
@@ -125,6 +125,8 @@ class Form extends Component
             $client = Client::findOrFail($this->clientId);
             $client->update($data);
             $this->dispatch('client-saved');
+
+            return $this->redirect(route('clients.index'), navigate: true);
         } else {
             // Mode création : création d'un nouveau client
             Client::create($data);
@@ -133,7 +135,7 @@ class Form extends Component
         }
     }
 
-    public function delete(): void
+    public function delete()
     {
         if (! $this->clientId) {
             $this->addError('delete', 'Impossible de supprimer un client en mode création.');
@@ -145,6 +147,8 @@ class Form extends Component
         $client->delete();
 
         $this->dispatch('client-deleted');
+
+        return $this->redirect(route('clients.index'), navigate: true);
     }
 
     public function render()
