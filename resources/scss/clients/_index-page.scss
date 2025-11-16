@@ -2,10 +2,81 @@
 @use '../base/typos' as *;
 @use '../base/rules' as *;
 
-// Page Clients Index
+// Page Clients Index - Liste
 
-.clients-index {
-  &__placeholder {
+.clients-list {
+  &__header {
+    margin-bottom: $spacing-lg;
+  }
+
+  &__search-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $spacing-md;
+  }
+
+  &__search-input {
+    flex: 1;
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    font-size: $font-size-base;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-blue;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: $spacing-md;
+  }
+
+  &__empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: $spacing-xl;
     color: $color-neutral-medium;
+  }
+}
+
+// Carte Client
+
+.client-card {
+  display: block;
+  padding: $spacing-md;
+  background: $color-bg-white;
+  border: 1px solid $color-border-light;
+  border-radius: $radius-md;
+  text-decoration: none;
+  color: inherit;
+  transition: all $transition-base;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: $color-primary-blue;
+  }
+
+  &__name {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-neutral-dark;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__phone {
+    font-size: $font-size-base;
+    color: $color-neutral-medium;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__email {
+    font-size: $font-size-sm;
+    color: $color-primary-blue;
   }
 }
