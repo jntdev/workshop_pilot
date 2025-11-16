@@ -8,11 +8,30 @@
   max-width: 800px;
   margin: 0 auto;
 
+  &__header {
+    margin-bottom: $spacing-2xl;
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-primary-blue;
+    text-decoration: none;
+    margin-bottom: $spacing-md;
+    transition: color $transition-base;
+
+    &:hover {
+      color: $color-neutral-dark;
+    }
+  }
+
   &__title {
     font-size: $font-size-3xl;
     font-weight: $font-weight-bold;
     color: $color-neutral-dark;
-    margin-bottom: $spacing-2xl;
   }
 
   &__form {

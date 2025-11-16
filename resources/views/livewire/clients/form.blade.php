@@ -1,11 +1,18 @@
 <div class="client-form">
-    <h2 class="client-form__title">
+    <div class="client-form__header">
         @if($clientId)
-            Fiche client : {{ $prenom }} {{ $nom }}
-        @else
-            Nouveau client
+            <a href="{{ route('clients.index') }}" wire:navigate class="client-form__back">
+                ← Retour à la liste
+            </a>
         @endif
-    </h2>
+        <h2 class="client-form__title">
+            @if($clientId)
+                Fiche client : {{ $prenom }} {{ $nom }}
+            @else
+                Nouveau client
+            @endif
+        </h2>
+    </div>
 
     <form wire:submit="save" class="client-form__form">
         <div class="client-form__section">
