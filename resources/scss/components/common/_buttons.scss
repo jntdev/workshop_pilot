@@ -1,5 +1,6 @@
-@import '../../base/colors';
-@import '../../base/rules';
+@use '../../base/colors' as *;
+@use '../../base/typos' as *;
+@use '../../base/rules' as *;
 
 // Boutons globaux
 

@@ -1,13 +1,17 @@
 // Feuille principale Workshop Pilot
 
 // Base
-@import 'base/colors';
-@import 'base/typos';
-@import 'base/rules';
-@import 'base/components';
+@use 'base/colors';
+@use 'base/typos';
+@use 'base/rules';
+
+// Composants & Layouts
+@use 'components/layouts/main';
+@use 'components/layouts/chapter';
+@use 'base/components';
 
 // Pages / Chapitres
-@import 'home/dashboard';
-@import 'clients/index-page';
-@import 'atelier/index-page';
-@import 'location/index-page';
+@use 'home/dashboard';
+@use 'clients/index-page' as clients-page;
+@use 'atelier/index-page' as atelier-page;
+@use 'location/index-page' as location-page;

@@ -12,23 +12,23 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
         <!-- Styles / Scripts -->
-        @vite(['resources/css/app.css', 'resources/scss/app.scss', 'resources/js/app.js'])
+        @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     </head>
-    <body>
+    <body class="layout">
         <!-- Header -->
-        <header class="border-b border-neutral-200">
-            <div class="container mx-auto px-4 py-4">
-                <div class="flex items-center justify-between">
-                    <h1 class="text-2xl font-semibold">
+        <header class="layout-header">
+            <div class="layout-header__inner">
+                <div class="layout-header__bar">
+                    <h1 class="layout-header__title">
                         <a href="{{ route('home') }}">{{ config('app.name', 'Workshop') }}</a>
                     </h1>
 
                     <!-- Navigation -->
-                    <nav class="flex gap-6">
-                        <a href="{{ route('home') }}" class="hover:text-primary transition">Accueil</a>
-                        <a href="{{ route('clients.index') }}" class="hover:text-primary transition">Clients</a>
-                        <a href="{{ route('atelier.index') }}" class="hover:text-primary transition">Atelier</a>
-                        <a href="{{ route('location.index') }}" class="hover:text-primary transition">Location</a>
+                    <nav class="layout-nav">
+                        <a href="{{ route('home') }}" class="layout-nav__link">Accueil</a>
+                        <a href="{{ route('clients.index') }}" class="layout-nav__link">Clients</a>
+                        <a href="{{ route('atelier.index') }}" class="layout-nav__link">Atelier</a>
+                        <a href="{{ route('location.index') }}" class="layout-nav__link">Location</a>
                     </nav>
                 </div>
             </div>
@@ -36,15 +36,15 @@
 
         <!-- Breadcrumb -->
         @if (isset($breadcrumb))
-            <div class="bg-neutral-50 border-b border-neutral-200">
-                <div class="container mx-auto px-4 py-2">
+            <div class="layout-breadcrumb">
+                <div class="layout-breadcrumb__inner">
                     {{ $breadcrumb }}
                 </div>
             </div>
         @endif
 
         <!-- Main Content -->
-        <main class="container mx-auto px-4 py-8">
+        <main class="layout-main">
             {{ $slot }}
         </main>
     </body>

@@ -1,8 +1,11 @@
-@import '../base/colors';
-@import '../base/rules';
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
 
 // Page Clients Index
 
 .clients-index {
-  // Styles spécifiques à la page clients
+  &__placeholder {
+    color: $color-neutral-medium;
+  }
 }
