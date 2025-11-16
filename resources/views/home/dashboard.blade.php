@@ -1,10 +1,12 @@
 <x-layouts.main>
-    <x-slot:title>Bienvenue</x-slot:title>
+    <x-slot:title>Tableau de bord</x-slot:title>
 
     <div class="dashboard">
-        <h1 class="dashboard__title">Bienvenue sur Workshop Pilot</h1>
+        <h1 class="dashboard__title">Tableau de bord</h1>
 
+        <!-- Dashboard Cards -->
         <div class="dashboard__cards">
+            <!-- Clients Card -->
             <a href="{{ route('clients.index') }}" class="dashboard-card">
                 <div class="dashboard-card__content">
                     <h2 class="dashboard-card__title">Clients</h2>
@@ -12,6 +14,7 @@
                 </div>
             </a>
 
+            <!-- Atelier Card -->
             <a href="{{ route('atelier.index') }}" class="dashboard-card">
                 <div class="dashboard-card__content">
                     <h2 class="dashboard-card__title">Atelier</h2>
@@ -19,6 +22,7 @@
                 </div>
             </a>
 
+            <!-- Location Card -->
             <a href="{{ route('location.index') }}" class="dashboard-card">
                 <div class="dashboard-card__content">
                     <h2 class="dashboard-card__title">Location</h2>
