@@ -2,8 +2,6 @@
     <x-slot:title>Clients</x-slot:title>
 
     <x-layouts.chapter title="Clients">
-        <div class="clients-index">
-            <p class="clients-index__placeholder">Page clients - Contenu à venir</p>
-        </div>
+        <livewire:clients.index />
     </x-layouts.chapter>
 </x-layouts.main>

@@ -1,5 +1,11 @@
 <div class="client-form">
-    <h2 class="client-form__title">Formulaire Client</h2>
+    <h2 class="client-form__title">
+        @if($clientId)
+            Fiche client : {{ $prenom }} {{ $nom }}
+        @else
+            Nouveau client
+        @endif
+    </h2>
 
     <form wire:submit="save" class="client-form__form">
         <div class="client-form__section">
@@ -108,7 +114,12 @@
         </div>
 
         <div class="client-form__actions">
-            <button type="submit" class="btn btn-primary">Enregistrer le client</button>
+            @if($clientId)
+                <button type="button" wire:click="delete" class="btn btn-danger">Supprimer</button>
+                <button type="submit" class="btn btn-primary">Modifier</button>
+            @else
+                <button type="submit" class="btn btn-primary">Enregistrer le client</button>
+            @endif
         </div>
     </form>
 </div>

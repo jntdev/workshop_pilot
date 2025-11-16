@@ -10,6 +10,14 @@ Route::get('/clients', function () {
     return view('clients.index');
 })->name('clients.index');
 
+Route::get('/clients/nouveau', function () {
+    return view('clients.create');
+})->name('clients.create');
+
+Route::get('/clients/{id}', function ($id) {
+    return view('clients.show', ['clientId' => $id]);
+})->name('clients.show');
+
 Route::get('/atelier', function () {
     return view('atelier.index');
 })->name('atelier.index');

@@ -16,7 +16,7 @@ class FormTest extends TestCase
     {
         Livewire::test(Form::class)
             ->assertStatus(200)
-            ->assertSee('Formulaire Client');
+            ->assertSee('Nouveau client');
     }
 
     public function test_can_save_client_with_valid_data(): void
@@ -141,5 +141,125 @@ class FormTest extends TestCase
             ->set('avantage_valeur', 0)
             ->call('save')
             ->assertDispatched('client-saved');
+    }
+
+    // Tests en mode édition
+
+    public function test_loads_client_data_in_edit_mode(): void
+    {
+        $client = Client::factory()->create([
+            'prenom' => 'Marie',
+            'nom' => 'Martin',
+            'telephone' => '0987654321',
+            'email' => 'marie@example.com',
+        ]);
+
+        Livewire::test(Form::class, ['clientId' => $client->id])
+            ->assertSet('clientId', $client->id)
+            ->assertSet('prenom', 'Marie')
+            ->assertSet('nom', 'Martin')
+            ->assertSet('telephone', '0987654321')
+            ->assertSet('email', 'marie@example.com');
+    }
+
+    public function test_can_update_client_in_edit_mode(): void
+    {
+        $client = Client::factory()->create([
+            'prenom' => 'Marie',
+            'nom' => 'Martin',
+            'telephone' => '0987654321',
+        ]);
+
+        Livewire::test(Form::class, ['clientId' => $client->id])
+            ->set('prenom', 'Marie-Claude')
+            ->set('nom', 'Dupuis')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('clients', [
+            'id' => $client->id,
+            'prenom' => 'Marie-Claude',
+            'nom' => 'Dupuis',
+        ]);
+    }
+
+    public function test_does_not_reset_fields_after_update(): void
+    {
+        $client = Client::factory()->create([
+            'prenom' => 'Marie',
+            'nom' => 'Martin',
+            'telephone' => '0987654321',
+        ]);
+
+        Livewire::test(Form::class, ['clientId' => $client->id])
+            ->set('prenom', 'Marie-Claude')
+            ->call('save')
+            ->assertSet('prenom', 'Marie-Claude')
+            ->assertSet('nom', 'Martin');
+    }
+
+    public function test_email_unique_validation_excludes_current_client(): void
+    {
+        $client1 = Client::factory()->create(['email' => 'test@example.com']);
+        $client2 = Client::factory()->create(['email' => 'other@example.com']);
+
+        // Should be able to keep same email when editing
+        Livewire::test(Form::class, ['clientId' => $client1->id])
+            ->set('prenom', $client1->prenom)
+            ->set('nom', $client1->nom)
+            ->set('telephone', $client1->telephone)
+            ->set('email', 'test@example.com')
+            ->set('avantage_type', 'aucun')
+            ->set('avantage_valeur', 0)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        // Should NOT be able to use another client's email
+        Livewire::test(Form::class, ['clientId' => $client2->id])
+            ->set('prenom', $client2->prenom)
+            ->set('nom', $client2->nom)
+            ->set('telephone', $client2->telephone)
+            ->set('email', 'test@example.com')
+            ->set('avantage_type', 'aucun')
+            ->set('avantage_valeur', 0)
+            ->call('save')
+            ->assertHasErrors(['email' => 'unique']);
+    }
+
+    public function test_can_delete_client(): void
+    {
+        $client = Client::factory()->create();
+
+        Livewire::test(Form::class, ['clientId' => $client->id])
+            ->call('delete')
+            ->assertDispatched('client-deleted');
+
+        $this->assertDatabaseMissing('clients', [
+            'id' => $client->id,
+        ]);
+    }
+
+    public function test_delete_only_available_in_edit_mode(): void
+    {
+        Livewire::test(Form::class)
+            ->call('delete')
+            ->assertHasErrors();
+    }
+
+    public function test_displays_create_title_in_create_mode(): void
+    {
+        Livewire::test(Form::class)
+            ->assertSee('Nouveau client');
+    }
+
+    public function test_displays_edit_title_in_edit_mode(): void
+    {
+        $client = Client::factory()->create([
+            'prenom' => 'Jean',
+            'nom' => 'Dupont',
+        ]);
+
+        Livewire::test(Form::class, ['clientId' => $client->id])
+            ->assertSee('Fiche client : Jean Dupont');
     }
 }
