@@ -1,0 +1,53 @@
+@use '../../base/colors' as *;
+@use '../../base/typos' as *;
+@use '../../base/rules' as *;
+
+// Boutons globaux
+
+.btn {
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Bouton suppression (fond rouge)
+.btn-danger {
+  background-color: $color-danger-red;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: darken($color-danger-red, 10%);
+  }
+}
+
+// Bouton validation (fond bleu foncé)
+.btn-primary {
+  background-color: $color-primary-blue;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: darken($color-primary-blue, 10%);
+  }
+}
+
+// Bouton secondaire (neutre)
+.btn-secondary {
+  background-color: $color-neutral-light;
+  color: $color-neutral-dark;
+
+  &:hover:not(:disabled) {
+    background-color: darken($color-neutral-light, 5%);
+  }
+}

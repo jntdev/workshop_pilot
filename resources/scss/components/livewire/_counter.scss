@@ -1,0 +1,82 @@
+@use '../../base/colors' as *;
+@use '../../base/typos' as *;
+@use '../../base/rules' as *;
+
+// Composant Livewire Counter
+
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-lg;
+  padding: $spacing-xl;
+  background-color: $color-bg-white;
+  border: 1px solid $color-border-light;
+  border-radius: $radius-md;
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-medium;
+    color: $color-neutral-dark;
+  }
+
+  &__value {
+    font-size: $font-size-4xl;
+    font-weight: $font-weight-bold;
+    color: $color-neutral-dark;
+  }
+
+  &__actions {
+    display: flex;
+    gap: $spacing-md;
+  }
+
+  &__button {
+    padding: $spacing-sm $spacing-lg;
+    background-color: $color-neutral-dark;
+    color: #fff;
+    border: none;
+    border-radius: $radius-sm;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: background-color $transition-base;
+
+    &:hover {
+      background-color: darken($color-neutral-dark, 10%);
+    }
+  }
+}
+
+// Page counter-demo
+
+.counter-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xl;
+  min-height: 100vh;
+  padding: $spacing-xl;
+  background-color: $color-bg-light;
+
+  &__title {
+    font-size: $font-size-4xl;
+    font-weight: $font-weight-bold;
+    color: $color-neutral-dark;
+  }
+
+  &__cta {
+    display: inline-block;
+    padding: $spacing-sm $spacing-lg;
+    color: $color-neutral-dark;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    text-decoration: none;
+    transition: border-color $transition-base;
+
+    &:hover {
+      border-color: $color-neutral-dark;
+    }
+  }
+}
