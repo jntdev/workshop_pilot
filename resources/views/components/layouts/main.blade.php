@@ -34,6 +34,11 @@
             </div>
         </header>
 
+        <!-- Feedback Banner -->
+        <div class="feedback-host">
+            <x-feedback.banner />
+        </div>
+
         <!-- Breadcrumb -->
         @if (isset($breadcrumb))
             <div class="layout-breadcrumb">

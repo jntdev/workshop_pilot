@@ -125,6 +125,7 @@ class Form extends Component
             $client = Client::findOrFail($this->clientId);
             $client->update($data);
             $this->dispatch('client-saved');
+            $this->dispatch('feedback-banner', type: 'success', message: 'Client modifié avec succès.');
 
             return $this->redirect(route('clients.index'), navigate: true);
         } else {
@@ -132,6 +133,7 @@ class Form extends Component
             Client::create($data);
             $this->reset();
             $this->dispatch('client-saved');
+            $this->dispatch('feedback-banner', type: 'success', message: 'Client créé avec succès.');
         }
     }
 
@@ -147,6 +149,7 @@ class Form extends Component
         $client->delete();
 
         $this->dispatch('client-deleted');
+        $this->dispatch('feedback-banner', type: 'success', message: 'Client supprimé avec succès.');
 
         return $this->redirect(route('clients.index'), navigate: true);
     }
