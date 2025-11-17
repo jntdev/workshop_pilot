@@ -132,9 +132,10 @@ class Form extends Component
         } else {
             // Mode création : création d'un nouveau client
             Client::create($data);
-            $this->reset();
             $this->dispatch('client-saved');
-            $this->dispatch('feedback-banner', type: 'success', message: 'Client créé avec succès.');
+            Feedback::success('Client créé avec succès.');
+
+            return $this->redirect(route('clients.index'), navigate: true);
         }
     }
 

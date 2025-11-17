@@ -3,7 +3,7 @@
 @use '../../base/rules' as *;
 
 .feedback-banner {
-  display: none;
+  display: flex;
   align-items: center;
   gap: $spacing-md;
   padding: $spacing-md $spacing-lg;

@@ -12,7 +12,7 @@ class FeedbackTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_dispatches_feedback_event_on_client_creation(): void
+    public function test_flashes_feedback_session_on_client_creation(): void
     {
         Livewire::test(Form::class)
             ->set('prenom', 'Jean')
@@ -20,11 +20,10 @@ class FeedbackTest extends TestCase
             ->set('telephone', '0123456789')
             ->set('avantage_type', 'aucun')
             ->set('avantage_valeur', 0)
-            ->call('save')
-            ->assertDispatched('feedback-banner', function ($event, $params) {
-                return $params['type'] === 'success'
-                    && $params['message'] === 'Client créé avec succès.';
-            });
+            ->call('save');
+
+        $this->assertEquals('success', session('feedback')['type']);
+        $this->assertEquals('Client créé avec succès.', session('feedback')['message']);
     }
 
     public function test_flashes_feedback_session_on_client_update(): void

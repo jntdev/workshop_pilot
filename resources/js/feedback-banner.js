@@ -23,8 +23,8 @@ class FeedbackBanner {
             delete window.feedbackBannerData;
         }
 
-        // Écouter les événements Livewire
-        window.addEventListener('feedback-banner', (event) => {
+        // Écouter les événements Livewire (événement natif dispatché depuis le backend)
+        document.addEventListener('feedback-banner', (event) => {
             const { type, message } = event.detail;
             this.show(type, message);
         });
