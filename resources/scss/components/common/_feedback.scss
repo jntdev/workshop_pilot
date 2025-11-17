@@ -12,17 +12,8 @@
   transition: opacity $transition-base;
   margin-bottom: $spacing-lg;
 
-  // Affichage contrôlé par JS
-  &[data-visible="true"] {
-    display: flex;
-  }
-
-  &[data-visible="false"] {
-    display: none;
-  }
-
-  // Modificateurs de type
-  &[data-type="success"] {
+  // Modificateurs BEM
+  &--success {
     background-color: $color-success-green;
 
     .feedback-banner__icon-success {
@@ -34,7 +25,7 @@
     }
   }
 
-  &[data-type="error"] {
+  &--error {
     background-color: $color-danger-red;
 
     .feedback-banner__icon-success {
@@ -44,6 +35,11 @@
     .feedback-banner__icon-error {
       display: block;
     }
+  }
+
+  // État caché
+  &--hidden {
+    display: none;
   }
 }
 

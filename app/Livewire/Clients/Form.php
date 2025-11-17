@@ -3,6 +3,7 @@
 namespace App\Livewire\Clients;
 
 use App\Models\Client;
+use App\Support\Feedback;
 use Livewire\Component;
 
 class Form extends Component
@@ -125,7 +126,7 @@ class Form extends Component
             $client = Client::findOrFail($this->clientId);
             $client->update($data);
             $this->dispatch('client-saved');
-            $this->dispatch('feedback-banner', type: 'success', message: 'Client modifié avec succès.');
+            Feedback::success('Client modifié avec succès.');
 
             return $this->redirect(route('clients.index'), navigate: true);
         } else {
@@ -149,7 +150,7 @@ class Form extends Component
         $client->delete();
 
         $this->dispatch('client-deleted');
-        $this->dispatch('feedback-banner', type: 'success', message: 'Client supprimé avec succès.');
+        Feedback::success('Client supprimé avec succès.');
 
         return $this->redirect(route('clients.index'), navigate: true);
     }

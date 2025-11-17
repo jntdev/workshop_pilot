@@ -27,7 +27,7 @@ class FeedbackTest extends TestCase
             });
     }
 
-    public function test_dispatches_feedback_event_on_client_update(): void
+    public function test_flashes_feedback_session_on_client_update(): void
     {
         $client = Client::factory()->create();
 
@@ -37,22 +37,20 @@ class FeedbackTest extends TestCase
             ->set('telephone', '0123456789')
             ->set('avantage_type', 'aucun')
             ->set('avantage_valeur', 0)
-            ->call('save')
-            ->assertDispatched('feedback-banner', function ($event, $params) {
-                return $params['type'] === 'success'
-                    && $params['message'] === 'Client modifié avec succès.';
-            });
+            ->call('save');
+
+        $this->assertEquals('success', session('feedback')['type']);
+        $this->assertEquals('Client modifié avec succès.', session('feedback')['message']);
     }
 
-    public function test_dispatches_feedback_event_on_client_deletion(): void
+    public function test_flashes_feedback_session_on_client_deletion(): void
     {
         $client = Client::factory()->create();
 
         Livewire::test(Form::class, ['clientId' => $client->id])
-            ->call('delete')
-            ->assertDispatched('feedback-banner', function ($event, $params) {
-                return $params['type'] === 'success'
-                    && $params['message'] === 'Client supprimé avec succès.';
-            });
+            ->call('delete');
+
+        $this->assertEquals('success', session('feedback')['type']);
+        $this->assertEquals('Client supprimé avec succès.', session('feedback')['message']);
     }
 }

@@ -38,10 +38,14 @@ class FeedbackBanner {
             clearTimeout(this.hideTimeout);
         }
 
-        // Mettre à jour le contenu et le type
+        // Retirer toutes les classes de type précédentes
+        this.element.classList.remove('feedback-banner--success', 'feedback-banner--error', 'feedback-banner--hidden');
+
+        // Ajouter la classe BEM appropriée
+        this.element.classList.add(`feedback-banner--${type}`);
+
+        // Mettre à jour le message
         this.messageElement.textContent = message;
-        this.element.setAttribute('data-type', type);
-        this.element.setAttribute('data-visible', 'true');
 
         // Programmer le masquage automatique
         this.hideTimeout = setTimeout(() => {
@@ -52,7 +56,8 @@ class FeedbackBanner {
     hide() {
         if (!this.element) return;
 
-        this.element.setAttribute('data-visible', 'false');
+        this.element.classList.remove('feedback-banner--success', 'feedback-banner--error');
+        this.element.classList.add('feedback-banner--hidden');
         this.hideTimeout = null;
     }
 }

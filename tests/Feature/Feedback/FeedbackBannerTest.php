@@ -17,6 +17,7 @@ class FeedbackBannerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('window.feedbackBannerData', false);
+        $response->assertSee('feedback-banner--hidden', false);
         $response->assertSee('"type":"success"', false);
         $response->assertSee('Operation reussie', false);
     }
@@ -32,6 +33,7 @@ class FeedbackBannerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('window.feedbackBannerData', false);
+        $response->assertSee('feedback-banner--hidden', false);
         $response->assertSee('"type":"error"', false);
         $response->assertSee('Une erreur est survenue', false);
     }
@@ -41,6 +43,7 @@ class FeedbackBannerTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertStatus(200);
+        $response->assertSee('feedback-banner--hidden', false);
         $response->assertDontSee('window.feedbackBannerData', false);
     }
 }

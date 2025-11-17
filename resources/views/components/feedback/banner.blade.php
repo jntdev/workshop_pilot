@@ -8,7 +8,7 @@
     </script>
 @endif
 
-<div id="feedback-banner" class="feedback-banner" data-visible="false" role="alert" aria-live="assertive">
+<div id="feedback-banner" class="feedback-banner feedback-banner--hidden" role="alert" aria-live="assertive">
     <div class="feedback-banner__icon">
         <svg class="feedback-banner__icon-success" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
