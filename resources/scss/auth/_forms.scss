@@ -1,0 +1,220 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+
+// Auth Layout
+.auth-layout {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: $color-bg-light;
+    padding: 1rem;
+    font-family: $font-family-base;
+}
+
+.auth-layout__wrapper {
+    width: 100%;
+    max-width: 28rem;
+}
+
+// Auth Card
+.auth-card {
+    background-color: $color-bg-white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    padding: 2rem;
+
+    @media (min-width: 640px) {
+        padding: 3rem;
+    }
+}
+
+.auth-card__header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.auth-card__title {
+    font-size: 1.875rem;
+    font-weight: 600;
+    color: $color-neutral-dark;
+    margin: 0 0 0.5rem 0;
+}
+
+.auth-card__subtitle {
+    font-size: 0.875rem;
+    color: $color-neutral-medium;
+    margin: 0;
+}
+
+// Auth Form
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.auth-form__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    &--checkbox {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.auth-form__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $color-neutral-dark;
+}
+
+.auth-form__input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid $color-border-light;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: $color-neutral-dark;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus {
+        outline: none;
+        border-color: $color-primary-blue;
+        box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+    }
+
+    &--error {
+        border-color: $color-danger-red;
+
+        &:focus {
+            border-color: $color-danger-red;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+    }
+}
+
+.auth-form__error {
+    font-size: 0.75rem;
+    color: $color-danger-red;
+    margin: 0;
+}
+
+.auth-form__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: $color-neutral-dark;
+    cursor: pointer;
+}
+
+.auth-form__checkbox {
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid $color-border-medium;
+    border-radius: 0.25rem;
+    cursor: pointer;
+
+    &:checked {
+        background-color: $color-primary-blue;
+        border-color: $color-primary-blue;
+    }
+
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+    }
+}
+
+.auth-form__actions {
+    margin-top: 0.5rem;
+}
+
+.auth-form__button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &--primary {
+        background-color: $color-primary-blue;
+        color: white;
+
+        &:hover {
+            background-color: darken($color-primary-blue, 5%);
+        }
+
+        &:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.2);
+        }
+    }
+}
+
+.auth-form__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid $color-border-light;
+}
+
+.auth-form__link {
+    font-size: 0.875rem;
+    color: $color-primary-blue;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+        color: darken($color-primary-blue, 10%);
+        text-decoration: underline;
+    }
+}
+
+// Auth Alert
+.auth-alert {
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+
+    &--success {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    &--error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+}
+
+// Responsive
+@media (max-width: 320px) {
+    .auth-card {
+        padding: 1.5rem;
+    }
+
+    .auth-card__title {
+        font-size: 1.5rem;
+    }
+
+    .auth-form__footer {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+}

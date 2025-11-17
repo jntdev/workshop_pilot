@@ -37,6 +37,12 @@ This application is a Laravel application and its main Laravel ecosystems packag
 ## Documentation Files
 - You must only create documentation files if explicitly requested by the user.
 
+## QA & Notation Process (mandatory)
+- Before every commit or push, reread the entire feature folder you are implementing (all `0X-*.md` files).
+- For each step listed in the feature checklist, verify concretely in the code that it is satisfied, award 1 point per step, and compute the score = validated points / total steps.
+- Run every test explicitly demanded by the feature and ensure they all pass; fix failures before continuing.
+- Only proceed with Git operations when the score is 100% **and** all required tests are green. If something is missing, stop and correct first.
+
 
 === boost rules ===
 

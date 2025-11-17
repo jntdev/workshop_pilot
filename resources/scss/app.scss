@@ -10,6 +10,9 @@
 @use 'components/layouts/chapter';
 @use 'base/components';
 
+// Auth
+@use 'auth/forms';
+
 // Pages / Chapitres
 @use 'home/dashboard';
 @use 'clients/index-page' as clients-page;
