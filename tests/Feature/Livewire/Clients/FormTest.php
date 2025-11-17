@@ -41,7 +41,7 @@ class FormTest extends TestCase
         ]);
     }
 
-    public function test_form_fields_are_reset_after_save(): void
+    public function test_redirects_to_list_after_create(): void
     {
         Livewire::test(Form::class)
             ->set('prenom', 'Jean')
@@ -50,12 +50,7 @@ class FormTest extends TestCase
             ->set('avantage_type', 'aucun')
             ->set('avantage_valeur', 0)
             ->call('save')
-            ->assertSet('prenom', '')
-            ->assertSet('nom', '')
-            ->assertSet('telephone', '')
-            ->assertSet('email', '')
-            ->assertSet('avantage_type', 'aucun')
-            ->assertSet('avantage_valeur', 0);
+            ->assertRedirect(route('clients.index'));
     }
 
     public function test_prenom_is_required(): void
