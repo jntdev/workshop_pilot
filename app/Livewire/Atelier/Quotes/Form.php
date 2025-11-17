@@ -217,13 +217,19 @@ class Form extends Component
         // Update or create client
         if ($this->selectedClientId) {
             $client = Client::findOrFail($this->selectedClientId);
-            $client->update([
+
+            // Vérifier si les données client ont été modifiées
+            $currentClientData = [
                 'prenom' => $this->clientPrenom,
                 'nom' => $this->clientNom,
                 'email' => $this->clientEmail,
                 'telephone' => $this->clientTelephone,
                 'adresse' => $this->clientAdresse,
-            ]);
+            ];
+
+            if ($this->hasClientDataChanged($currentClientData)) {
+                $client->update($currentClientData);
+            }
         } else {
             $client = Client::create([
                 'prenom' => $this->clientPrenom,
@@ -236,24 +242,34 @@ class Form extends Component
         }
 
         // Create or update quote
-        $quoteData = [
-            'client_id' => $client->id,
-            'reference' => $this->generateReference(),
-            'status' => 'draft',
-            'valid_until' => $this->validUntil,
-            'discount_type' => $this->discountValue ? $this->discountType : null,
-            'discount_value' => $this->discountValue ?: null,
-            'total_ht' => $this->totals['total_ht'],
-            'total_tva' => $this->totals['total_tva'],
-            'total_ttc' => $this->totals['total_ttc'],
-            'margin_total_ht' => $this->totals['margin_total_ht'],
-        ];
-
         if ($this->quoteId) {
+            // Mode édition : mise à jour sans changer la référence
             $quote = Quote::findOrFail($this->quoteId);
-            $quote->update($quoteData);
+            $quote->update([
+                'client_id' => $client->id,
+                'status' => 'draft',
+                'valid_until' => $this->validUntil,
+                'discount_type' => $this->discountValue ? $this->discountType : null,
+                'discount_value' => $this->discountValue ?: null,
+                'total_ht' => $this->totals['total_ht'],
+                'total_tva' => $this->totals['total_tva'],
+                'total_ttc' => $this->totals['total_ttc'],
+                'margin_total_ht' => $this->totals['margin_total_ht'],
+            ]);
         } else {
-            $quote = Quote::create($quoteData);
+            // Mode création : génération de la référence
+            $quote = Quote::create([
+                'client_id' => $client->id,
+                'reference' => $this->generateReference(),
+                'status' => 'draft',
+                'valid_until' => $this->validUntil,
+                'discount_type' => $this->discountValue ? $this->discountType : null,
+                'discount_value' => $this->discountValue ?: null,
+                'total_ht' => $this->totals['total_ht'],
+                'total_tva' => $this->totals['total_tva'],
+                'total_ttc' => $this->totals['total_ttc'],
+                'margin_total_ht' => $this->totals['margin_total_ht'],
+            ]);
             $this->quoteId = $quote->id;
         }
 
@@ -309,6 +325,42 @@ class Form extends Component
         ])->toArray();
 
         $this->recalculateTotals();
+    }
+
+    protected function hasClientDataChanged(array $currentData): bool
+    {
+        // Si pas de client sélectionné, pas de comparaison possible
+        if (! $this->selectedClientId) {
+            return false;
+        }
+
+        // Charger le client actuel depuis la base de données
+        $client = Client::find($this->selectedClientId);
+
+        if (! $client) {
+            return false;
+        }
+
+        // Comparer avec les données actuelles du client en base
+        $databaseData = [
+            'prenom' => $client->prenom,
+            'nom' => $client->nom,
+            'email' => $client->email ?? '',
+            'telephone' => $client->telephone ?? '',
+            'adresse' => $client->adresse ?? '',
+        ];
+
+        // Comparer chaque champ
+        foreach ($currentData as $key => $value) {
+            $dbValue = $databaseData[$key] ?? '';
+            $currentValue = $value ?? '';
+
+            if ($currentValue !== $dbValue) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function generateReference(): string
