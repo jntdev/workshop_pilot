@@ -13,6 +13,9 @@
 // Auth
 @use 'auth/forms';
 
+// Atelier
+@use 'atelier/quotes';
+
 // Pages / Chapitres
 @use 'home/dashboard';
 @use 'clients/index-page' as clients-page;

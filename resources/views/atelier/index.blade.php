@@ -3,7 +3,14 @@
 
     <x-layouts.chapter title="Atelier">
         <div class="atelier-index">
-            <p class="atelier-index__placeholder">Page atelier - Contenu à venir</p>
+            <div class="atelier-index__actions">
+                <a href="{{ route('atelier.quotes.create') }}" class="atelier-index__btn atelier-index__btn--primary">
+                    Nouveau devis
+                </a>
+                <a href="{{ route('atelier.quotes.index') }}" class="atelier-index__btn atelier-index__btn--secondary">
+                    Voir tous les devis
+                </a>
+            </div>
         </div>
     </x-layouts.chapter>
 </x-layouts.main>

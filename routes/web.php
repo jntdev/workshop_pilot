@@ -28,6 +28,26 @@ Route::middleware(['auth'])->group(function () {
         return view('atelier.index');
     })->name('atelier.index');
 
+    Route::get('/atelier/devis', function () {
+        $quotes = \App\Models\Quote::with('client')->latest()->get();
+
+        return view('atelier.quotes.index', ['quotes' => $quotes]);
+    })->name('atelier.quotes.index');
+
+    Route::get('/atelier/devis/nouveau', function () {
+        return view('atelier.quotes.create');
+    })->name('atelier.quotes.create');
+
+    Route::get('/atelier/devis/{quote}', function (\App\Models\Quote $quote) {
+        $quote->load('client', 'lines');
+
+        return view('atelier.quotes.show', ['quote' => $quote]);
+    })->name('atelier.quotes.show');
+
+    Route::get('/atelier/devis/{quote}/modifier', function (\App\Models\Quote $quote) {
+        return view('atelier.quotes.edit', ['quote' => $quote]);
+    })->name('atelier.quotes.edit');
+
     Route::get('/location', function () {
         return view('location.index');
     })->name('location.index');
