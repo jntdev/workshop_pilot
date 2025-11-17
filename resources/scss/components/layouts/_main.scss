@@ -50,14 +50,29 @@
 .layout-nav {
   display: flex;
   gap: $spacing-lg;
+  align-items: center;
 
   &__link {
     color: $color-neutral-dark;
     text-decoration: none;
     transition: color $transition-base;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    padding: 0;
 
     &:hover {
       color: $color-primary-blue;
+    }
+
+    &--logout {
+      color: $color-danger-red;
+
+      &:hover {
+        color: darken($color-danger-red, 10%);
+      }
     }
   }
 }

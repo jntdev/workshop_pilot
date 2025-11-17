@@ -29,6 +29,14 @@
                         <a href="{{ route('clients.index') }}" class="layout-nav__link">Clients</a>
                         <a href="{{ route('atelier.index') }}" class="layout-nav__link">Atelier</a>
                         <a href="{{ route('location.index') }}" class="layout-nav__link">Location</a>
+
+                        <!-- Logout Button -->
+                        <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="layout-nav__link layout-nav__link--logout">
+                                Déconnexion
+                            </button>
+                        </form>
                     </nav>
                 </div>
             </div>
