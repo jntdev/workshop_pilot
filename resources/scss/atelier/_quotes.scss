@@ -790,3 +790,39 @@
         color: darken(#ff9800, 30%);
     }
 }
+
+// Badges de statut pour page show
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+
+    &--brouillon {
+        background-color: lighten($color-primary-blue, 45%);
+        color: darken($color-primary-blue, 10%);
+        border: 1px solid $color-primary-blue;
+    }
+
+    &--prêt {
+        background-color: lighten($color-success-green, 45%);
+        color: darken($color-success-green, 10%);
+        border: 1px solid $color-success-green;
+    }
+
+    &--modifiable {
+        background-color: lighten(#ff9800, 45%);
+        color: darken(#ff9800, 20%);
+        border: 1px solid #ff9800;
+    }
+
+    &--facturé {
+        background-color: lighten($color-neutral-medium, 35%);
+        color: darken($color-neutral-medium, 20%);
+        border: 1px solid $color-neutral-medium;
+    }
+}
