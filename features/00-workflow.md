@@ -11,7 +11,7 @@ Pour chaque feature décrite dans ce dossier :
 4. **Processus obligatoire avant chaque commit/push** :
    - Relire intégralement le dossier de la feature (tous les fichiers `0X-*.md`).
    - Pour chaque étape listée : vérifier concrètement que le code réalisé correspond (1 point par étape).
-   - Exécuter tous les tests indiqués (backend, frontend, Livewire…) et s’assurer qu’ils passent. Si un test échoue, corriger avant de poursuivre.
+   - Exécuter tous les tests indiqués (backend, frontend, Livewire…) **en utilisant l’environnement `.env.testing` isolé (cf. `process/01-isolated-testing.md`)** et s’assurer qu’ils passent. Si un test échoue, corriger avant de poursuivre.
    - Attribuer une note = nombre de points obtenus / nombre d’étapes. Autoriser commit/push uniquement si la note est maximale (toutes les étapes validées + tests verts).
    - Documenter dans le message de commit quels points ont été couverts si nécessaire.
 5. **Pousser la branche** vers le remote (sans merge). Claude n’ouvre jamais de pull/merge request et ne merge jamais lui-même ; il se contente de `git push` pour que la revue soit faite par l’équipe.
