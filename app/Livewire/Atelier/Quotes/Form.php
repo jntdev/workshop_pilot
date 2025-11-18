@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Atelier\Quotes;
 
+use App\Enums\QuoteStatus;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteLine;
@@ -12,6 +13,8 @@ use Livewire\Component;
 class Form extends Component
 {
     public ?int $quoteId = null;
+
+    public QuoteStatus $status = QuoteStatus::Draft;
 
     public ?int $selectedClientId = null;
 
@@ -65,15 +68,18 @@ class Form extends Component
 
     public function addLine(): void
     {
+        // En mode modifiable, les nouvelles lignes ont purchase_price_ht = null
+        $purchasePriceHt = $this->status->canShowPurchasePrice() ? '0.00' : null;
+
         $this->lines[] = [
             'id' => null,
             'title' => '',
             'reference' => '',
-            'purchase_price_ht' => '0.00',
+            'purchase_price_ht' => $purchasePriceHt,
             'sale_price_ht' => '0.00',
             'sale_price_ttc' => '0.00',
-            'margin_amount_ht' => '0.00',
-            'margin_rate' => '0.0000',
+            'margin_amount_ht' => $purchasePriceHt === null ? null : '0.00',
+            'margin_rate' => $purchasePriceHt === null ? null : '0.0000',
             'tva_rate' => '20.0000',
             'position' => count($this->lines),
         ];
@@ -99,8 +105,8 @@ class Form extends Component
 
         $line['sale_price_ht'] = number_format((float) $calculated['sale_price_ht'], 2, '.', '');
         $line['sale_price_ttc'] = number_format((float) $calculated['sale_price_ttc'], 2, '.', '');
-        $line['margin_amount_ht'] = number_format((float) $calculated['margin_amount_ht'], 2, '.', '');
-        $line['margin_rate'] = number_format((float) $calculated['margin_rate'], 4, '.', '');
+        $line['margin_amount_ht'] = $calculated['margin_amount_ht'] !== null ? number_format((float) $calculated['margin_amount_ht'], 2, '.', '') : null;
+        $line['margin_rate'] = $calculated['margin_rate'] !== null ? number_format((float) $calculated['margin_rate'], 4, '.', '') : null;
 
         $this->recalculateTotals();
     }
@@ -118,8 +124,8 @@ class Form extends Component
 
         $line['sale_price_ht'] = number_format((float) $calculated['sale_price_ht'], 2, '.', '');
         $line['sale_price_ttc'] = number_format((float) $calculated['sale_price_ttc'], 2, '.', '');
-        $line['margin_amount_ht'] = number_format((float) $calculated['margin_amount_ht'], 2, '.', '');
-        $line['margin_rate'] = number_format((float) $calculated['margin_rate'], 4, '.', '');
+        $line['margin_amount_ht'] = $calculated['margin_amount_ht'] !== null ? number_format((float) $calculated['margin_amount_ht'], 2, '.', '') : null;
+        $line['margin_rate'] = $calculated['margin_rate'] !== null ? number_format((float) $calculated['margin_rate'], 4, '.', '') : null;
 
         $this->recalculateTotals();
     }
@@ -137,8 +143,8 @@ class Form extends Component
 
         $line['sale_price_ht'] = number_format((float) $calculated['sale_price_ht'], 2, '.', '');
         $line['sale_price_ttc'] = number_format((float) $calculated['sale_price_ttc'], 2, '.', '');
-        $line['margin_amount_ht'] = number_format((float) $calculated['margin_amount_ht'], 2, '.', '');
-        $line['margin_rate'] = number_format((float) $calculated['margin_rate'], 4, '.', '');
+        $line['margin_amount_ht'] = $calculated['margin_amount_ht'] !== null ? number_format((float) $calculated['margin_amount_ht'], 2, '.', '') : null;
+        $line['margin_rate'] = $calculated['margin_rate'] !== null ? number_format((float) $calculated['margin_rate'], 4, '.', '') : null;
 
         $this->recalculateTotals();
     }
@@ -156,8 +162,8 @@ class Form extends Component
 
         $line['sale_price_ht'] = number_format((float) $calculated['sale_price_ht'], 2, '.', '');
         $line['sale_price_ttc'] = number_format((float) $calculated['sale_price_ttc'], 2, '.', '');
-        $line['margin_amount_ht'] = number_format((float) $calculated['margin_amount_ht'], 2, '.', '');
-        $line['margin_rate'] = number_format((float) $calculated['margin_rate'], 4, '.', '');
+        $line['margin_amount_ht'] = $calculated['margin_amount_ht'] !== null ? number_format((float) $calculated['margin_amount_ht'], 2, '.', '') : null;
+        $line['margin_rate'] = $calculated['margin_rate'] !== null ? number_format((float) $calculated['margin_rate'], 4, '.', '') : null;
 
         $this->recalculateTotals();
     }
@@ -243,11 +249,10 @@ class Form extends Component
 
         // Create or update quote
         if ($this->quoteId) {
-            // Mode édition : mise à jour sans changer la référence
+            // Mode édition : mise à jour sans changer la référence ni le statut
             $quote = Quote::findOrFail($this->quoteId);
             $quote->update([
                 'client_id' => $client->id,
-                'status' => 'draft',
                 'valid_until' => $this->validUntil,
                 'discount_type' => $this->discountValue ? $this->discountType : null,
                 'discount_value' => $this->discountValue ?: null,
@@ -257,11 +262,11 @@ class Form extends Component
                 'margin_total_ht' => $this->totals['margin_total_ht'],
             ]);
         } else {
-            // Mode création : génération de la référence
+            // Mode création : génération de la référence, status par défaut brouillon
             $quote = Quote::create([
                 'client_id' => $client->id,
                 'reference' => $this->generateReference(),
-                'status' => 'draft',
+                'status' => QuoteStatus::Draft,
                 'valid_until' => $this->validUntil,
                 'discount_type' => $this->discountValue ? $this->discountType : null,
                 'discount_value' => $this->discountValue ?: null,
@@ -301,6 +306,7 @@ class Form extends Component
     {
         $quote = Quote::with('lines', 'client')->findOrFail($quoteId);
 
+        $this->status = $quote->status;
         $this->selectedClientId = $quote->client_id;
         $this->clientPrenom = $quote->client->prenom;
         $this->clientNom = $quote->client->nom;
@@ -315,11 +321,11 @@ class Form extends Component
             'id' => $line->id,
             'title' => $line->title,
             'reference' => $line->reference ?? '',
-            'purchase_price_ht' => number_format((float) $line->purchase_price_ht, 2, '.', ''),
+            'purchase_price_ht' => $line->purchase_price_ht !== null ? number_format((float) $line->purchase_price_ht, 2, '.', '') : null,
             'sale_price_ht' => number_format((float) $line->sale_price_ht, 2, '.', ''),
             'sale_price_ttc' => number_format((float) $line->sale_price_ttc, 2, '.', ''),
-            'margin_amount_ht' => number_format((float) $line->margin_amount_ht, 2, '.', ''),
-            'margin_rate' => number_format((float) $line->margin_rate, 4, '.', ''),
+            'margin_amount_ht' => $line->margin_amount_ht !== null ? number_format((float) $line->margin_amount_ht, 2, '.', '') : null,
+            'margin_rate' => $line->margin_rate !== null ? number_format((float) $line->margin_rate, 4, '.', '') : null,
             'tva_rate' => number_format((float) $line->tva_rate, 4, '.', ''),
             'position' => $line->position,
         ])->toArray();
@@ -375,6 +381,41 @@ class Form extends Component
         $number = $lastQuote ? ((int) substr($lastQuote->reference, -4)) + 1 : 1;
 
         return sprintf('DEV-%s%s-%04d', $year, $month, $number);
+    }
+
+    public function changeStatus(string $newStatus): void
+    {
+        if (! $this->quoteId) {
+            session()->flash('error', 'Vous devez d\'abord enregistrer le devis.');
+
+            return;
+        }
+
+        $quote = Quote::findOrFail($this->quoteId);
+        $newStatusEnum = QuoteStatus::from($newStatus);
+
+        try {
+            // Vérifier si la transition est autorisée
+            if (! $quote->status->canTransitionTo($newStatusEnum)) {
+                session()->flash('error', "Impossible de passer au statut '{$newStatusEnum->label()}' depuis '{$quote->status->label()}'");
+
+                return;
+            }
+
+            // Validation spécifique pour le statut facturé
+            if ($newStatusEnum === QuoteStatus::Invoiced && ! $quote->canBeInvoiced()) {
+                session()->flash('error', "Impossible de facturer : {$quote->getIncompleteLinesCount()} ligne(s) sans prix d'achat. Passez en brouillon pour les compléter.");
+
+                return;
+            }
+
+            $quote->update(['status' => $newStatusEnum]);
+            $this->status = $newStatusEnum;
+
+            session()->flash('message', "Devis marqué comme '{$newStatusEnum->label()}'");
+        } catch (\DomainException $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     public function render()

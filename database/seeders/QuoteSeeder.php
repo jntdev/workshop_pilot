@@ -26,7 +26,7 @@ class QuoteSeeder extends Seeder
         $quote1 = Quote::create([
             'client_id' => $clients->where('email', 'marie.dubois@example.com')->first()?->id ?? $clients->first()->id,
             'reference' => 'DEV-202511-0001',
-            'status' => 'draft',
+            'status' => 'brouillon',
             'valid_until' => now()->addDays(15),
             'discount_type' => 'percent',
             'discount_value' => 10.00,
@@ -79,7 +79,7 @@ class QuoteSeeder extends Seeder
         $quote2 = Quote::create([
             'client_id' => $clients->where('email', 'jean.martin@example.com')->first()?->id ?? $clients->skip(1)->first()->id,
             'reference' => 'DEV-202511-0002',
-            'status' => 'validated',
+            'status' => 'prêt',
             'valid_until' => now()->addDays(10),
             'discount_type' => null,
             'discount_value' => null,
@@ -132,7 +132,7 @@ class QuoteSeeder extends Seeder
         $quote3 = Quote::create([
             'client_id' => $clients->where('email', 'sophie.bernard@example.com')->first()?->id ?? $clients->skip(2)->first()->id,
             'reference' => 'DEV-202511-0003',
-            'status' => 'draft',
+            'status' => 'brouillon',
             'valid_until' => now()->addDays(20),
             'discount_type' => 'amount',
             'discount_value' => 15.00,
@@ -185,7 +185,7 @@ class QuoteSeeder extends Seeder
         $quote4 = Quote::create([
             'client_id' => $clients->where('email', 'thomas.petit@example.com')->first()?->id ?? $clients->skip(3)->first()->id,
             'reference' => 'DEV-202511-0004',
-            'status' => 'draft',
+            'status' => 'brouillon',
             'valid_until' => now()->addDays(12),
             'discount_type' => null,
             'discount_value' => null,
@@ -225,7 +225,7 @@ class QuoteSeeder extends Seeder
         $quote5 = Quote::create([
             'client_id' => $clients->where('email', 'claire.robert@example.com')->first()?->id ?? $clients->skip(4)->first()->id,
             'reference' => 'DEV-202511-0005',
-            'status' => 'validated',
+            'status' => 'prêt',
             'valid_until' => now()->addDays(30),
             'discount_type' => 'percent',
             'discount_value' => 5.00,
