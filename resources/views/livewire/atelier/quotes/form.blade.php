@@ -28,7 +28,7 @@
                     <label for="status-select" class="quote-form__label">Changer le statut :</label>
                     <select
                         id="status-select"
-                        wire:change="changeStatus($event.target.value)"
+                        onchange="handleStatusChange(event)"
                         class="quote-form__select"
                         {{ $status === \App\Enums\QuoteStatus::Invoiced ? 'disabled' : '' }}
                     >
@@ -184,6 +184,11 @@
                                 required
                                 {{ $isReadOnly ? 'readonly' : '' }}
                             >
+                            @if($line['purchase_price_ht'] === null)
+                                <span class="quote-lines-table__badge quote-lines-table__badge--warning">
+                                    ⚠️ Prix d'achat à compléter
+                                </span>
+                            @endif
                         </div>
                         <div class="quote-lines-table__cell">
                             <input
@@ -380,11 +385,67 @@
             @endif
         </div>
     </form>
+
+    {{-- Modale de confirmation facturation --}}
+    <div id="invoice-modal" class="quote-modal" style="display: none;">
+        <div class="quote-modal__overlay" onclick="closeInvoiceModal()"></div>
+        <div class="quote-modal__content">
+            <h3 class="quote-modal__title">⚠️ Confirmation de facturation</h3>
+            <div class="quote-modal__body">
+                <p class="quote-modal__text">
+                    Vous êtes sur le point de <strong>facturer ce devis</strong>.
+                </p>
+                <p class="quote-modal__warning">
+                    Cette action est <strong>irréversible</strong> : le devis sera verrouillé et ne pourra plus être modifié.
+                </p>
+                <p class="quote-modal__text">
+                    Voulez-vous vraiment continuer ?
+                </p>
+            </div>
+            <div class="quote-modal__actions">
+                <button type="button" onclick="closeInvoiceModal()" class="quote-modal__btn quote-modal__btn--secondary">
+                    Annuler
+                </button>
+                <button type="button" onclick="confirmInvoice()" class="quote-modal__btn quote-modal__btn--danger">
+                    Oui, facturer le devis
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+    let pendingStatusValue = null;
+    const currentStatus = '{{ $status->value }}';
+
     function showTab(tab) {
         document.querySelectorAll('.quote-form__tab-content').forEach(el => el.style.display = 'none');
         document.getElementById('tab-' + tab).style.display = 'block';
+    }
+
+    function handleStatusChange(event) {
+        const newValue = event.target.value;
+
+        // Si on passe en statut "facturé", afficher la modale
+        if (newValue === 'facturé') {
+            pendingStatusValue = newValue;
+            event.target.value = currentStatus; // Remettre l'ancienne valeur
+            document.getElementById('invoice-modal').style.display = 'flex';
+        } else {
+            // Pour les autres statuts, changement direct
+            @this.call('changeStatus', newValue);
+        }
+    }
+
+    function closeInvoiceModal() {
+        document.getElementById('invoice-modal').style.display = 'none';
+        pendingStatusValue = null;
+    }
+
+    function confirmInvoice() {
+        if (pendingStatusValue) {
+            @this.call('changeStatus', pendingStatusValue);
+            closeInvoiceModal();
+        }
     }
 </script>
