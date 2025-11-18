@@ -1,4 +1,9 @@
 <div class="quote-form">
+    @php
+        $isEditable = $status->canEdit();
+        $isReadOnly = !$isEditable;
+    @endphp
+
     @if (session()->has('message'))
         <div class="quote-form__alert quote-form__alert--success">
             {{ session('message') }}
@@ -91,6 +96,7 @@
                             wire:model="clientPrenom"
                             class="quote-form__input"
                             required
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                         @error('clientPrenom') <span class="quote-form__error">{{ $message }}</span> @enderror
                     </div>
@@ -103,6 +109,7 @@
                             wire:model="clientNom"
                             class="quote-form__input"
                             required
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                         @error('clientNom') <span class="quote-form__error">{{ $message }}</span> @enderror
                     </div>
@@ -114,6 +121,7 @@
                             id="clientEmail"
                             wire:model="clientEmail"
                             class="quote-form__input"
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                         @error('clientEmail') <span class="quote-form__error">{{ $message }}</span> @enderror
                     </div>
@@ -125,6 +133,7 @@
                             id="clientTelephone"
                             wire:model="clientTelephone"
                             class="quote-form__input"
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                         @error('clientTelephone') <span class="quote-form__error">{{ $message }}</span> @enderror
                     </div>
@@ -136,6 +145,7 @@
                             id="clientAdresse"
                             wire:model="clientAdresse"
                             class="quote-form__input"
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                     </div>
                 </div>
@@ -172,6 +182,7 @@
                                 class="quote-lines-table__input"
                                 placeholder="Intitulé"
                                 required
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
                         <div class="quote-lines-table__cell">
@@ -180,6 +191,7 @@
                                 wire:model="lines.{{ $index }}.reference"
                                 class="quote-lines-table__input quote-lines-table__input--narrow"
                                 placeholder="Réf"
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
 
@@ -209,6 +221,7 @@
                                 wire:change="updateLineSalePriceHt({{ $index }})"
                                 class="quote-lines-table__input quote-lines-table__input--number"
                                 required
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
 
@@ -221,7 +234,7 @@
                                     wire:change="updateLineMarginAmount({{ $index }})"
                                     class="quote-lines-table__input quote-lines-table__input--number"
                                     {{ $line['margin_amount_ht'] === null ? 'placeholder=-' : '' }}
-                                    {{ $line['margin_amount_ht'] === null ? 'disabled' : '' }}
+                                    {{ $line['margin_amount_ht'] === null || $isReadOnly ? 'disabled' : '' }}
                                 >
                             </div>
                             <div class="quote-lines-table__cell">
@@ -232,7 +245,7 @@
                                     wire:change="updateLineMarginRate({{ $index }})"
                                     class="quote-lines-table__input quote-lines-table__input--number"
                                     {{ $line['margin_rate'] === null ? 'placeholder=-' : '' }}
-                                    {{ $line['margin_rate'] === null ? 'disabled' : '' }}
+                                    {{ $line['margin_rate'] === null || $isReadOnly ? 'disabled' : '' }}
                                 >
                             </div>
                         @endif
@@ -242,6 +255,7 @@
                                 step="0.0001"
                                 wire:model="lines.{{ $index }}.tva_rate"
                                 class="quote-lines-table__input quote-lines-table__input--number"
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
                         <div class="quote-lines-table__cell">
@@ -251,6 +265,7 @@
                                 wire:model="lines.{{ $index }}.sale_price_ttc"
                                 wire:change="updateLineSalePriceTtc({{ $index }})"
                                 class="quote-lines-table__input quote-lines-table__input--number"
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
                         <div class="quote-lines-table__cell">
@@ -259,6 +274,7 @@
                                 wire:click="removeLine({{ $index }})"
                                 class="quote-lines-table__btn-remove"
                                 title="Supprimer la prestation"
+                                {{ $isReadOnly ? 'disabled' : '' }}
                             >
                                 ×
                             </button>
@@ -267,13 +283,15 @@
                 @endforeach
             </div>
 
-            <button
-                type="button"
-                wire:click="addLine"
-                class="quote-form__btn-add-line"
-            >
-                + Ajouter une ligne
-            </button>
+            @if($isEditable)
+                <button
+                    type="button"
+                    wire:click="addLine"
+                    class="quote-form__btn-add-line"
+                >
+                    + Ajouter une ligne
+                </button>
+            @endif
         </section>
 
         {{-- Section Totaux --}}
@@ -306,6 +324,7 @@
                         id="discountType"
                         wire:model.live="discountType"
                         class="quote-form__input"
+                        {{ $isReadOnly ? 'disabled' : '' }}
                     >
                         <option value="amount">Montant (€)</option>
                         <option value="percent">Pourcentage (%)</option>
@@ -320,6 +339,7 @@
                         id="discountValue"
                         wire:model.live="discountValue"
                         class="quote-form__input"
+                        {{ $isReadOnly ? 'readonly' : '' }}
                     >
                 </div>
 
@@ -331,6 +351,7 @@
                         wire:model="validUntil"
                         class="quote-form__input"
                         required
+                        {{ $isReadOnly ? 'readonly' : '' }}
                     >
                     @error('validUntil') <span class="quote-form__error">{{ $message }}</span> @enderror
                 </div>
@@ -342,19 +363,21 @@
             <a href="{{ route('atelier.index') }}" class="quote-form__btn quote-form__btn--secondary">
                 Annuler
             </a>
-            <button
-                type="button"
-                wire:click="save(true)"
-                class="quote-form__btn quote-form__btn--secondary"
-            >
-                Enregistrer et continuer
-            </button>
-            <button
-                type="submit"
-                class="quote-form__btn quote-form__btn--primary"
-            >
-                Enregistrer le devis
-            </button>
+            @if($isEditable)
+                <button
+                    type="button"
+                    wire:click="save(true)"
+                    class="quote-form__btn quote-form__btn--secondary"
+                >
+                    Enregistrer et continuer
+                </button>
+                <button
+                    type="submit"
+                    class="quote-form__btn quote-form__btn--primary"
+                >
+                    Enregistrer le devis
+                </button>
+            @endif
         </div>
     </form>
 </div>

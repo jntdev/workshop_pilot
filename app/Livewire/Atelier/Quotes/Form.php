@@ -68,6 +68,11 @@ class Form extends Component
 
     public function addLine(): void
     {
+        // Bloquer si le devis n'est pas éditable
+        if (! $this->status->canEdit()) {
+            return;
+        }
+
         // En mode modifiable, les nouvelles lignes ont purchase_price_ht = null
         $purchasePriceHt = $this->status->canShowPurchasePrice() ? '0.00' : null;
 
@@ -87,6 +92,11 @@ class Form extends Component
 
     public function removeLine(int $index): void
     {
+        // Bloquer si le devis n'est pas éditable
+        if (! $this->status->canEdit()) {
+            return;
+        }
+
         unset($this->lines[$index]);
         $this->lines = array_values($this->lines);
         $this->recalculateTotals();
@@ -209,6 +219,25 @@ class Form extends Component
 
     public function save(bool $stayOnPage = false): void
     {
+        // Bloquer la sauvegarde si le devis est facturé
+        if ($this->quoteId && $this->status === QuoteStatus::Invoiced) {
+            session()->flash('error', 'Impossible de modifier un devis facturé.');
+
+            return;
+        }
+
+        // Bloquer la sauvegarde si le devis est en mode "prêt" (lecture seule)
+        if ($this->quoteId && $this->status === QuoteStatus::Ready) {
+            session()->flash('error', 'Le devis est en mode lecture seule. Changez le statut pour le modifier.');
+
+            return;
+        }
+
+        // Adapter les règles de validation selon le statut
+        $purchasePriceRule = $this->status->canShowPurchasePrice()
+            ? 'required|numeric|min:0'
+            : 'nullable|numeric|min:0';
+
         $this->validate([
             'clientPrenom' => 'required|string|max:255',
             'clientNom' => 'required|string|max:255',
@@ -216,7 +245,7 @@ class Form extends Component
             'clientTelephone' => 'nullable|string|max:20',
             'validUntil' => 'required|date',
             'lines.*.title' => 'required|string|max:255',
-            'lines.*.purchase_price_ht' => 'required|numeric|min:0',
+            'lines.*.purchase_price_ht' => $purchasePriceRule,
             'lines.*.sale_price_ht' => 'required|numeric|min:0',
         ]);
 

@@ -167,8 +167,15 @@ class QuoteCalculator
     {
         $ht = $this->toDecimal($totalHt);
         $tva = $this->toDecimal($totalTva);
+        $ttc = bcadd($ht, $tva, 6);
         $discount = $this->toDecimal($discountValue);
 
+        // Calculer le taux de TVA moyen
+        $tvaRate = $ht !== '0' && $ht !== '0.00'
+            ? bcmul(bcdiv($tva, $ht, 6), '100', 6)
+            : '0';
+
+        // Appliquer la remise sur le HT
         if ($discountType === 'amount') {
             $ht = bcsub($ht, $discount, 6);
         } elseif ($discountType === 'percent') {
@@ -181,6 +188,8 @@ class QuoteCalculator
             $ht = '0';
         }
 
+        // Recalculer la TVA et le TTC après application de la remise
+        $tva = bcmul($ht, bcdiv($tvaRate, '100', 6), 6);
         $ttc = bcadd($ht, $tva, 6);
 
         return [
