@@ -680,3 +680,113 @@
         }
     }
 }
+
+// Status management
+.quote-form__header {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.quote-form__status-section {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.quote-form__status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &--brouillon {
+        background-color: lighten($color-primary-blue, 45%);
+        color: darken($color-primary-blue, 10%);
+        border: 2px solid $color-primary-blue;
+    }
+
+    &--prêt {
+        background-color: lighten($color-success-green, 45%);
+        color: darken($color-success-green, 10%);
+        border: 2px solid $color-success-green;
+    }
+
+    &--modifiable {
+        background-color: lighten(#ff9800, 45%);
+        color: darken(#ff9800, 20%);
+        border: 2px solid #ff9800;
+    }
+
+    &--facturé {
+        background-color: lighten($color-neutral-medium, 35%);
+        color: darken($color-neutral-medium, 20%);
+        border: 2px solid $color-neutral-medium;
+    }
+}
+
+.quote-form__status-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.quote-form__select {
+    padding: 0.5rem 1rem;
+    border: 2px solid $color-border-light;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: white;
+    cursor: pointer;
+
+    &:disabled {
+        background-color: $color-neutral-light;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: $color-primary-blue;
+    }
+}
+
+.quote-form__info-banner {
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    font-size: 0.95rem;
+
+    &--warning {
+        background-color: lighten(#ff9800, 45%);
+        color: darken(#ff9800, 30%);
+        border-left: 4px solid #ff9800;
+    }
+}
+
+.quote-form__alert--error {
+    background-color: lighten($color-danger-red, 40%);
+    color: darken($color-danger-red, 10%);
+    border: 1px solid $color-danger-red;
+}
+
+// Line badges
+.quote-lines-table__badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+
+    &--warning {
+        background-color: lighten(#ff9800, 40%);
+        color: darken(#ff9800, 30%);
+    }
+}
