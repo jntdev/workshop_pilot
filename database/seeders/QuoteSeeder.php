@@ -287,6 +287,158 @@ class QuoteSeeder extends Seeder
             'position' => 3,
         ]);
 
-        $this->command->info('5 devis créés avec succès avec leurs lignes.');
+        // Devis 6: Devis en statut "modifiable" avec ligne incomplète
+        $quote6 = Quote::create([
+            'client_id' => $clients->where('email', 'marie.dubois@example.com')->first()?->id ?? $clients->first()->id,
+            'reference' => 'DEV-202511-0006',
+            'status' => 'modifiable',
+            'valid_until' => now()->addDays(14),
+            'discount_type' => null,
+            'discount_value' => null,
+            'total_ht' => 95.00,
+            'total_tva' => 19.00,
+            'total_ttc' => 114.00,
+            'margin_total_ht' => 45.00,
+        ]);
+
+        QuoteLine::create([
+            'quote_id' => $quote6->id,
+            'title' => 'Changement plateau',
+            'reference' => 'PLAT-001',
+            'purchase_price_ht' => 30.00,
+            'sale_price_ht' => 60.00,
+            'sale_price_ttc' => 72.00,
+            'margin_amount_ht' => 30.00,
+            'margin_rate' => 50.0000,
+            'tva_rate' => 20.0000,
+            'position' => 0,
+        ]);
+
+        QuoteLine::create([
+            'quote_id' => $quote6->id,
+            'title' => 'Cassette 11 vitesses',
+            'reference' => 'CASS-11V',
+            'purchase_price_ht' => 20.00,
+            'sale_price_ht' => 35.00,
+            'sale_price_ttc' => 42.00,
+            'margin_amount_ht' => 15.00,
+            'margin_rate' => 42.8571,
+            'tva_rate' => 20.0000,
+            'position' => 1,
+        ]);
+
+        // Ligne incomplète ajoutée en mode "modifiable" - prix d'achat non défini
+        QuoteLine::create([
+            'quote_id' => $quote6->id,
+            'title' => 'Ajustement transmission',
+            'reference' => 'ADJ-TRANS',
+            'purchase_price_ht' => null,
+            'sale_price_ht' => 25.00,
+            'sale_price_ttc' => 30.00,
+            'margin_amount_ht' => null,
+            'margin_rate' => null,
+            'tva_rate' => 20.0000,
+            'position' => 2,
+        ]);
+
+        // Devis 7: Devis facturé (toutes lignes complètes)
+        $quote7 = Quote::create([
+            'client_id' => $clients->where('email', 'jean.martin@example.com')->first()?->id ?? $clients->skip(1)->first()->id,
+            'reference' => 'DEV-202511-0007',
+            'status' => 'facturé',
+            'valid_until' => now()->subDays(5),
+            'discount_type' => null,
+            'discount_value' => null,
+            'total_ht' => 120.00,
+            'total_tva' => 24.00,
+            'total_ttc' => 144.00,
+            'margin_total_ht' => 70.00,
+        ]);
+
+        QuoteLine::create([
+            'quote_id' => $quote7->id,
+            'title' => 'Remplacement fourche',
+            'reference' => 'FOURCHE-001',
+            'purchase_price_ht' => 35.00,
+            'sale_price_ht' => 80.00,
+            'sale_price_ttc' => 96.00,
+            'margin_amount_ht' => 45.00,
+            'margin_rate' => 56.2500,
+            'tva_rate' => 20.0000,
+            'position' => 0,
+        ]);
+
+        QuoteLine::create([
+            'quote_id' => $quote7->id,
+            'title' => 'Main d\'œuvre montage',
+            'reference' => 'MO-MONT-001',
+            'purchase_price_ht' => 0.00,
+            'sale_price_ht' => 40.00,
+            'sale_price_ttc' => 48.00,
+            'margin_amount_ht' => 40.00,
+            'margin_rate' => 100.0000,
+            'tva_rate' => 20.0000,
+            'position' => 1,
+        ]);
+
+        // Devis 8: Devis brouillon avec plusieurs lignes incomplètes
+        $quote8 = Quote::create([
+            'client_id' => $clients->where('email', 'sophie.bernard@example.com')->first()?->id ?? $clients->skip(2)->first()->id,
+            'reference' => 'DEV-202511-0008',
+            'status' => 'brouillon',
+            'valid_until' => now()->addDays(25),
+            'discount_type' => null,
+            'discount_value' => null,
+            'total_ht' => 0.00,
+            'total_tva' => 0.00,
+            'total_ttc' => 0.00,
+            'margin_total_ht' => 0.00,
+        ]);
+
+        // Toutes les lignes sans prix d'achat - devis en cours de préparation
+        QuoteLine::create([
+            'quote_id' => $quote8->id,
+            'title' => 'Selle confort ergonomique',
+            'reference' => 'SELLE-CONF',
+            'purchase_price_ht' => null,
+            'sale_price_ht' => 0.00,
+            'sale_price_ttc' => 0.00,
+            'margin_amount_ht' => null,
+            'margin_rate' => null,
+            'tva_rate' => 20.0000,
+            'position' => 0,
+        ]);
+
+        QuoteLine::create([
+            'quote_id' => $quote8->id,
+            'title' => 'Guidon cintre course',
+            'reference' => 'GUID-CINT',
+            'purchase_price_ht' => null,
+            'sale_price_ht' => 0.00,
+            'sale_price_ttc' => 0.00,
+            'margin_amount_ht' => null,
+            'margin_rate' => null,
+            'tva_rate' => 20.0000,
+            'position' => 1,
+        ]);
+
+        QuoteLine::create([
+            'quote_id' => $quote8->id,
+            'title' => 'Ruban de cintre',
+            'reference' => 'RUB-CINT',
+            'purchase_price_ht' => null,
+            'sale_price_ht' => 0.00,
+            'sale_price_ttc' => 0.00,
+            'margin_amount_ht' => null,
+            'margin_rate' => null,
+            'tva_rate' => 20.0000,
+            'position' => 2,
+        ]);
+
+        $this->command->info('8 devis créés avec succès :');
+        $this->command->info('  - 3 en brouillon (dont 1 incomplet)');
+        $this->command->info('  - 2 prêts');
+        $this->command->info('  - 1 modifiable (avec ligne incomplète)');
+        $this->command->info('  - 1 facturé');
     }
 }
