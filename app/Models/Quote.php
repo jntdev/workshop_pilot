@@ -17,6 +17,7 @@ class Quote extends Model
         'client_id',
         'reference',
         'status',
+        'invoiced_at',
         'valid_until',
         'discount_type',
         'discount_value',
@@ -30,6 +31,7 @@ class Quote extends Model
     {
         return [
             'status' => QuoteStatus::class,
+            'invoiced_at' => 'datetime',
             'valid_until' => 'date',
             'discount_value' => 'decimal:2',
             'total_ht' => 'decimal:2',
@@ -37,6 +39,40 @@ class Quote extends Model
             'total_ttc' => 'decimal:2',
             'margin_total_ht' => 'decimal:2',
         ];
+    }
+
+    // Méthodes pour le nouveau workflow simplifié (7.1)
+
+    public function isInvoice(): bool
+    {
+        return $this->invoiced_at !== null;
+    }
+
+    public function isQuote(): bool
+    {
+        return $this->invoiced_at === null;
+    }
+
+    public function canEdit(): bool
+    {
+        return $this->isQuote();
+    }
+
+    public function canDelete(): bool
+    {
+        return $this->isQuote();
+    }
+
+    public function convertToInvoice(): void
+    {
+        if ($this->isInvoice()) {
+            throw new \DomainException('Ce document est déjà une facture.');
+        }
+
+        $this->update([
+            'invoiced_at' => now(),
+            'status' => QuoteStatus::Invoiced,
+        ]);
     }
 
     public function client(): BelongsTo
@@ -64,40 +100,5 @@ class Quote extends Model
     public function getIncompleteLinesCount(): int
     {
         return $this->lines()->whereNull('purchase_price_ht')->count();
-    }
-
-    // Méthodes de transition de statut
-
-    public function markAsReady(): void
-    {
-        if (! $this->status->canTransitionTo(QuoteStatus::Ready)) {
-            throw new \DomainException("Impossible de passer au statut 'prêt' depuis '{$this->status->label()}'");
-        }
-
-        $this->update(['status' => QuoteStatus::Ready]);
-    }
-
-    public function markAsModifiable(): void
-    {
-        if (! $this->status->canTransitionTo(QuoteStatus::Editable)) {
-            throw new \DomainException("Impossible de passer au statut 'modifiable' depuis '{$this->status->label()}'");
-        }
-
-        $this->update(['status' => QuoteStatus::Editable]);
-    }
-
-    public function markAsInvoiced(): void
-    {
-        if (! $this->status->canTransitionTo(QuoteStatus::Invoiced)) {
-            throw new \DomainException("Impossible de passer au statut 'facturé' depuis '{$this->status->label()}'");
-        }
-
-        if (! $this->canBeInvoiced()) {
-            throw new \DomainException(
-                "Impossible de facturer : {$this->getIncompleteLinesCount()} ligne(s) sans prix d'achat. Passez en brouillon pour les compléter."
-            );
-        }
-
-        $this->update(['status' => QuoteStatus::Invoiced]);
     }
 }

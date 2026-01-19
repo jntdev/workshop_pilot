@@ -14,6 +14,8 @@ class Form extends Component
 {
     public ?int $quoteId = null;
 
+    public ?string $invoicedAt = null;
+
     public QuoteStatus $status = QuoteStatus::Draft;
 
     public ?int $selectedClientId = null;
@@ -66,15 +68,24 @@ class Form extends Component
         $this->clientAdresse = $clientData['adresse'] ?? '';
     }
 
+    public function isInvoice(): bool
+    {
+        return $this->invoicedAt !== null;
+    }
+
+    public function canEdit(): bool
+    {
+        return ! $this->isInvoice();
+    }
+
     public function addLine(): void
     {
-        // Bloquer si le devis n'est pas éditable
-        if (! $this->status->canEdit()) {
+        // Bloquer si c'est une facture (non éditable)
+        if ($this->isInvoice()) {
             return;
         }
 
-        // En mode modifiable, les nouvelles lignes ont purchase_price_ht = null
-        $purchasePriceHt = $this->status->canShowPurchasePrice() ? '0.00' : null;
+        $purchasePriceHt = '0.00';
 
         $this->lines[] = [
             'id' => null,
@@ -92,8 +103,8 @@ class Form extends Component
 
     public function removeLine(int $index): void
     {
-        // Bloquer si le devis n'est pas éditable
-        if (! $this->status->canEdit()) {
+        // Bloquer si c'est une facture
+        if ($this->isInvoice()) {
             return;
         }
 
@@ -219,24 +230,14 @@ class Form extends Component
 
     public function save(bool $stayOnPage = false): void
     {
-        // Bloquer la sauvegarde si le devis est facturé
-        if ($this->quoteId && $this->status === QuoteStatus::Invoiced) {
-            session()->flash('error', 'Impossible de modifier un devis facturé.');
+        // Bloquer la sauvegarde si c'est une facture
+        if ($this->isInvoice()) {
+            session()->flash('error', 'Impossible de modifier une facture.');
 
             return;
         }
 
-        // Bloquer la sauvegarde si le devis est en mode "prêt" (lecture seule)
-        if ($this->quoteId && $this->status === QuoteStatus::Ready) {
-            session()->flash('error', 'Le devis est en mode lecture seule. Changez le statut pour le modifier.');
-
-            return;
-        }
-
-        // Adapter les règles de validation selon le statut
-        $purchasePriceRule = $this->status->canShowPurchasePrice()
-            ? 'required|numeric|min:0'
-            : 'nullable|numeric|min:0';
+        $purchasePriceRule = 'required|numeric|min:0';
 
         $this->validate([
             'clientPrenom' => 'required|string|max:255',
@@ -335,6 +336,7 @@ class Form extends Component
     {
         $quote = Quote::with('lines', 'client')->findOrFail($quoteId);
 
+        $this->invoicedAt = $quote->invoiced_at?->toDateTimeString();
         $this->status = $quote->status;
         $this->selectedClientId = $quote->client_id;
         $this->clientPrenom = $quote->client->prenom;
@@ -412,7 +414,7 @@ class Form extends Component
         return sprintf('DEV-%s%s-%04d', $year, $month, $number);
     }
 
-    public function changeStatus(string $newStatus): void
+    public function convertToInvoice(): void
     {
         if (! $this->quoteId) {
             session()->flash('error', 'Vous devez d\'abord enregistrer le devis.');
@@ -420,28 +422,20 @@ class Form extends Component
             return;
         }
 
+        if ($this->isInvoice()) {
+            session()->flash('error', 'Ce document est déjà une facture.');
+
+            return;
+        }
+
         $quote = Quote::findOrFail($this->quoteId);
-        $newStatusEnum = QuoteStatus::from($newStatus);
 
         try {
-            // Vérifier si la transition est autorisée
-            if (! $quote->status->canTransitionTo($newStatusEnum)) {
-                session()->flash('error', "Impossible de passer au statut '{$newStatusEnum->label()}' depuis '{$quote->status->label()}'");
+            $quote->convertToInvoice();
+            $this->invoicedAt = $quote->invoiced_at->toDateTimeString();
+            $this->status = $quote->status;
 
-                return;
-            }
-
-            // Validation spécifique pour le statut facturé
-            if ($newStatusEnum === QuoteStatus::Invoiced && ! $quote->canBeInvoiced()) {
-                session()->flash('error', "Impossible de facturer : {$quote->getIncompleteLinesCount()} ligne(s) sans prix d'achat. Passez en brouillon pour les compléter.");
-
-                return;
-            }
-
-            $quote->update(['status' => $newStatusEnum]);
-            $this->status = $newStatusEnum;
-
-            session()->flash('message', "Devis marqué comme '{$newStatusEnum->label()}'");
+            session()->flash('message', 'Le devis a été transformé en facture.');
         } catch (\DomainException $e) {
             session()->flash('error', $e->getMessage());
         }

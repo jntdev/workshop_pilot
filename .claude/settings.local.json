@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(php artisan migrate:*)",
-      "Bash(php --ini:*)"
+      "Bash(php --ini:*)",
+      "Bash(php artisan:*)",
+      "Bash(vendor/bin/pint:*)"
     ]
   }
 }

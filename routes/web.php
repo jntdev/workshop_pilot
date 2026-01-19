@@ -48,6 +48,18 @@ Route::middleware(['auth'])->group(function () {
         return view('atelier.quotes.edit', ['quote' => $quote]);
     })->name('atelier.quotes.edit');
 
+    Route::delete('/atelier/devis/{quote}', function (\App\Models\Quote $quote) {
+        if (! $quote->canDelete()) {
+            return redirect()->route('atelier.quotes.index')
+                ->with('error', 'Impossible de supprimer une facture.');
+        }
+
+        $quote->delete();
+
+        return redirect()->route('atelier.quotes.index')
+            ->with('message', 'Devis supprimé avec succès.');
+    })->name('atelier.quotes.destroy');
+
     Route::get('/location', function () {
         return view('location.index');
     })->name('location.index');

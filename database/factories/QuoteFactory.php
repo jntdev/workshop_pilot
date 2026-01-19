@@ -55,6 +55,23 @@ class QuoteFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'facturé',
+            'invoiced_at' => now(),
+        ]);
+    }
+
+    public function asInvoice(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'invoiced_at' => now(),
+            'status' => 'facturé',
+        ]);
+    }
+
+    public function asQuote(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'invoiced_at' => null,
+            'status' => 'brouillon',
         ]);
     }
 

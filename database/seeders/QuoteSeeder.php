@@ -341,12 +341,13 @@ class QuoteSeeder extends Seeder
             'position' => 2,
         ]);
 
-        // Devis 7: Devis facturé (toutes lignes complètes)
+        // Devis 7: Facture (toutes lignes complètes)
         $quote7 = Quote::create([
             'client_id' => $clients->where('email', 'jean.martin@example.com')->first()?->id ?? $clients->skip(1)->first()->id,
             'reference' => 'DEV-202511-0007',
             'status' => 'facturé',
-            'valid_until' => now()->subDays(5),
+            'invoiced_at' => now()->subDays(5),
+            'valid_until' => now()->subDays(10),
             'discount_type' => null,
             'discount_value' => null,
             'total_ht' => 120.00,
@@ -435,10 +436,8 @@ class QuoteSeeder extends Seeder
             'position' => 2,
         ]);
 
-        $this->command->info('8 devis créés avec succès :');
-        $this->command->info('  - 3 en brouillon (dont 1 incomplet)');
-        $this->command->info('  - 2 prêts');
-        $this->command->info('  - 1 modifiable (avec ligne incomplète)');
-        $this->command->info('  - 1 facturé');
+        $this->command->info('8 documents créés avec succès :');
+        $this->command->info('  - 7 devis');
+        $this->command->info('  - 1 facture');
     }
 }

@@ -1,7 +1,8 @@
 <div class="quote-form">
     @php
-        $isEditable = $status->canEdit();
-        $isReadOnly = !$isEditable;
+        $isInvoice = $this->isInvoice();
+        $isEditable = !$isInvoice;
+        $isReadOnly = $isInvoice;
     @endphp
 
     @if (session()->has('message'))
@@ -16,43 +17,23 @@
         </div>
     @endif
 
-    {{-- En-tête avec statut --}}
+    {{-- En-tête avec type de document --}}
     @if($quoteId)
         <div class="quote-form__header">
             <div class="quote-form__status-section">
-                <span class="quote-form__status-badge quote-form__status-badge--{{ $status->value }}">
-                    {{ $status->label() }}
-                </span>
-
-                <div class="quote-form__status-selector">
-                    <label for="status-select" class="quote-form__label">Changer le statut :</label>
-                    <select
-                        id="status-select"
-                        onchange="handleStatusChange(event)"
-                        class="quote-form__select"
-                        {{ $status === \App\Enums\QuoteStatus::Invoiced ? 'disabled' : '' }}
-                    >
-                        <option value="{{ \App\Enums\QuoteStatus::Draft->value }}" {{ $status === \App\Enums\QuoteStatus::Draft ? 'selected' : '' }}>
-                            Brouillon
-                        </option>
-                        <option value="{{ \App\Enums\QuoteStatus::Ready->value }}" {{ $status === \App\Enums\QuoteStatus::Ready ? 'selected' : '' }}>
-                            Prêt
-                        </option>
-                        <option value="{{ \App\Enums\QuoteStatus::Editable->value }}" {{ $status === \App\Enums\QuoteStatus::Editable ? 'selected' : '' }}>
-                            Modifiable
-                        </option>
-                        <option value="{{ \App\Enums\QuoteStatus::Invoiced->value }}" {{ $status === \App\Enums\QuoteStatus::Invoiced ? 'selected' : '' }}>
-                            Facturé
-                        </option>
-                    </select>
-                </div>
+                @if($isInvoice)
+                    <span class="quote-form__status-badge quote-form__status-badge--facturé">
+                        Facture
+                    </span>
+                    <div class="quote-form__info-banner quote-form__info-banner--info">
+                        Cette facture est en lecture seule et ne peut plus être modifiée.
+                    </div>
+                @else
+                    <span class="quote-form__status-badge quote-form__status-badge--brouillon">
+                        Devis
+                    </span>
+                @endif
             </div>
-
-            @if($status === \App\Enums\QuoteStatus::Editable)
-                <div class="quote-form__info-banner quote-form__info-banner--warning">
-                    ⚠️ Mode modifiable : Les prix d'achat et marges sont masqués. Nouvelles lignes créées sans prix d'achat.
-                </div>
-            @endif
         </div>
     @endif
 
@@ -160,14 +141,10 @@
                 <div class="quote-lines-table__header">
                     <div class="quote-lines-table__cell">Intitulé</div>
                     <div class="quote-lines-table__cell">Réf.</div>
-                    @if($status->canShowPurchasePrice())
-                        <div class="quote-lines-table__cell">PA HT</div>
-                    @endif
+                    <div class="quote-lines-table__cell">PA HT</div>
                     <div class="quote-lines-table__cell">PV HT</div>
-                    @if($status->showMargins())
-                        <div class="quote-lines-table__cell">Marge €</div>
-                        <div class="quote-lines-table__cell">Marge %</div>
-                    @endif
+                    <div class="quote-lines-table__cell">Marge €</div>
+                    <div class="quote-lines-table__cell">Marge %</div>
                     <div class="quote-lines-table__cell">TVA %</div>
                     <div class="quote-lines-table__cell">PV TTC</div>
                     <div class="quote-lines-table__cell"></div>
@@ -184,11 +161,6 @@
                                 required
                                 {{ $isReadOnly ? 'readonly' : '' }}
                             >
-                            @if($line['purchase_price_ht'] === null)
-                                <span class="quote-lines-table__badge quote-lines-table__badge--warning">
-                                    ⚠️ Prix d'achat à compléter
-                                </span>
-                            @endif
                         </div>
                         <div class="quote-lines-table__cell">
                             <input
@@ -200,23 +172,16 @@
                             >
                         </div>
 
-                        @if($status->canShowPurchasePrice())
-                            <div class="quote-lines-table__cell">
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    wire:model="lines.{{ $index }}.purchase_price_ht"
-                                    wire:change="updateLinePurchasePrice({{ $index }})"
-                                    class="quote-lines-table__input quote-lines-table__input--number"
-                                    {{ $line['purchase_price_ht'] === null ? 'placeholder=À définir' : '' }}
-                                >
-                                @if($line['purchase_price_ht'] === null)
-                                    <span class="quote-lines-table__badge quote-lines-table__badge--warning">
-                                        ⚠️ À compléter
-                                    </span>
-                                @endif
-                            </div>
-                        @endif
+                        <div class="quote-lines-table__cell">
+                            <input
+                                type="number"
+                                step="0.01"
+                                wire:model="lines.{{ $index }}.purchase_price_ht"
+                                wire:change="updateLinePurchasePrice({{ $index }})"
+                                class="quote-lines-table__input quote-lines-table__input--number"
+                                {{ $isReadOnly ? 'readonly' : '' }}
+                            >
+                        </div>
 
                         <div class="quote-lines-table__cell">
                             <input
@@ -230,30 +195,26 @@
                             >
                         </div>
 
-                        @if($status->showMargins())
-                            <div class="quote-lines-table__cell">
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    wire:model="lines.{{ $index }}.margin_amount_ht"
-                                    wire:change="updateLineMarginAmount({{ $index }})"
-                                    class="quote-lines-table__input quote-lines-table__input--number"
-                                    {{ $line['margin_amount_ht'] === null ? 'placeholder=-' : '' }}
-                                    {{ $line['margin_amount_ht'] === null || $isReadOnly ? 'disabled' : '' }}
-                                >
-                            </div>
-                            <div class="quote-lines-table__cell">
-                                <input
-                                    type="number"
-                                    step="0.0001"
-                                    wire:model="lines.{{ $index }}.margin_rate"
-                                    wire:change="updateLineMarginRate({{ $index }})"
-                                    class="quote-lines-table__input quote-lines-table__input--number"
-                                    {{ $line['margin_rate'] === null ? 'placeholder=-' : '' }}
-                                    {{ $line['margin_rate'] === null || $isReadOnly ? 'disabled' : '' }}
-                                >
-                            </div>
-                        @endif
+                        <div class="quote-lines-table__cell">
+                            <input
+                                type="number"
+                                step="0.01"
+                                wire:model="lines.{{ $index }}.margin_amount_ht"
+                                wire:change="updateLineMarginAmount({{ $index }})"
+                                class="quote-lines-table__input quote-lines-table__input--number"
+                                {{ $isReadOnly ? 'readonly' : '' }}
+                            >
+                        </div>
+                        <div class="quote-lines-table__cell">
+                            <input
+                                type="number"
+                                step="0.0001"
+                                wire:model="lines.{{ $index }}.margin_rate"
+                                wire:change="updateLineMarginRate({{ $index }})"
+                                class="quote-lines-table__input quote-lines-table__input--number"
+                                {{ $isReadOnly ? 'readonly' : '' }}
+                            >
+                        </div>
                         <div class="quote-lines-table__cell">
                             <input
                                 type="number"
@@ -366,7 +327,7 @@
         {{-- Actions --}}
         <div class="quote-form__actions">
             <a href="{{ route('atelier.index') }}" class="quote-form__btn quote-form__btn--secondary">
-                Annuler
+                Retour
             </a>
             @if($isEditable)
                 <button
@@ -382,32 +343,41 @@
                 >
                     Enregistrer le devis
                 </button>
+                @if($quoteId)
+                    <button
+                        type="button"
+                        onclick="openConvertModal()"
+                        class="quote-form__btn quote-form__btn--warning"
+                    >
+                        Transformer en facture
+                    </button>
+                @endif
             @endif
         </div>
     </form>
 
-    {{-- Modale de confirmation facturation --}}
-    <div id="invoice-modal" class="quote-modal" style="display: none;">
-        <div class="quote-modal__overlay" onclick="closeInvoiceModal()"></div>
+    {{-- Modale de confirmation transformation en facture --}}
+    <div id="convert-modal" class="quote-modal" style="display: none;">
+        <div class="quote-modal__overlay" onclick="closeConvertModal()"></div>
         <div class="quote-modal__content">
-            <h3 class="quote-modal__title">⚠️ Confirmation de facturation</h3>
+            <h3 class="quote-modal__title">Transformer en facture</h3>
             <div class="quote-modal__body">
                 <p class="quote-modal__text">
-                    Vous êtes sur le point de <strong>facturer ce devis</strong>.
+                    Vous êtes sur le point de <strong>transformer ce devis en facture</strong>.
                 </p>
                 <p class="quote-modal__warning">
-                    Cette action est <strong>irréversible</strong> : le devis sera verrouillé et ne pourra plus être modifié.
+                    Cette action est <strong>irréversible</strong> : la facture sera verrouillée et ne pourra plus être modifiée.
                 </p>
                 <p class="quote-modal__text">
                     Voulez-vous vraiment continuer ?
                 </p>
             </div>
             <div class="quote-modal__actions">
-                <button type="button" onclick="closeInvoiceModal()" class="quote-modal__btn quote-modal__btn--secondary">
+                <button type="button" onclick="closeConvertModal()" class="quote-modal__btn quote-modal__btn--secondary">
                     Annuler
                 </button>
-                <button type="button" onclick="confirmInvoice()" class="quote-modal__btn quote-modal__btn--danger">
-                    Oui, facturer le devis
+                <button type="button" onclick="confirmConvert()" class="quote-modal__btn quote-modal__btn--danger">
+                    Oui, transformer en facture
                 </button>
             </div>
         </div>
@@ -415,37 +385,21 @@
 </div>
 
 <script>
-    let pendingStatusValue = null;
-    const currentStatus = '{{ $status->value }}';
-
     function showTab(tab) {
         document.querySelectorAll('.quote-form__tab-content').forEach(el => el.style.display = 'none');
         document.getElementById('tab-' + tab).style.display = 'block';
     }
 
-    function handleStatusChange(event) {
-        const newValue = event.target.value;
-
-        // Si on passe en statut "facturé", afficher la modale
-        if (newValue === 'facturé') {
-            pendingStatusValue = newValue;
-            event.target.value = currentStatus; // Remettre l'ancienne valeur
-            document.getElementById('invoice-modal').style.display = 'flex';
-        } else {
-            // Pour les autres statuts, changement direct
-            @this.call('changeStatus', newValue);
-        }
+    function openConvertModal() {
+        document.getElementById('convert-modal').style.display = 'flex';
     }
 
-    function closeInvoiceModal() {
-        document.getElementById('invoice-modal').style.display = 'none';
-        pendingStatusValue = null;
+    function closeConvertModal() {
+        document.getElementById('convert-modal').style.display = 'none';
     }
 
-    function confirmInvoice() {
-        if (pendingStatusValue) {
-            @this.call('changeStatus', pendingStatusValue);
-            closeInvoiceModal();
-        }
+    function confirmConvert() {
+        @this.call('convertToInvoice');
+        closeConvertModal();
     }
 </script>
