@@ -1,6 +1,15 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware('guest')->group(function () {
+    Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
+        ->name('auth.google.redirect');
+
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
+        ->name('auth.google.callback');
+});
 
 // Protected routes - require authentication
 Route::middleware(['auth'])->group(function () {
@@ -47,6 +56,28 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/atelier/devis/{quote}/modifier', function (\App\Models\Quote $quote) {
         return view('atelier.quotes.edit', ['quote' => $quote]);
     })->name('atelier.quotes.edit');
+
+    Route::get('/atelier/devis/{quote}/pdf', function (\App\Models\Quote $quote, \App\Services\PdfService $pdfService) {
+        $quote->load('client', 'lines');
+
+        if ($quote->isInvoice()) {
+            return $pdfService->generateInvoicePdf($quote);
+        }
+
+        return $pdfService->generateQuotePdf($quote);
+    })->name('atelier.quotes.pdf');
+
+    Route::delete('/atelier/devis/{quote}', function (\App\Models\Quote $quote) {
+        if (! $quote->canDelete()) {
+            return redirect()->route('atelier.quotes.index')
+                ->with('error', 'Impossible de supprimer une facture.');
+        }
+
+        $quote->delete();
+
+        return redirect()->route('atelier.quotes.index')
+            ->with('message', 'Devis supprimé avec succès.');
+    })->name('atelier.quotes.destroy');
 
     Route::get('/location', function () {
         return view('location.index');

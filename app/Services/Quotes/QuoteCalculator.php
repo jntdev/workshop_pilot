@@ -7,15 +7,25 @@ class QuoteCalculator
     /**
      * Calculate line values from sale price HT.
      *
-     * @return array{sale_price_ht: string, sale_price_ttc: string, margin_amount_ht: string, margin_rate: string}
+     * @return array{sale_price_ht: string, sale_price_ttc: string, margin_amount_ht: string|null, margin_rate: string|null}
      */
-    public function fromSalePriceHt(string $purchasePriceHt, string $salePriceHt, string $tvaRate): array
+    public function fromSalePriceHt(?string $purchasePriceHt, string $salePriceHt, string $tvaRate): array
     {
-        $purchaseHt = $this->toDecimal($purchasePriceHt);
         $saleHt = $this->toDecimal($salePriceHt);
         $tva = $this->toDecimal($tvaRate);
-
         $saleTtc = bcmul($saleHt, bcadd('1', bcdiv($tva, '100', 6), 6), 6);
+
+        // Si purchase_price_ht est null, ne pas calculer les marges
+        if ($purchasePriceHt === null || $purchasePriceHt === '') {
+            return [
+                'sale_price_ht' => $this->round($saleHt, 2),
+                'sale_price_ttc' => $this->round($saleTtc, 2),
+                'margin_amount_ht' => null,
+                'margin_rate' => null,
+            ];
+        }
+
+        $purchaseHt = $this->toDecimal($purchasePriceHt);
         $marginHt = bcsub($saleHt, $purchaseHt, 6);
         $marginRate = $saleHt !== '0.00' && $saleHt !== '0'
             ? bcmul(bcdiv($marginHt, $saleHt, 6), '100', 6)
@@ -32,15 +42,25 @@ class QuoteCalculator
     /**
      * Calculate line values from sale price TTC.
      *
-     * @return array{sale_price_ht: string, sale_price_ttc: string, margin_amount_ht: string, margin_rate: string}
+     * @return array{sale_price_ht: string, sale_price_ttc: string, margin_amount_ht: string|null, margin_rate: string|null}
      */
-    public function fromSalePriceTtc(string $purchasePriceHt, string $salePriceTtc, string $tvaRate): array
+    public function fromSalePriceTtc(?string $purchasePriceHt, string $salePriceTtc, string $tvaRate): array
     {
-        $purchaseHt = $this->toDecimal($purchasePriceHt);
         $saleTtc = $this->toDecimal($salePriceTtc);
         $tva = $this->toDecimal($tvaRate);
-
         $saleHt = bcdiv($saleTtc, bcadd('1', bcdiv($tva, '100', 6), 6), 6);
+
+        // Si purchase_price_ht est null, ne pas calculer les marges
+        if ($purchasePriceHt === null || $purchasePriceHt === '') {
+            return [
+                'sale_price_ht' => $this->round($saleHt, 2),
+                'sale_price_ttc' => $this->round($saleTtc, 2),
+                'margin_amount_ht' => null,
+                'margin_rate' => null,
+            ];
+        }
+
+        $purchaseHt = $this->toDecimal($purchasePriceHt);
         $marginHt = bcsub($saleHt, $purchaseHt, 6);
         $marginRate = $saleHt !== '0.00' && $saleHt !== '0'
             ? bcmul(bcdiv($marginHt, $saleHt, 6), '100', 6)
@@ -110,7 +130,7 @@ class QuoteCalculator
     /**
      * Aggregate totals from lines array.
      *
-     * @param  array<int, array{sale_price_ht: string, sale_price_ttc: string, margin_amount_ht: string}>  $lines
+     * @param  array<int, array{sale_price_ht: string, sale_price_ttc: string, margin_amount_ht: string|null}>  $lines
      * @return array{total_ht: string, total_tva: string, total_ttc: string, margin_total_ht: string}
      */
     public function aggregateTotals(array $lines): array
@@ -122,7 +142,10 @@ class QuoteCalculator
         foreach ($lines as $line) {
             $totalHt = bcadd($totalHt, $this->toDecimal($line['sale_price_ht'] ?? '0'), 6);
             $totalTtc = bcadd($totalTtc, $this->toDecimal($line['sale_price_ttc'] ?? '0'), 6);
-            $totalMargin = bcadd($totalMargin, $this->toDecimal($line['margin_amount_ht'] ?? '0'), 6);
+            // Ignorer les marges null (lignes incomplètes)
+            if (isset($line['margin_amount_ht']) && $line['margin_amount_ht'] !== null) {
+                $totalMargin = bcadd($totalMargin, $this->toDecimal($line['margin_amount_ht']), 6);
+            }
         }
 
         $totalTva = bcsub($totalTtc, $totalHt, 6);
@@ -144,8 +167,15 @@ class QuoteCalculator
     {
         $ht = $this->toDecimal($totalHt);
         $tva = $this->toDecimal($totalTva);
+        $ttc = bcadd($ht, $tva, 6);
         $discount = $this->toDecimal($discountValue);
 
+        // Calculer le taux de TVA moyen
+        $tvaRate = $ht !== '0' && $ht !== '0.00'
+            ? bcmul(bcdiv($tva, $ht, 6), '100', 6)
+            : '0';
+
+        // Appliquer la remise sur le HT
         if ($discountType === 'amount') {
             $ht = bcsub($ht, $discount, 6);
         } elseif ($discountType === 'percent') {
@@ -158,6 +188,8 @@ class QuoteCalculator
             $ht = '0';
         }
 
+        // Recalculer la TVA et le TTC après application de la remise
+        $tva = bcmul($ht, bcdiv($tvaRate, '100', 6), 6);
         $ttc = bcadd($ht, $tva, 6);
 
         return [

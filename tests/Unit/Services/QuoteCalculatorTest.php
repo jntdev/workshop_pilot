@@ -89,9 +89,12 @@ class QuoteCalculatorTest extends TestCase
     {
         $result = $this->calculator->applyDiscount('100.00', '20.00', 'amount', '10.00');
 
+        // Après remise de 10€ sur 100€ HT : 90€ HT
+        // TVA recalculée : 90€ * 20% = 18€
+        // Total TTC : 90€ + 18€ = 108€
         $this->assertEquals('90.00', $result['total_ht']);
-        $this->assertEquals('20.00', $result['total_tva']);
-        $this->assertEquals('110.00', $result['total_ttc']);
+        $this->assertEquals('18.00', $result['total_tva']);
+        $this->assertEquals('108.00', $result['total_ttc']);
     }
 
     #[Test]
@@ -99,9 +102,12 @@ class QuoteCalculatorTest extends TestCase
     {
         $result = $this->calculator->applyDiscount('100.00', '20.00', 'percent', '10.00');
 
+        // Après remise de 10% sur 100€ HT : 90€ HT
+        // TVA recalculée : 90€ * 20% = 18€
+        // Total TTC : 90€ + 18€ = 108€
         $this->assertEquals('90.00', $result['total_ht']);
-        $this->assertEquals('20.00', $result['total_tva']);
-        $this->assertEquals('110.00', $result['total_ttc']);
+        $this->assertEquals('18.00', $result['total_tva']);
+        $this->assertEquals('108.00', $result['total_ttc']);
     }
 
     #[Test]
@@ -109,8 +115,11 @@ class QuoteCalculatorTest extends TestCase
     {
         $result = $this->calculator->applyDiscount('100.00', '20.00', 'amount', '150.00');
 
+        // Remise supérieure au HT : le HT est ramené à 0€
+        // TVA recalculée : 0€ * 20% = 0€
+        // Total TTC : 0€ + 0€ = 0€
         $this->assertEquals('0.00', $result['total_ht']);
-        $this->assertEquals('20.00', $result['total_tva']);
-        $this->assertEquals('20.00', $result['total_ttc']);
+        $this->assertEquals('0.00', $result['total_tva']);
+        $this->assertEquals('0.00', $result['total_ttc']);
     }
 }

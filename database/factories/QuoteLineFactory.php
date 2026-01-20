@@ -31,6 +31,7 @@ class QuoteLineFactory extends Factory
             'quote_id' => \App\Models\Quote::factory(),
             'title' => fake()->words(3, true),
             'reference' => fake()->optional(0.7)->bothify('REF-####'),
+            'quantity' => '1.00',
             'purchase_price_ht' => number_format($purchasePrice, 2, '.', ''),
             'sale_price_ht' => $calculated['sale_price_ht'],
             'sale_price_ttc' => $calculated['sale_price_ttc'],

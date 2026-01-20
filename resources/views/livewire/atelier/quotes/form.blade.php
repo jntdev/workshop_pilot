@@ -1,7 +1,39 @@
 <div class="quote-form">
+    @php
+        $isInvoice = $this->isInvoice();
+        $isEditable = !$isInvoice;
+        $isReadOnly = $isInvoice;
+    @endphp
+
     @if (session()->has('message'))
         <div class="quote-form__alert quote-form__alert--success">
             {{ session('message') }}
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="quote-form__alert quote-form__alert--error">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    {{-- En-tête avec type de document --}}
+    @if($quoteId)
+        <div class="quote-form__header">
+            <div class="quote-form__status-section">
+                @if($isInvoice)
+                    <span class="quote-form__status-badge quote-form__status-badge--facturé">
+                        Facture
+                    </span>
+                    <div class="quote-form__info-banner quote-form__info-banner--info">
+                        Cette facture est en lecture seule et ne peut plus être modifiée.
+                    </div>
+                @else
+                    <span class="quote-form__status-badge quote-form__status-badge--brouillon">
+                        Devis
+                    </span>
+                @endif
+            </div>
         </div>
     @endif
 
@@ -45,6 +77,7 @@
                             wire:model="clientPrenom"
                             class="quote-form__input"
                             required
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                         @error('clientPrenom') <span class="quote-form__error">{{ $message }}</span> @enderror
                     </div>
@@ -57,6 +90,7 @@
                             wire:model="clientNom"
                             class="quote-form__input"
                             required
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                         @error('clientNom') <span class="quote-form__error">{{ $message }}</span> @enderror
                     </div>
@@ -68,6 +102,7 @@
                             id="clientEmail"
                             wire:model="clientEmail"
                             class="quote-form__input"
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                         @error('clientEmail') <span class="quote-form__error">{{ $message }}</span> @enderror
                     </div>
@@ -79,6 +114,7 @@
                             id="clientTelephone"
                             wire:model="clientTelephone"
                             class="quote-form__input"
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                         @error('clientTelephone') <span class="quote-form__error">{{ $message }}</span> @enderror
                     </div>
@@ -90,6 +126,7 @@
                             id="clientAdresse"
                             wire:model="clientAdresse"
                             class="quote-form__input"
+                            {{ $isReadOnly ? 'readonly' : '' }}
                         >
                     </div>
                 </div>
@@ -104,6 +141,7 @@
                 <div class="quote-lines-table__header">
                     <div class="quote-lines-table__cell">Intitulé</div>
                     <div class="quote-lines-table__cell">Réf.</div>
+                    <div class="quote-lines-table__cell">Qté</div>
                     <div class="quote-lines-table__cell">PA HT</div>
                     <div class="quote-lines-table__cell">PV HT</div>
                     <div class="quote-lines-table__cell">Marge €</div>
@@ -122,6 +160,7 @@
                                 class="quote-lines-table__input"
                                 placeholder="Intitulé"
                                 required
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
                         <div class="quote-lines-table__cell">
@@ -130,8 +169,22 @@
                                 wire:model="lines.{{ $index }}.reference"
                                 class="quote-lines-table__input quote-lines-table__input--narrow"
                                 placeholder="Réf"
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
+
+                        <div class="quote-lines-table__cell">
+                            <input
+                                type="number"
+                                step="0.01"
+                                wire:model="lines.{{ $index }}.quantity"
+                                wire:change="updateLinePurchasePrice({{ $index }})"
+                                class="quote-lines-table__input quote-lines-table__input--number"
+                                required
+                                {{ $isReadOnly ? 'readonly' : '' }}
+                            >
+                        </div>
+
                         <div class="quote-lines-table__cell">
                             <input
                                 type="number"
@@ -139,9 +192,10 @@
                                 wire:model="lines.{{ $index }}.purchase_price_ht"
                                 wire:change="updateLinePurchasePrice({{ $index }})"
                                 class="quote-lines-table__input quote-lines-table__input--number"
-                                required
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
+
                         <div class="quote-lines-table__cell">
                             <input
                                 type="number"
@@ -150,8 +204,10 @@
                                 wire:change="updateLineSalePriceHt({{ $index }})"
                                 class="quote-lines-table__input quote-lines-table__input--number"
                                 required
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
+
                         <div class="quote-lines-table__cell">
                             <input
                                 type="number"
@@ -159,6 +215,7 @@
                                 wire:model="lines.{{ $index }}.margin_amount_ht"
                                 wire:change="updateLineMarginAmount({{ $index }})"
                                 class="quote-lines-table__input quote-lines-table__input--number"
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
                         <div class="quote-lines-table__cell">
@@ -168,14 +225,16 @@
                                 wire:model="lines.{{ $index }}.margin_rate"
                                 wire:change="updateLineMarginRate({{ $index }})"
                                 class="quote-lines-table__input quote-lines-table__input--number"
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
                         <div class="quote-lines-table__cell">
                             <input
                                 type="number"
-                                step="0.0001"
+                                step="1"
                                 wire:model="lines.{{ $index }}.tva_rate"
-                                class="quote-lines-table__input quote-lines-table__input--number"
+                                class="quote-lines-table__input quote-lines-table__input--narrow"
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
                         <div class="quote-lines-table__cell">
@@ -185,6 +244,7 @@
                                 wire:model="lines.{{ $index }}.sale_price_ttc"
                                 wire:change="updateLineSalePriceTtc({{ $index }})"
                                 class="quote-lines-table__input quote-lines-table__input--number"
+                                {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
                         <div class="quote-lines-table__cell">
@@ -193,6 +253,7 @@
                                 wire:click="removeLine({{ $index }})"
                                 class="quote-lines-table__btn-remove"
                                 title="Supprimer la prestation"
+                                {{ $isReadOnly ? 'disabled' : '' }}
                             >
                                 ×
                             </button>
@@ -201,13 +262,15 @@
                 @endforeach
             </div>
 
-            <button
-                type="button"
-                wire:click="addLine"
-                class="quote-form__btn-add-line"
-            >
-                + Ajouter une ligne
-            </button>
+            @if($isEditable)
+                <button
+                    type="button"
+                    wire:click="addLine"
+                    class="quote-form__btn-add-line"
+                >
+                    + Ajouter une ligne
+                </button>
+            @endif
         </section>
 
         {{-- Section Totaux --}}
@@ -240,6 +303,7 @@
                         id="discountType"
                         wire:model.live="discountType"
                         class="quote-form__input"
+                        {{ $isReadOnly ? 'disabled' : '' }}
                     >
                         <option value="amount">Montant (€)</option>
                         <option value="percent">Pourcentage (%)</option>
@@ -254,6 +318,7 @@
                         id="discountValue"
                         wire:model.live="discountValue"
                         class="quote-form__input"
+                        {{ $isReadOnly ? 'readonly' : '' }}
                     >
                 </div>
 
@@ -265,6 +330,7 @@
                         wire:model="validUntil"
                         class="quote-form__input"
                         required
+                        {{ $isReadOnly ? 'readonly' : '' }}
                     >
                     @error('validUntil') <span class="quote-form__error">{{ $message }}</span> @enderror
                 </div>
@@ -274,28 +340,86 @@
         {{-- Actions --}}
         <div class="quote-form__actions">
             <a href="{{ route('atelier.index') }}" class="quote-form__btn quote-form__btn--secondary">
-                Annuler
+                Retour
             </a>
-            <button
-                type="button"
-                wire:click="save(true)"
-                class="quote-form__btn quote-form__btn--secondary"
-            >
-                Enregistrer et continuer
-            </button>
-            <button
-                type="submit"
-                class="quote-form__btn quote-form__btn--primary"
-            >
-                Enregistrer le devis
-            </button>
+            @if($isEditable)
+                <button
+                    type="button"
+                    wire:click="downloadPdf"
+                    class="quote-form__btn quote-form__btn--secondary"
+                >
+                    Télécharger PDF
+                </button>
+                <button
+                    type="button"
+                    wire:click="save(true)"
+                    class="quote-form__btn quote-form__btn--secondary"
+                >
+                    Enregistrer et continuer
+                </button>
+                <button
+                    type="submit"
+                    class="quote-form__btn quote-form__btn--primary"
+                >
+                    Enregistrer le devis
+                </button>
+                @if($quoteId)
+                    <button
+                        type="button"
+                        onclick="openConvertModal()"
+                        class="quote-form__btn quote-form__btn--warning"
+                    >
+                        Transformer en facture
+                    </button>
+                @endif
+            @endif
         </div>
     </form>
+
+    {{-- Modale de confirmation transformation en facture --}}
+    <div id="convert-modal" class="quote-modal" style="display: none;">
+        <div class="quote-modal__overlay" onclick="closeConvertModal()"></div>
+        <div class="quote-modal__content">
+            <h3 class="quote-modal__title">Transformer en facture</h3>
+            <div class="quote-modal__body">
+                <p class="quote-modal__text">
+                    Vous êtes sur le point de <strong>transformer ce devis en facture</strong>.
+                </p>
+                <p class="quote-modal__warning">
+                    Cette action est <strong>irréversible</strong> : la facture sera verrouillée et ne pourra plus être modifiée.
+                </p>
+                <p class="quote-modal__text">
+                    Voulez-vous vraiment continuer ?
+                </p>
+            </div>
+            <div class="quote-modal__actions">
+                <button type="button" onclick="closeConvertModal()" class="quote-modal__btn quote-modal__btn--secondary">
+                    Annuler
+                </button>
+                <button type="button" onclick="confirmConvert()" class="quote-modal__btn quote-modal__btn--danger">
+                    Oui, transformer en facture
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
     function showTab(tab) {
         document.querySelectorAll('.quote-form__tab-content').forEach(el => el.style.display = 'none');
         document.getElementById('tab-' + tab).style.display = 'block';
+    }
+
+    function openConvertModal() {
+        document.getElementById('convert-modal').style.display = 'flex';
+    }
+
+    function closeConvertModal() {
+        document.getElementById('convert-modal').style.display = 'none';
+    }
+
+    function confirmConvert() {
+        @this.call('convertToInvoice');
+        closeConvertModal();
     }
 </script>

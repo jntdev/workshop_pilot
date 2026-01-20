@@ -7,7 +7,7 @@
             <span>&gt;</span>
             <span>{{ $quote->reference }}</span>
         </div>
-        <h1>Devis {{ $quote->reference }}</h1>
+        <h1>{{ $quote->isInvoice() ? 'Facture' : 'Devis' }} {{ $quote->reference }}</h1>
     </div>
 
     <div class="quote-show">
@@ -47,6 +47,7 @@
                         <tr>
                             <th>Intitulé</th>
                             <th>Réf.</th>
+                            <th>Qté</th>
                             <th>PA HT</th>
                             <th>PV HT</th>
                             <th>Marge €</th>
@@ -60,11 +61,12 @@
                             <tr>
                                 <td>{{ $line->title }}</td>
                                 <td>{{ $line->reference }}</td>
+                                <td>{{ number_format((float)$line->quantity, 2, ',', ' ') }}</td>
                                 <td>{{ number_format((float)$line->purchase_price_ht, 2, ',', ' ') }} €</td>
                                 <td>{{ number_format((float)$line->sale_price_ht, 2, ',', ' ') }} €</td>
                                 <td>{{ number_format((float)$line->margin_amount_ht, 2, ',', ' ') }} €</td>
                                 <td>{{ number_format((float)$line->margin_rate, 2, ',', ' ') }} %</td>
-                                <td>{{ number_format((float)$line->tva_rate, 2, ',', ' ') }} %</td>
+                                <td>{{ number_format((float)$line->tva_rate, 0, ',', ' ') }} %</td>
                                 <td>{{ number_format((float)$line->sale_price_ttc, 2, ',', ' ') }} €</td>
                             </tr>
                         @endforeach
@@ -96,13 +98,25 @@
 
             <div class="quote-show__meta">
                 <div class="quote-show__info-row">
-                    <span class="quote-show__label">Statut</span>
-                    <span class="quote-show__value">{{ $quote->status === 'draft' ? 'Brouillon' : 'Validé' }}</span>
+                    <span class="quote-show__label">Type</span>
+                    <span class="quote-show__value">
+                        @if($quote->isInvoice())
+                            <span class="badge badge--invoice">Facture</span>
+                        @else
+                            <span class="badge badge--quote">Devis</span>
+                        @endif
+                    </span>
                 </div>
                 <div class="quote-show__info-row">
                     <span class="quote-show__label">Date de validité</span>
                     <span class="quote-show__value">{{ $quote->valid_until->format('d/m/Y') }}</span>
                 </div>
+                @if($quote->isInvoice())
+                    <div class="quote-show__info-row">
+                        <span class="quote-show__label">Date de facturation</span>
+                        <span class="quote-show__value">{{ $quote->invoiced_at->format('d/m/Y') }}</span>
+                    </div>
+                @endif
             </div>
         </section>
 
@@ -110,9 +124,14 @@
             <a href="{{ route('atelier.quotes.index') }}" class="quote-show__btn quote-show__btn--secondary">
                 Retour
             </a>
-            <a href="{{ route('atelier.quotes.edit', $quote) }}" class="quote-show__btn quote-show__btn--primary">
-                Modifier
+            <a href="{{ route('atelier.quotes.pdf', $quote) }}" class="quote-show__btn quote-show__btn--secondary">
+                Télécharger PDF
             </a>
+            @if($quote->canEdit())
+                <a href="{{ route('atelier.quotes.edit', $quote) }}" class="quote-show__btn quote-show__btn--primary">
+                    Modifier
+                </a>
+            @endif
         </div>
     </div>
 </x-layouts.main>

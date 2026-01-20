@@ -14,6 +14,7 @@ class QuoteLine extends Model
         'quote_id',
         'title',
         'reference',
+        'quantity',
         'purchase_price_ht',
         'sale_price_ht',
         'sale_price_ttc',
@@ -26,6 +27,7 @@ class QuoteLine extends Model
     protected function casts(): array
     {
         return [
+            'quantity' => 'decimal:2',
             'purchase_price_ht' => 'decimal:2',
             'sale_price_ht' => 'decimal:2',
             'sale_price_ttc' => 'decimal:2',
