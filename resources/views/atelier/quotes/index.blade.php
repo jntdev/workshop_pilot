@@ -58,9 +58,15 @@
                             </td>
                             <td>{{ $quote->created_at->format('d/m/Y') }}</td>
                             <td class="quotes-list__actions">
-                                <a href="{{ route('atelier.quotes.show', $quote) }}" class="quotes-list__link">
-                                    Consulter
-                                </a>
+                                @if($quote->isInvoice())
+                                    <a href="{{ route('atelier.quotes.show', $quote) }}" class="quotes-list__link">
+                                        Consulter
+                                    </a>
+                                @else
+                                    <a href="{{ route('atelier.quotes.edit', $quote) }}" class="quotes-list__link">
+                                        Consulter
+                                    </a>
+                                @endif
                                 @if($quote->canDelete())
                                     <form action="{{ route('atelier.quotes.destroy', $quote) }}" method="POST" class="quotes-list__delete-form" onsubmit="return confirm('Voulez-vous vraiment supprimer ce devis ?')">
                                         @csrf

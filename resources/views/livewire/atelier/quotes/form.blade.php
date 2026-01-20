@@ -141,6 +141,7 @@
                 <div class="quote-lines-table__header">
                     <div class="quote-lines-table__cell">Intitulé</div>
                     <div class="quote-lines-table__cell">Réf.</div>
+                    <div class="quote-lines-table__cell">Qté</div>
                     <div class="quote-lines-table__cell">PA HT</div>
                     <div class="quote-lines-table__cell">PV HT</div>
                     <div class="quote-lines-table__cell">Marge €</div>
@@ -168,6 +169,18 @@
                                 wire:model="lines.{{ $index }}.reference"
                                 class="quote-lines-table__input quote-lines-table__input--narrow"
                                 placeholder="Réf"
+                                {{ $isReadOnly ? 'readonly' : '' }}
+                            >
+                        </div>
+
+                        <div class="quote-lines-table__cell">
+                            <input
+                                type="number"
+                                step="0.01"
+                                wire:model="lines.{{ $index }}.quantity"
+                                wire:change="updateLinePurchasePrice({{ $index }})"
+                                class="quote-lines-table__input quote-lines-table__input--number"
+                                required
                                 {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
@@ -218,9 +231,9 @@
                         <div class="quote-lines-table__cell">
                             <input
                                 type="number"
-                                step="0.0001"
+                                step="1"
                                 wire:model="lines.{{ $index }}.tva_rate"
-                                class="quote-lines-table__input quote-lines-table__input--number"
+                                class="quote-lines-table__input quote-lines-table__input--narrow"
                                 {{ $isReadOnly ? 'readonly' : '' }}
                             >
                         </div>
@@ -330,6 +343,13 @@
                 Retour
             </a>
             @if($isEditable)
+                <button
+                    type="button"
+                    wire:click="downloadPdf"
+                    class="quote-form__btn quote-form__btn--secondary"
+                >
+                    Télécharger PDF
+                </button>
                 <button
                     type="button"
                     wire:click="save(true)"

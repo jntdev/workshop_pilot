@@ -69,7 +69,20 @@ class Quote extends Model
             throw new \DomainException('Ce document est déjà une facture.');
         }
 
+        // Générer une nouvelle référence pour la facture
+        $today = now();
+        $datePrefix = $today->format('Ymd');
+
+        // Compter les factures créées aujourd'hui
+        $countToday = self::whereNotNull('invoiced_at')
+            ->whereDate('invoiced_at', $today->toDateString())
+            ->count();
+
+        $number = $countToday + 1;
+        $newReference = sprintf('%s-%d', $datePrefix, $number);
+
         $this->update([
+            'reference' => $newReference,
             'invoiced_at' => now(),
             'status' => QuoteStatus::Invoiced,
         ]);

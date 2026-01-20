@@ -4,7 +4,16 @@
       "Bash(php artisan migrate:*)",
       "Bash(php --ini:*)",
       "Bash(php artisan:*)",
-      "Bash(vendor/bin/pint:*)"
+      "Bash(vendor/bin/pint:*)",
+      "Bash(composer require:*)",
+      "Bash(if not exist database mkdir database)",
+      "Bash(mysql:*)",
+      "Bash(if [ -f \"public/images/logo.png\" ])",
+      "Bash(then ls -lh public/images/logo.png)",
+      "Bash(else echo \"Logo file does not exist\")",
+      "Bash(fi)",
+      "Bash(convert:*)",
+      "Bash(git add:*)"
     ]
   }
 }

@@ -91,12 +91,13 @@ class Form extends Component
             'id' => null,
             'title' => '',
             'reference' => '',
+            'quantity' => '1.00',
             'purchase_price_ht' => $purchasePriceHt,
             'sale_price_ht' => '0.00',
             'sale_price_ttc' => '0.00',
             'margin_amount_ht' => $purchasePriceHt === null ? null : '0.00',
             'margin_rate' => $purchasePriceHt === null ? null : '0.0000',
-            'tva_rate' => '20.0000',
+            'tva_rate' => '20',
             'position' => count($this->lines),
         ];
     }
@@ -246,6 +247,7 @@ class Form extends Component
             'clientTelephone' => 'nullable|string|max:20',
             'validUntil' => 'required|date',
             'lines.*.title' => 'required|string|max:255',
+            'lines.*.quantity' => 'required|numeric|min:0.01',
             'lines.*.purchase_price_ht' => $purchasePriceRule,
             'lines.*.sale_price_ht' => 'required|numeric|min:0',
         ]);
@@ -315,6 +317,7 @@ class Form extends Component
                 'quote_id' => $quote->id,
                 'title' => $lineData['title'],
                 'reference' => $lineData['reference'],
+                'quantity' => $lineData['quantity'],
                 'purchase_price_ht' => $lineData['purchase_price_ht'],
                 'sale_price_ht' => $lineData['sale_price_ht'],
                 'sale_price_ttc' => $lineData['sale_price_ttc'],
@@ -352,12 +355,13 @@ class Form extends Component
             'id' => $line->id,
             'title' => $line->title,
             'reference' => $line->reference ?? '',
+            'quantity' => number_format((float) $line->quantity, 2, '.', ''),
             'purchase_price_ht' => $line->purchase_price_ht !== null ? number_format((float) $line->purchase_price_ht, 2, '.', '') : null,
             'sale_price_ht' => number_format((float) $line->sale_price_ht, 2, '.', ''),
             'sale_price_ttc' => number_format((float) $line->sale_price_ttc, 2, '.', ''),
             'margin_amount_ht' => $line->margin_amount_ht !== null ? number_format((float) $line->margin_amount_ht, 2, '.', '') : null,
             'margin_rate' => $line->margin_rate !== null ? number_format((float) $line->margin_rate, 4, '.', '') : null,
-            'tva_rate' => number_format((float) $line->tva_rate, 4, '.', ''),
+            'tva_rate' => number_format((float) $line->tva_rate, 0, '.', ''),
             'position' => $line->position,
         ])->toArray();
 
@@ -402,16 +406,29 @@ class Form extends Component
 
     protected function generateReference(): string
     {
-        $year = date('Y');
-        $month = date('m');
-        $lastQuote = Quote::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->latest('id')
-            ->first();
+        $today = now();
+        $datePrefix = $today->format('Ymd');
 
-        $number = $lastQuote ? ((int) substr($lastQuote->reference, -4)) + 1 : 1;
+        // Compter les devis créés aujourd'hui
+        $countToday = Quote::whereDate('created_at', $today->toDateString())
+            ->count();
 
-        return sprintf('DEV-%s%s-%04d', $year, $month, $number);
+        $number = $countToday + 1;
+
+        return sprintf('%s-%d', $datePrefix, $number);
+    }
+
+    public function downloadPdf(): void
+    {
+        // Si le devis n'existe pas encore, l'enregistrer d'abord
+        if (! $this->quoteId) {
+            $this->save(true);
+        }
+
+        // Rediriger vers la génération du PDF
+        if ($this->quoteId) {
+            $this->redirect(route('atelier.quotes.pdf', $this->quoteId));
+        }
     }
 
     public function convertToInvoice(): void
@@ -432,10 +449,11 @@ class Form extends Component
 
         try {
             $quote->convertToInvoice();
-            $this->invoicedAt = $quote->invoiced_at->toDateTimeString();
-            $this->status = $quote->status;
 
             session()->flash('message', 'Le devis a été transformé en facture.');
+
+            // Rediriger vers la page de consultation (visuel non-modifiable)
+            $this->redirect(route('atelier.quotes.show', $quote), navigate: true);
         } catch (\DomainException $e) {
             session()->flash('error', $e->getMessage());
         }
