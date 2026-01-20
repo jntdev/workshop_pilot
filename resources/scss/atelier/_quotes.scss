@@ -1,0 +1,924 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+
+// Quote Form
+.quote-form {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+
+    &__alert {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+
+        &--success {
+            background-color: lighten($color-success-green, 45%);
+            color: darken($color-success-green, 10%);
+            border: 1px solid $color-success-green;
+        }
+    }
+
+    &__section {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    &__section-title {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: $color-neutral-dark;
+    }
+
+    &__tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid $color-border-light;
+    }
+
+    &__tab {
+        background: none;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        font-size: 1rem;
+        color: $color-neutral-medium;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+
+        &:hover {
+            color: $color-primary-blue;
+        }
+
+        &.active {
+            color: $color-primary-blue;
+            border-bottom-color: $color-primary-blue;
+        }
+    }
+
+    &__tab-content {
+        margin-bottom: 1.5rem;
+    }
+
+    &__help-text {
+        color: $color-neutral-medium;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    &__client-badge {
+        background-color: lighten($color-primary-blue, 45%);
+        color: $color-primary-blue;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+
+    &__client-fields {
+        margin-top: 1.5rem;
+    }
+
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    &__field {
+        &--full {
+            grid-column: 1 / -1;
+        }
+    }
+
+    &__label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: $color-neutral-dark;
+        font-size: 0.9rem;
+    }
+
+    &__input,
+    &__select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-family: $font-family-base;
+
+        &:focus {
+            outline: none;
+            border-color: $color-primary-blue;
+            box-shadow: 0 0 0 3px rgba($color-primary-blue, 0.1);
+        }
+    }
+
+    &__error {
+        display: block;
+        color: $color-danger-red;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    &__btn-add-line {
+        background-color: $color-primary-blue;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-top: 1rem;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: darken($color-primary-blue, 10%);
+        }
+    }
+
+    &__discount {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    &__btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+
+        &--primary {
+            background-color: $color-primary-blue;
+            color: white;
+
+            &:hover {
+                background-color: darken($color-primary-blue, 10%);
+            }
+        }
+
+        &--secondary {
+            background-color: $color-bg-light;
+            color: $color-neutral-dark;
+            border: 1px solid $color-border-medium;
+
+            &:hover {
+                background-color: darken($color-bg-light, 5%);
+            }
+        }
+    }
+}
+
+// Quote Lines Table
+.quote-lines-table {
+    overflow-x: auto;
+
+    &__header {
+        display: grid;
+        grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 60px;
+        gap: 0.5rem;
+        padding: 0.75rem 0.5rem;
+        background-color: $color-bg-light;
+        border-radius: 4px 4px 0 0;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: $color-neutral-dark;
+    }
+
+    &__row {
+        display: grid;
+        grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 60px;
+        gap: 0.5rem;
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid $color-border-light;
+        align-items: center;
+
+        &:hover {
+            background-color: lighten($color-bg-light, 3%);
+        }
+    }
+
+    &__cell {
+        display: flex;
+        align-items: center;
+    }
+
+    &__input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid $color-border-light;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-family: $font-family-base;
+
+        &:focus {
+            outline: none;
+            border-color: $color-primary-blue;
+        }
+
+        &--narrow {
+            max-width: 100px;
+        }
+
+        &--number {
+            text-align: right;
+        }
+    }
+
+    &__btn-remove {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background-color: $color-danger-red;
+        color: white;
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+            background-color: darken($color-danger-red, 10%);
+        }
+    }
+}
+
+// Quote Totals
+.quote-totals {
+    background-color: $color-bg-light;
+    padding: 1.5rem;
+    border-radius: 8px;
+
+    &__row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid $color-border-light;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &--total {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: $color-primary-blue;
+            margin-top: 0.5rem;
+        }
+    }
+
+    &__label {
+        font-weight: 500;
+        color: $color-neutral-dark;
+    }
+
+    &__value {
+        font-weight: 600;
+        color: $color-neutral-dark;
+    }
+}
+
+// Client Search
+.client-search {
+    position: relative;
+
+    &__input-wrapper {
+        margin-bottom: 1rem;
+    }
+
+    &__input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-family: $font-family-base;
+
+        &:focus {
+            outline: none;
+            border-color: $color-primary-blue;
+            box-shadow: 0 0 0 3px rgba($color-primary-blue, 0.1);
+        }
+    }
+
+    &__results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 10;
+    }
+
+    &__result-item {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+        border-bottom: 1px solid $color-border-light;
+        transition: background-color 0.2s;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:hover {
+            background-color: $color-bg-light;
+        }
+    }
+
+    &__result-name {
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin-bottom: 0.25rem;
+    }
+
+    &__result-details {
+        font-size: 0.85rem;
+        color: $color-neutral-medium;
+
+        span {
+            margin-right: 1rem;
+        }
+    }
+}
+
+// Quote Show Page
+.quote-show {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+
+    &__section {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    &__section-title {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: $color-neutral-dark;
+    }
+
+    &__info {
+        display: grid;
+        gap: 1rem;
+    }
+
+    &__info-row {
+        display: flex;
+        gap: 1rem;
+    }
+
+    &__label {
+        font-weight: 600;
+        color: $color-neutral-medium;
+        min-width: 150px;
+    }
+
+    &__value {
+        color: $color-neutral-dark;
+    }
+
+    &__table {
+        width: 100%;
+        border-collapse: collapse;
+
+        thead {
+            background-color: $color-bg-light;
+
+            th {
+                padding: 0.75rem;
+                text-align: left;
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: $color-neutral-dark;
+            }
+        }
+
+        tbody {
+            tr {
+                border-bottom: 1px solid $color-border-light;
+
+                &:hover {
+                    background-color: lighten($color-bg-light, 3%);
+                }
+            }
+
+            td {
+                padding: 0.75rem;
+                color: $color-neutral-dark;
+            }
+        }
+    }
+
+    &__totals {
+        background-color: $color-bg-light;
+        padding: 1.5rem;
+        border-radius: 8px;
+        max-width: 500px;
+        margin-left: auto;
+    }
+
+    &__totals-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid $color-border-light;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &--total {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: $color-primary-blue;
+            margin-top: 0.5rem;
+        }
+    }
+
+    &__meta {
+        margin-top: 1.5rem;
+        display: grid;
+        gap: 1rem;
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    &__btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+
+        &--primary {
+            background-color: $color-primary-blue;
+            color: white;
+
+            &:hover {
+                background-color: darken($color-primary-blue, 10%);
+            }
+        }
+
+        &--secondary {
+            background-color: $color-bg-light;
+            color: $color-neutral-dark;
+            border: 1px solid $color-border-medium;
+
+            &:hover {
+                background-color: darken($color-bg-light, 5%);
+            }
+        }
+    }
+}
+
+// Quotes List Page
+.quotes-list {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+
+    &__header {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 2rem;
+    }
+
+    &__btn-create {
+        background-color: $color-primary-blue;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: darken($color-primary-blue, 10%);
+        }
+    }
+
+    &__table {
+        width: 100%;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-collapse: collapse;
+
+        thead {
+            background-color: $color-bg-light;
+
+            th {
+                padding: 1rem;
+                text-align: left;
+                font-weight: 600;
+                color: $color-neutral-dark;
+            }
+        }
+
+        tbody {
+            tr {
+                border-bottom: 1px solid $color-border-light;
+
+                &:hover {
+                    background-color: lighten($color-bg-light, 3%);
+                }
+
+                &:last-child {
+                    border-bottom: none;
+                }
+            }
+
+            td {
+                padding: 1rem;
+                color: $color-neutral-dark;
+            }
+        }
+    }
+
+    &__status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 500;
+
+        &--draft {
+            background-color: lighten($color-toggle-mango, 35%);
+            color: darken($color-toggle-mango, 10%);
+        }
+
+        &--validated {
+            background-color: lighten($color-success-green, 45%);
+            color: darken($color-success-green, 10%);
+        }
+    }
+
+    &__link {
+        color: $color-primary-blue;
+        text-decoration: none;
+        font-weight: 500;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    &__empty {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+        p {
+            color: $color-neutral-medium;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+    }
+}
+
+// Atelier Index
+.atelier-index {
+    &__actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    &__btn {
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.2s;
+
+        &--primary {
+            background-color: $color-primary-blue;
+            color: white;
+
+            &:hover {
+                background-color: darken($color-primary-blue, 10%);
+            }
+        }
+
+        &--secondary {
+            background-color: white;
+            color: $color-primary-blue;
+            border: 2px solid $color-primary-blue;
+
+            &:hover {
+                background-color: lighten($color-primary-blue, 45%);
+            }
+        }
+    }
+}
+
+// Responsive
+@media (max-width: 768px) {
+    .quote-lines-table {
+        &__header,
+        &__row {
+            grid-template-columns: 1.5fr 0.6fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 50px;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    .quote-form {
+        padding: 1rem;
+
+        &__section {
+            padding: 1.5rem;
+        }
+
+        &__grid {
+            grid-template-columns: 1fr;
+        }
+    }
+}
+
+// Status management
+.quote-form__header {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.quote-form__status-section {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.quote-form__status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &--brouillon {
+        background-color: lighten($color-primary-blue, 45%);
+        color: darken($color-primary-blue, 10%);
+        border: 2px solid $color-primary-blue;
+    }
+
+    &--prêt {
+        background-color: lighten($color-success-green, 45%);
+        color: darken($color-success-green, 10%);
+        border: 2px solid $color-success-green;
+    }
+
+    &--modifiable {
+        background-color: lighten(#ff9800, 45%);
+        color: darken(#ff9800, 20%);
+        border: 2px solid #ff9800;
+    }
+
+    &--facturé {
+        background-color: lighten($color-neutral-medium, 35%);
+        color: darken($color-neutral-medium, 20%);
+        border: 2px solid $color-neutral-medium;
+    }
+}
+
+.quote-form__status-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.quote-form__select {
+    padding: 0.5rem 1rem;
+    border: 2px solid $color-border-light;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: white;
+    cursor: pointer;
+
+    &:disabled {
+        background-color: $color-neutral-light;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: $color-primary-blue;
+    }
+}
+
+.quote-form__info-banner {
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    font-size: 0.95rem;
+
+    &--warning {
+        background-color: lighten(#ff9800, 45%);
+        color: darken(#ff9800, 30%);
+        border-left: 4px solid #ff9800;
+    }
+}
+
+.quote-form__alert--error {
+    background-color: lighten($color-danger-red, 40%);
+    color: darken($color-danger-red, 10%);
+    border: 1px solid $color-danger-red;
+}
+
+// Line badges
+.quote-lines-table__badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+
+    &--warning {
+        background-color: lighten(#ff9800, 40%);
+        color: darken(#ff9800, 30%);
+    }
+}
+
+// Badges de statut pour page show
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+
+    &--brouillon {
+        background-color: lighten($color-primary-blue, 45%);
+        color: darken($color-primary-blue, 10%);
+        border: 1px solid $color-primary-blue;
+    }
+
+    &--prêt {
+        background-color: lighten($color-success-green, 45%);
+        color: darken($color-success-green, 10%);
+        border: 1px solid $color-success-green;
+    }
+
+    &--modifiable {
+        background-color: lighten(#ff9800, 45%);
+        color: darken(#ff9800, 20%);
+        border: 1px solid #ff9800;
+    }
+
+    &--facturé {
+        background-color: lighten($color-neutral-medium, 35%);
+        color: darken($color-neutral-medium, 20%);
+        border: 1px solid $color-neutral-medium;
+    }
+}
+
+// Modale de confirmation
+.quote-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &__overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+    }
+
+    &__content {
+        position: relative;
+        background-color: $color-bg-white;
+        border-radius: 8px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        max-width: 500px;
+        width: 90%;
+        padding: 24px;
+        z-index: 1001;
+    }
+
+    &__title {
+        font-size: 20px;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin: 0 0 16px 0;
+    }
+
+    &__body {
+        margin-bottom: 24px;
+    }
+
+    &__text {
+        margin: 0 0 12px 0;
+        color: $color-neutral-dark;
+        line-height: 1.5;
+    }
+
+    &__warning {
+        margin: 16px 0;
+        padding: 12px;
+        background-color: lighten($color-danger-red, 45%);
+        border-left: 4px solid $color-danger-red;
+        color: darken($color-danger-red, 10%);
+        line-height: 1.5;
+        border-radius: 4px;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    &__btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &--secondary {
+            background-color: $color-neutral-light;
+            color: $color-neutral-dark;
+            border: 1px solid $color-border-medium;
+
+            &:hover {
+                background-color: darken($color-neutral-light, 5%);
+            }
+        }
+
+        &--danger {
+            background-color: $color-danger-red;
+            color: white;
+
+            &:hover {
+                background-color: darken($color-danger-red, 10%);
+            }
+        }
+    }
+}

@@ -1,0 +1,98 @@
+@use '../../base/colors' as *;
+@use '../../base/typos' as *;
+@use '../../base/rules' as *;
+
+// Layout principal
+
+.layout {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  line-height: $line-height-normal;
+  color: $color-neutral-dark;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+// Header
+.layout-header {
+  border-bottom: 1px solid $color-border-light;
+
+  &__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: $spacing-lg $spacing-md;
+  }
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    margin: 0;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover {
+        color: $color-primary-blue;
+      }
+    }
+  }
+}
+
+// Navigation
+.layout-nav {
+  display: flex;
+  gap: $spacing-lg;
+  align-items: center;
+
+  &__link {
+    color: $color-neutral-dark;
+    text-decoration: none;
+    transition: color $transition-base;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    padding: 0;
+
+    &:hover {
+      color: $color-primary-blue;
+    }
+
+    &--logout {
+      color: $color-danger-red;
+
+      &:hover {
+        color: darken($color-danger-red, 10%);
+      }
+    }
+  }
+}
+
+// Breadcrumb
+.layout-breadcrumb {
+  background-color: $color-bg-light;
+  border-bottom: 1px solid $color-border-light;
+
+  &__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: $spacing-sm $spacing-md;
+  }
+}
+
+// Main content
+.layout-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-2xl $spacing-md;
+  flex: 1;
+}

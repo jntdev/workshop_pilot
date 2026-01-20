@@ -1,0 +1,23 @@
+// Feuille principale Workshop Pilot
+
+// Base
+@use 'base/colors';
+@use 'base/typos';
+@use 'base/rules';
+
+// Composants & Layouts
+@use 'components/layouts/main';
+@use 'components/layouts/chapter';
+@use 'base/components';
+
+// Auth
+@use 'auth/forms';
+
+// Atelier
+@use 'atelier/quotes';
+
+// Pages / Chapitres
+@use 'home/dashboard';
+@use 'clients/index-page' as clients-page;
+@use 'atelier/index-page' as atelier-page;
+@use 'location/index-page' as location-page;
