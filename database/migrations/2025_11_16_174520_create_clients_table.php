@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('prenom');
             $table->string('nom');
             $table->string('telephone');
-            $table->string('email')->nullable()->unique();
+            $table->string('email', 191)->nullable()->unique();
             $table->text('adresse')->nullable();
             $table->string('origine_contact')->nullable();
             $table->text('commentaires')->nullable();

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('authorized_emails', function (Blueprint $table) {
             $table->id();
-            $table->string('email')->unique();
+            $table->string('email', 191)->unique();
             $table->timestamps();
         });
     }
