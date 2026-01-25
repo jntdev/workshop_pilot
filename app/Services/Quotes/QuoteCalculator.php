@@ -11,21 +11,21 @@ class QuoteCalculator
      */
     public function fromSalePriceHt(string $purchasePriceHt, string $salePriceHt, string $tvaRate): array
     {
-        $saleHt = $this->toDecimal($salePriceHt);
-        $tva = $this->toDecimal($tvaRate);
-        $saleTtc = bcmul($saleHt, bcadd('1', bcdiv($tva, '100', 6), 6), 6);
+        $saleHt = (float) $salePriceHt;
+        $tva = (float) $tvaRate;
+        $saleTtc = $saleHt * (1 + $tva / 100);
 
-        $purchaseHt = $this->toDecimal($purchasePriceHt);
-        $marginHt = bcsub($saleHt, $purchaseHt, 6);
-        $marginRate = $saleHt !== '0.00' && $saleHt !== '0'
-            ? bcmul(bcdiv($marginHt, $saleHt, 6), '100', 6)
-            : '0';
+        $purchaseHt = (float) $purchasePriceHt;
+        $marginHt = $saleHt - $purchaseHt;
+        $marginRate = $saleHt != 0
+            ? ($marginHt / $saleHt) * 100
+            : 0;
 
         return [
-            'sale_price_ht' => $this->round($saleHt, 2),
-            'sale_price_ttc' => $this->round($saleTtc, 2),
-            'margin_amount_ht' => $this->round($marginHt, 2),
-            'margin_rate' => $this->round($marginRate, 4),
+            'sale_price_ht' => $this->formatMoney($saleHt),
+            'sale_price_ttc' => $this->floorMoney($saleTtc),
+            'margin_amount_ht' => $this->floorMoney($marginHt),
+            'margin_rate' => $this->formatRate($marginRate),
         ];
     }
 
@@ -36,21 +36,21 @@ class QuoteCalculator
      */
     public function fromSalePriceTtc(string $purchasePriceHt, string $salePriceTtc, string $tvaRate): array
     {
-        $saleTtc = $this->toDecimal($salePriceTtc);
-        $tva = $this->toDecimal($tvaRate);
-        $saleHt = bcdiv($saleTtc, bcadd('1', bcdiv($tva, '100', 6), 6), 6);
+        $saleTtc = (float) $salePriceTtc;
+        $tva = (float) $tvaRate;
+        $saleHt = $saleTtc / (1 + $tva / 100);
 
-        $purchaseHt = $this->toDecimal($purchasePriceHt);
-        $marginHt = bcsub($saleHt, $purchaseHt, 6);
-        $marginRate = $saleHt !== '0.00' && $saleHt !== '0'
-            ? bcmul(bcdiv($marginHt, $saleHt, 6), '100', 6)
-            : '0';
+        $purchaseHt = (float) $purchasePriceHt;
+        $marginHt = $saleHt - $purchaseHt;
+        $marginRate = $saleHt != 0
+            ? ($marginHt / $saleHt) * 100
+            : 0;
 
         return [
-            'sale_price_ht' => $this->round($saleHt, 2),
-            'sale_price_ttc' => $this->round($saleTtc, 2),
-            'margin_amount_ht' => $this->round($marginHt, 2),
-            'margin_rate' => $this->round($marginRate, 4),
+            'sale_price_ht' => $this->floorMoney($saleHt),
+            'sale_price_ttc' => $this->formatMoney($saleTtc),
+            'margin_amount_ht' => $this->floorMoney($marginHt),
+            'margin_rate' => $this->formatRate($marginRate),
         ];
     }
 
@@ -61,21 +61,21 @@ class QuoteCalculator
      */
     public function fromMarginAmount(string $purchasePriceHt, string $marginAmount, string $tvaRate): array
     {
-        $purchaseHt = $this->toDecimal($purchasePriceHt);
-        $margin = $this->toDecimal($marginAmount);
-        $tva = $this->toDecimal($tvaRate);
+        $purchaseHt = (float) $purchasePriceHt;
+        $margin = (float) $marginAmount;
+        $tva = (float) $tvaRate;
 
-        $saleHt = bcadd($purchaseHt, $margin, 6);
-        $saleTtc = bcmul($saleHt, bcadd('1', bcdiv($tva, '100', 6), 6), 6);
-        $marginRate = $saleHt !== '0.00' && $saleHt !== '0'
-            ? bcmul(bcdiv($margin, $saleHt, 6), '100', 6)
-            : '0';
+        $saleHt = $purchaseHt + $margin;
+        $saleTtc = $saleHt * (1 + $tva / 100);
+        $marginRate = $saleHt != 0
+            ? ($margin / $saleHt) * 100
+            : 0;
 
         return [
-            'sale_price_ht' => $this->round($saleHt, 2),
-            'sale_price_ttc' => $this->round($saleTtc, 2),
-            'margin_amount_ht' => $this->round($margin, 2),
-            'margin_rate' => $this->round($marginRate, 4),
+            'sale_price_ht' => $this->floorMoney($saleHt),
+            'sale_price_ttc' => $this->floorMoney($saleTtc),
+            'margin_amount_ht' => $this->formatMoney($margin),
+            'margin_rate' => $this->formatRate($marginRate),
         ];
     }
 
@@ -86,24 +86,24 @@ class QuoteCalculator
      */
     public function fromMarginRate(string $purchasePriceHt, string $marginRate, string $tvaRate): array
     {
-        $purchaseHt = $this->toDecimal($purchasePriceHt);
-        $rate = $this->toDecimal($marginRate);
-        $tva = $this->toDecimal($tvaRate);
+        $purchaseHt = (float) $purchasePriceHt;
+        $rate = (float) $marginRate;
+        $tva = (float) $tvaRate;
 
         // PV HT = PA HT / (1 - (Marge % / 100))
-        $divisor = bcsub('1', bcdiv($rate, '100', 6), 6);
-        $saleHt = $divisor !== '0' && $divisor !== '0.00'
-            ? bcdiv($purchaseHt, $divisor, 6)
+        $divisor = 1 - ($rate / 100);
+        $saleHt = $divisor != 0
+            ? $purchaseHt / $divisor
             : $purchaseHt;
 
-        $saleTtc = bcmul($saleHt, bcadd('1', bcdiv($tva, '100', 6), 6), 6);
-        $marginHt = bcsub($saleHt, $purchaseHt, 6);
+        $saleTtc = $saleHt * (1 + $tva / 100);
+        $marginHt = $saleHt - $purchaseHt;
 
         return [
-            'sale_price_ht' => $this->round($saleHt, 2),
-            'sale_price_ttc' => $this->round($saleTtc, 2),
-            'margin_amount_ht' => $this->round($marginHt, 2),
-            'margin_rate' => $this->round($rate, 4),
+            'sale_price_ht' => $this->floorMoney($saleHt),
+            'sale_price_ttc' => $this->floorMoney($saleTtc),
+            'margin_amount_ht' => $this->floorMoney($marginHt),
+            'margin_rate' => $this->formatRate($rate),
         ];
     }
 
@@ -115,23 +115,23 @@ class QuoteCalculator
      */
     public function aggregateTotals(array $lines): array
     {
-        $totalHt = '0';
-        $totalTtc = '0';
-        $totalMargin = '0';
+        $totalHt = 0.0;
+        $totalTtc = 0.0;
+        $totalMargin = 0.0;
 
         foreach ($lines as $line) {
-            $totalHt = bcadd($totalHt, $this->toDecimal($line['sale_price_ht'] ?? '0'), 6);
-            $totalTtc = bcadd($totalTtc, $this->toDecimal($line['sale_price_ttc'] ?? '0'), 6);
-            $totalMargin = bcadd($totalMargin, $this->toDecimal($line['margin_amount_ht'] ?? '0'), 6);
+            $totalHt += (float) ($line['sale_price_ht'] ?? 0);
+            $totalTtc += (float) ($line['sale_price_ttc'] ?? 0);
+            $totalMargin += (float) ($line['margin_amount_ht'] ?? 0);
         }
 
-        $totalTva = bcsub($totalTtc, $totalHt, 6);
+        $totalTva = $totalTtc - $totalHt;
 
         return [
-            'total_ht' => $this->round($totalHt, 2),
-            'total_tva' => $this->round($totalTva, 2),
-            'total_ttc' => $this->round($totalTtc, 2),
-            'margin_total_ht' => $this->round($totalMargin, 2),
+            'total_ht' => $this->floorMoney($totalHt),
+            'total_tva' => $this->floorMoney($totalTva),
+            'total_ttc' => $this->floorMoney($totalTtc),
+            'margin_total_ht' => $this->floorMoney($totalMargin),
         ];
     }
 
@@ -142,64 +142,66 @@ class QuoteCalculator
      */
     public function applyDiscount(string $totalHt, string $totalTva, string $discountType, string $discountValue): array
     {
-        $ht = $this->toDecimal($totalHt);
-        $tva = $this->toDecimal($totalTva);
-        $ttc = bcadd($ht, $tva, 6);
-        $discount = $this->toDecimal($discountValue);
+        $ht = (float) $totalHt;
+        $tva = (float) $totalTva;
+        $discount = (float) $discountValue;
 
         // Calculer le taux de TVA moyen
-        $tvaRate = $ht !== '0' && $ht !== '0.00'
-            ? bcmul(bcdiv($tva, $ht, 6), '100', 6)
-            : '0';
+        $tvaRate = $ht != 0 ? ($tva / $ht) * 100 : 0;
 
         // Appliquer la remise sur le HT
         if ($discountType === 'amount') {
-            $ht = bcsub($ht, $discount, 6);
+            $ht -= $discount;
         } elseif ($discountType === 'percent') {
-            $discountAmount = bcmul($ht, bcdiv($discount, '100', 6), 6);
-            $ht = bcsub($ht, $discountAmount, 6);
+            $discountAmount = $ht * ($discount / 100);
+            $ht -= $discountAmount;
         }
 
         // Ensure HT doesn't go negative
-        if (bccomp($ht, '0', 6) < 0) {
-            $ht = '0';
+        if ($ht < 0) {
+            $ht = 0;
         }
 
         // Recalculer la TVA et le TTC après application de la remise
-        $tva = bcmul($ht, bcdiv($tvaRate, '100', 6), 6);
-        $ttc = bcadd($ht, $tva, 6);
+        $tva = $ht * ($tvaRate / 100);
+        $ttc = $ht + $tva;
 
         return [
-            'total_ht' => $this->round($ht, 2),
-            'total_tva' => $this->round($tva, 2),
-            'total_ttc' => $this->round($ttc, 2),
+            'total_ht' => $this->floorMoney($ht),
+            'total_tva' => $this->floorMoney($tva),
+            'total_ttc' => $this->floorMoney($ttc),
         ];
     }
 
     /**
-     * Convert value to decimal string.
+     * Format money value (2 decimals, no rounding adjustment).
      */
-    private function toDecimal(string|int|float $value): string
+    private function formatMoney(float $value): string
     {
-        return (string) $value;
+        return number_format($value, 2, '.', '');
     }
 
     /**
-     * Round value to specified precision.
+     * Floor money value (round down for billing - pessimistic for revenue).
      */
-    private function round(string $value, int $precision): string
+    private function floorMoney(float $value): string
     {
-        $multiplier = bcpow('10', (string) $precision, 0);
-        $rounded = bcdiv(
-            bcadd(
-                bcmul($value, $multiplier, 0),
-                bccomp($value, '0', $precision + 2) >= 0 ? '0.5' : '-0.5',
-                0
-            ),
-            $multiplier,
-            $precision
-        );
+        return number_format(floor($value * 100) / 100, 2, '.', '');
+    }
 
-        return $rounded;
+    /**
+     * Ceil money value (round up for costs - pessimistic for expenses).
+     */
+    private function ceilMoney(float $value): string
+    {
+        return number_format(ceil($value * 100) / 100, 2, '.', '');
+    }
+
+    /**
+     * Format rate value (4 decimals).
+     */
+    private function formatRate(float $value): string
+    {
+        return number_format($value, 4, '.', '');
     }
 }
