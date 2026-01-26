@@ -43,21 +43,21 @@
             wire:click="setActiveTab('quotes')"
             class="quotes-tab {{ $activeTab === 'quotes' ? 'quotes-tab--active' : '' }}"
         >
-            Devis ({{ $this->quotes->count() }})
+            Devis
         </button>
         <button
             type="button"
             wire:click="setActiveTab('invoices')"
             class="quotes-tab {{ $activeTab === 'invoices' ? 'quotes-tab--active' : '' }}"
         >
-            Factures ({{ $this->invoices->count() }})
+            Factures
         </button>
         <button
             type="button"
             wire:click="setActiveTab('clients')"
             class="quotes-tab {{ $activeTab === 'clients' ? 'quotes-tab--active' : '' }}"
         >
-            Clients ({{ $this->clientQuotes->count() }})
+            Clients
         </button>
     </div>
 
@@ -151,6 +151,11 @@
                 placeholder="Rechercher un client (prénom, nom, email)..."
                 style="width: 100%; max-width: 400px; padding: 10px 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px;"
             >
+            @if(strlen($clientSearch) > 0 && strlen($clientSearch) < 2)
+                <p style="margin-top: 8px; font-size: 13px; color: #6c757d;">
+                    Saisissez au moins 2 caractères pour lancer la recherche.
+                </p>
+            @endif
         </div>
 
         @if($this->clientQuotes->count() > 0)
@@ -241,9 +246,13 @@
                     </table>
                 </div>
             @endforeach
+        @elseif(strlen($clientSearch) >= 2)
+            <div class="quotes-list__empty">
+                <p>Aucun client trouvé pour "{{ $clientSearch }}".</p>
+            </div>
         @else
             <div class="quotes-list__empty">
-                <p>Aucun client trouvé.</p>
+                <p>Utilisez la recherche pour trouver un client.</p>
             </div>
         @endif
     </div>
