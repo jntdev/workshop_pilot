@@ -85,18 +85,16 @@ class Form extends Component
             return;
         }
 
-        $purchasePriceHt = '0.00';
-
         $this->lines[] = [
             'id' => null,
             'title' => '',
             'reference' => '',
             'quantity' => '1.00',
-            'purchase_price_ht' => $purchasePriceHt,
+            'purchase_price_ht' => '0.00',
             'sale_price_ht' => '0.00',
             'sale_price_ttc' => '0.00',
-            'margin_amount_ht' => $purchasePriceHt === null ? null : '0.00',
-            'margin_rate' => $purchasePriceHt === null ? null : '0.0000',
+            'margin_amount_ht' => '0.00',
+            'margin_rate' => '0.0000',
             'tva_rate' => '20',
             'position' => count($this->lines),
         ];
@@ -127,8 +125,8 @@ class Form extends Component
 
         $line['sale_price_ht'] = number_format((float) $calculated['sale_price_ht'], 2, '.', '');
         $line['sale_price_ttc'] = number_format((float) $calculated['sale_price_ttc'], 2, '.', '');
-        $line['margin_amount_ht'] = $calculated['margin_amount_ht'] !== null ? number_format((float) $calculated['margin_amount_ht'], 2, '.', '') : null;
-        $line['margin_rate'] = $calculated['margin_rate'] !== null ? number_format((float) $calculated['margin_rate'], 4, '.', '') : null;
+        $line['margin_amount_ht'] = number_format((float) $calculated['margin_amount_ht'], 2, '.', '');
+        $line['margin_rate'] = number_format((float) $calculated['margin_rate'], 4, '.', '');
 
         $this->recalculateTotals();
     }
@@ -146,8 +144,8 @@ class Form extends Component
 
         $line['sale_price_ht'] = number_format((float) $calculated['sale_price_ht'], 2, '.', '');
         $line['sale_price_ttc'] = number_format((float) $calculated['sale_price_ttc'], 2, '.', '');
-        $line['margin_amount_ht'] = $calculated['margin_amount_ht'] !== null ? number_format((float) $calculated['margin_amount_ht'], 2, '.', '') : null;
-        $line['margin_rate'] = $calculated['margin_rate'] !== null ? number_format((float) $calculated['margin_rate'], 4, '.', '') : null;
+        $line['margin_amount_ht'] = number_format((float) $calculated['margin_amount_ht'], 2, '.', '');
+        $line['margin_rate'] = number_format((float) $calculated['margin_rate'], 4, '.', '');
 
         $this->recalculateTotals();
     }
@@ -165,8 +163,8 @@ class Form extends Component
 
         $line['sale_price_ht'] = number_format((float) $calculated['sale_price_ht'], 2, '.', '');
         $line['sale_price_ttc'] = number_format((float) $calculated['sale_price_ttc'], 2, '.', '');
-        $line['margin_amount_ht'] = $calculated['margin_amount_ht'] !== null ? number_format((float) $calculated['margin_amount_ht'], 2, '.', '') : null;
-        $line['margin_rate'] = $calculated['margin_rate'] !== null ? number_format((float) $calculated['margin_rate'], 4, '.', '') : null;
+        $line['margin_amount_ht'] = number_format((float) $calculated['margin_amount_ht'], 2, '.', '');
+        $line['margin_rate'] = number_format((float) $calculated['margin_rate'], 4, '.', '');
 
         $this->recalculateTotals();
     }
@@ -184,8 +182,8 @@ class Form extends Component
 
         $line['sale_price_ht'] = number_format((float) $calculated['sale_price_ht'], 2, '.', '');
         $line['sale_price_ttc'] = number_format((float) $calculated['sale_price_ttc'], 2, '.', '');
-        $line['margin_amount_ht'] = $calculated['margin_amount_ht'] !== null ? number_format((float) $calculated['margin_amount_ht'], 2, '.', '') : null;
-        $line['margin_rate'] = $calculated['margin_rate'] !== null ? number_format((float) $calculated['margin_rate'], 4, '.', '') : null;
+        $line['margin_amount_ht'] = number_format((float) $calculated['margin_amount_ht'], 2, '.', '');
+        $line['margin_rate'] = number_format((float) $calculated['margin_rate'], 4, '.', '');
 
         $this->recalculateTotals();
     }
@@ -356,11 +354,11 @@ class Form extends Component
             'title' => $line->title,
             'reference' => $line->reference ?? '',
             'quantity' => number_format((float) $line->quantity, 2, '.', ''),
-            'purchase_price_ht' => $line->purchase_price_ht !== null ? number_format((float) $line->purchase_price_ht, 2, '.', '') : null,
+            'purchase_price_ht' => number_format((float) ($line->purchase_price_ht ?? 0), 2, '.', ''),
             'sale_price_ht' => number_format((float) $line->sale_price_ht, 2, '.', ''),
             'sale_price_ttc' => number_format((float) $line->sale_price_ttc, 2, '.', ''),
-            'margin_amount_ht' => $line->margin_amount_ht !== null ? number_format((float) $line->margin_amount_ht, 2, '.', '') : null,
-            'margin_rate' => $line->margin_rate !== null ? number_format((float) $line->margin_rate, 4, '.', '') : null,
+            'margin_amount_ht' => number_format((float) ($line->margin_amount_ht ?? 0), 2, '.', ''),
+            'margin_rate' => number_format((float) ($line->margin_rate ?? 0), 4, '.', ''),
             'tva_rate' => number_format((float) $line->tva_rate, 0, '.', ''),
             'position' => $line->position,
         ])->toArray();
