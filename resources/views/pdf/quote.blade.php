@@ -169,6 +169,28 @@
             font-size: 8px;
             color: #999;
         }
+        .bike-info {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+        }
+        .bike-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+        .bike-info p {
+            margin: 5px 0;
+            font-size: 11px;
+            color: #555;
+        }
+        .bike-info .label {
+            font-weight: bold;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -202,8 +224,20 @@
         </div>
     </div>
 
+    @if($quote->bike_description || $quote->reception_comment)
+        <div class="bike-info">
+            <h3>Vélo concerné</h3>
+            @if($quote->bike_description)
+                <p><span class="label">Description :</span> {{ $quote->bike_description }}</p>
+            @endif
+            @if($quote->reception_comment)
+                <p><span class="label">Motif :</span> {{ $quote->reception_comment }}</p>
+            @endif
+        </div>
+    @endif
+
     <div class="section">
-             
+
         @if(!$quote->isInvoice())
             <div class="info-row">
                 <span class="info-label">Date d'émission</span>

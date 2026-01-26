@@ -69,6 +69,7 @@
                     <tr>
                         <th>Référence</th>
                         <th>Client</th>
+                        <th>Vélo</th>
                         <th>Total TTC</th>
                         <th>Date</th>
                         <th>Actions</th>
@@ -79,6 +80,7 @@
                         <tr>
                             <td>{{ $quote->reference }}</td>
                             <td>{{ $quote->client->prenom }} {{ $quote->client->nom }}</td>
+                            <td>{{ $quote->bike_description ?: '-' }}</td>
                             <td>{{ number_format((float)$quote->total_ttc, 2, ',', ' ') }} €</td>
                             <td>{{ $quote->created_at->format('d/m/Y') }}</td>
                             <td class="quotes-list__actions">
@@ -114,6 +116,7 @@
                     <tr>
                         <th>Référence</th>
                         <th>Client</th>
+                        <th>Vélo</th>
                         <th>Total TTC</th>
                         <th>Date de facturation</th>
                         <th>Actions</th>
@@ -124,6 +127,7 @@
                         <tr>
                             <td>{{ $invoice->reference }}</td>
                             <td>{{ $invoice->client->prenom }} {{ $invoice->client->nom }}</td>
+                            <td>{{ $invoice->bike_description ?: '-' }}</td>
                             <td>{{ number_format((float)$invoice->total_ttc, 2, ',', ' ') }} €</td>
                             <td>{{ $invoice->invoiced_at->format('d/m/Y') }}</td>
                             <td class="quotes-list__actions">
@@ -191,6 +195,7 @@
                         <thead>
                             <tr>
                                 <th>Référence</th>
+                                <th>Vélo</th>
                                 <th>Type</th>
                                 <th>Total TTC</th>
                                 <th>Date</th>
@@ -201,6 +206,7 @@
                             @foreach($quotes->sortByDesc('created_at') as $quote)
                                 <tr>
                                     <td>{{ $quote->reference }}</td>
+                                    <td>{{ $quote->bike_description ?: '-' }}</td>
                                     <td>
                                         @if($quote->isInvoice())
                                             <span class="quotes-list__status quotes-list__status--invoice">

@@ -21,6 +21,8 @@ class Quote extends Model
 
     protected $fillable = [
         'client_id',
+        'bike_description',
+        'reception_comment',
         'metier',
         'reference',
         'status',

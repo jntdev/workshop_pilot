@@ -30,6 +30,10 @@ class Form extends Component
 
     public string $clientAdresse = '';
 
+    public string $bikeDescription = '';
+
+    public string $receptionComment = '';
+
     public string $validUntil = '';
 
     public string $discountType = 'percent';
@@ -243,6 +247,8 @@ class Form extends Component
             'clientNom' => 'required|string|max:255',
             'clientEmail' => 'nullable|email|max:255',
             'clientTelephone' => 'nullable|string|max:20',
+            'bikeDescription' => 'required|string|max:255',
+            'receptionComment' => 'required|string',
             'validUntil' => 'required|date',
             'lines.*.title' => 'required|string|max:255',
             'lines.*.quantity' => 'required|numeric|min:0.01',
@@ -283,6 +289,8 @@ class Form extends Component
             $quote = Quote::findOrFail($this->quoteId);
             $quote->update([
                 'client_id' => $client->id,
+                'bike_description' => $this->bikeDescription,
+                'reception_comment' => $this->receptionComment,
                 'valid_until' => $this->validUntil,
                 'discount_type' => $this->discountValue ? $this->discountType : null,
                 'discount_value' => $this->discountValue ?: null,
@@ -295,6 +303,8 @@ class Form extends Component
             // Mode création : génération de la référence, status par défaut brouillon
             $quote = Quote::create([
                 'client_id' => $client->id,
+                'bike_description' => $this->bikeDescription,
+                'reception_comment' => $this->receptionComment,
                 'reference' => $this->generateReference(),
                 'status' => QuoteStatus::Draft,
                 'valid_until' => $this->validUntil,
@@ -345,6 +355,8 @@ class Form extends Component
         $this->clientEmail = $quote->client->email ?? '';
         $this->clientTelephone = $quote->client->telephone ?? '';
         $this->clientAdresse = $quote->client->adresse ?? '';
+        $this->bikeDescription = $quote->bike_description ?? '';
+        $this->receptionComment = $quote->reception_comment ?? '';
         $this->validUntil = $quote->valid_until->format('Y-m-d');
         $this->discountType = $quote->discount_type ?? 'percent';
         $this->discountValue = $quote->discount_value ?? '0';
