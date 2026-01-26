@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Atelier;
 
-use App\Models\Quote;
-use Illuminate\Support\Facades\DB;
+use App\Enums\Metier;
+use App\Models\MonthlyKpi;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -46,29 +46,34 @@ class Dashboard extends Component
 
     protected function getStatsForMonth(int $year, int $month): array
     {
-        $startDate = now()->setYear($year)->setMonth($month)->startOfMonth();
-        $endDate = now()->setYear($year)->setMonth($month)->endOfMonth();
+        $kpi = MonthlyKpi::where('metier', Metier::Atelier)
+            ->where('year', $year)
+            ->where('month', $month)
+            ->first();
 
-        $invoices = Quote::whereNotNull('invoiced_at')
-            ->whereBetween('invoiced_at', [$startDate, $endDate])
-            ->get();
+        if (! $kpi) {
+            return [
+                'revenue' => 0,
+                'margin' => 0,
+                'count' => 0,
+                'margin_rate' => 0,
+            ];
+        }
 
-        $revenue = $invoices->sum('total_ht');
-        $margin = $invoices->sum('margin_total_ht');
-        $count = $invoices->count();
+        $revenue = (float) $kpi->revenue_ht;
+        $margin = (float) $kpi->margin_ht;
 
         return [
             'revenue' => $revenue,
             'margin' => $margin,
-            'count' => $count,
+            'count' => $kpi->invoice_count,
             'margin_rate' => $revenue > 0 ? ($margin / $revenue) * 100 : 0,
         ];
     }
 
     public function getAvailableYears(): array
     {
-        $years = Quote::whereNotNull('invoiced_at')
-            ->select(DB::raw('YEAR(invoiced_at) as year'))
+        $years = MonthlyKpi::where('metier', Metier::Atelier)
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year')

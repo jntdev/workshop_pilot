@@ -3,6 +3,7 @@
 namespace App\Livewire\Atelier;
 
 use App\Models\Quote;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -16,6 +17,8 @@ class QuotesList extends Component
 
     public string $clientSearch = '';
 
+    public bool $invoicesLoaded = false;
+
     public function mount(): void
     {
         $this->filterYear = now()->year;
@@ -27,14 +30,19 @@ class QuotesList extends Component
     {
         $this->filterYear = $year;
         $this->filterMonth = $month;
+        $this->invoicesLoaded = false;
     }
 
     public function setActiveTab(string $tab): void
     {
         $this->activeTab = $tab;
+
+        if ($tab === 'invoices') {
+            $this->invoicesLoaded = true;
+        }
     }
 
-    public function getQuotesProperty()
+    public function getQuotesProperty(): Collection
     {
         return Quote::with('client')
             ->whereNull('invoiced_at')
@@ -42,8 +50,12 @@ class QuotesList extends Component
             ->get();
     }
 
-    public function getInvoicesProperty()
+    public function getInvoicesProperty(): Collection
     {
+        if (! $this->invoicesLoaded && $this->activeTab !== 'invoices') {
+            return collect();
+        }
+
         $startDate = now()->setYear($this->filterYear)->setMonth($this->filterMonth)->startOfMonth();
         $endDate = now()->setYear($this->filterYear)->setMonth($this->filterMonth)->endOfMonth();
 
@@ -54,19 +66,21 @@ class QuotesList extends Component
             ->get();
     }
 
-    public function getClientQuotesProperty()
+    public function getClientQuotesProperty(): Collection
     {
-        $query = Quote::with('client')->latest();
-
-        if ($this->clientSearch) {
-            $query->whereHas('client', function ($q) {
-                $q->where('prenom', 'like', '%' . $this->clientSearch . '%')
-                    ->orWhere('nom', 'like', '%' . $this->clientSearch . '%')
-                    ->orWhere('email', 'like', '%' . $this->clientSearch . '%');
-            });
+        if (empty($this->clientSearch) || strlen($this->clientSearch) < 2) {
+            return collect();
         }
 
-        return $query->get()->groupBy('client_id');
+        return Quote::with('client')
+            ->whereHas('client', function ($q) {
+                $q->where('prenom', 'like', '%'.$this->clientSearch.'%')
+                    ->orWhere('nom', 'like', '%'.$this->clientSearch.'%')
+                    ->orWhere('email', 'like', '%'.$this->clientSearch.'%');
+            })
+            ->latest()
+            ->get()
+            ->groupBy('client_id');
     }
 
     public function render()
