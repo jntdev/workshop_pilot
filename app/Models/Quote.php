@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\Metier;
 use App\Enums\QuoteStatus;
+use App\Services\Kpis\MonthlyKpiUpdater;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,8 +15,13 @@ class Quote extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $attributes = [
+        'metier' => 'atelier',
+    ];
+
     protected $fillable = [
         'client_id',
+        'metier',
         'reference',
         'status',
         'invoiced_at',
@@ -30,6 +37,7 @@ class Quote extends Model
     protected function casts(): array
     {
         return [
+            'metier' => Metier::class,
             'status' => QuoteStatus::class,
             'invoiced_at' => 'datetime',
             'valid_until' => 'date',
@@ -86,6 +94,9 @@ class Quote extends Model
             'invoiced_at' => now(),
             'status' => QuoteStatus::Invoiced,
         ]);
+
+        // Mettre à jour les KPIs mensuels
+        app(MonthlyKpiUpdater::class)->applyInvoice($this);
     }
 
     public function client(): BelongsTo
