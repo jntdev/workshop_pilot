@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('monthly_kpis', function (Blueprint $table) {
             $table->id();
-            $table->string('metier');
+            $table->string('metier', 50);
             $table->unsignedSmallInteger('year');
             $table->unsignedTinyInteger('month');
             $table->unsignedInteger('invoice_count')->default(0);
