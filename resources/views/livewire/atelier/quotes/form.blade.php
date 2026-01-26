@@ -133,6 +133,41 @@
             </div>
         </section>
 
+        {{-- Section Vélo --}}
+        <section class="quote-form__section">
+            <h2 class="quote-form__section-title">Identification du vélo</h2>
+
+            <div class="quote-form__grid">
+                <div class="quote-form__field quote-form__field--full">
+                    <label for="bikeDescription" class="quote-form__label">Description du vélo *</label>
+                    <input
+                        type="text"
+                        id="bikeDescription"
+                        wire:model="bikeDescription"
+                        class="quote-form__input"
+                        placeholder="Ex: Nakamura vert, VTT bleu avec roue blanche..."
+                        required
+                        {{ $isReadOnly ? 'readonly' : '' }}
+                    >
+                    @error('bikeDescription') <span class="quote-form__error">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="quote-form__field quote-form__field--full">
+                    <label for="receptionComment" class="quote-form__label">Commentaire de réception *</label>
+                    <textarea
+                        id="receptionComment"
+                        wire:model="receptionComment"
+                        class="quote-form__input quote-form__textarea"
+                        rows="4"
+                        placeholder="Ex: Devis révision, le client vient parce que de temps en temps il experimente ceci cela..."
+                        required
+                        {{ $isReadOnly ? 'readonly' : '' }}
+                    ></textarea>
+                    @error('receptionComment') <span class="quote-form__error">{{ $message }}</span> @enderror
+                </div>
+            </div>
+        </section>
+
         {{-- Section Prestations --}}
         <section class="quote-form__section">
             <h2 class="quote-form__section-title">Prestations</h2>

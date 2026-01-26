@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Metier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,6 +19,9 @@ class QuoteFactory extends Factory
     {
         return [
             'client_id' => \App\Models\Client::factory(),
+            'bike_description' => fake()->randomElement(['VTT noir', 'Vélo de ville bleu', 'Nakamura vert', 'VTT bleu avec roue blanche']),
+            'reception_comment' => fake()->sentence(),
+            'metier' => Metier::Atelier,
             'reference' => 'DEV-'.fake()->unique()->numberBetween(1000, 9999),
             'status' => fake()->randomElement(['brouillon', 'prêt']),
             'valid_until' => fake()->dateTimeBetween('now', '+30 days'),
@@ -79,5 +83,26 @@ class QuoteFactory extends Factory
     public function validated(): static
     {
         return $this->ready();
+    }
+
+    public function atelier(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'metier' => Metier::Atelier,
+        ]);
+    }
+
+    public function vente(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'metier' => Metier::Vente,
+        ]);
+    }
+
+    public function location(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'metier' => Metier::Location,
+        ]);
     }
 }
