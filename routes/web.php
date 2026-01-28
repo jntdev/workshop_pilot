@@ -129,7 +129,48 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/atelier/devis/{quote}', function (\App\Models\Quote $quote) {
         $quote->load('client', 'lines');
 
-        return view('atelier.quotes.show', ['quote' => $quote]);
+        return Inertia::render('Atelier/Quotes/Show', [
+            'quote' => [
+                'id' => $quote->id,
+                'reference' => $quote->reference,
+                'client_id' => $quote->client_id,
+                'client' => [
+                    'id' => $quote->client->id,
+                    'prenom' => $quote->client->prenom,
+                    'nom' => $quote->client->nom,
+                    'email' => $quote->client->email,
+                    'telephone' => $quote->client->telephone,
+                    'adresse' => $quote->client->adresse,
+                ],
+                'bike_description' => $quote->bike_description,
+                'reception_comment' => $quote->reception_comment,
+                'valid_until' => $quote->valid_until->format('Y-m-d'),
+                'discount_type' => $quote->discount_type,
+                'discount_value' => $quote->discount_value,
+                'total_ht' => $quote->total_ht,
+                'total_tva' => $quote->total_tva,
+                'total_ttc' => $quote->total_ttc,
+                'margin_total_ht' => $quote->margin_total_ht,
+                'invoiced_at' => $quote->invoiced_at?->toISOString(),
+                'created_at' => $quote->created_at->toISOString(),
+                'is_invoice' => $quote->isInvoice(),
+                'can_edit' => $quote->canEdit(),
+                'can_delete' => $quote->canDelete(),
+                'lines' => $quote->lines->map(fn ($line) => [
+                    'id' => $line->id,
+                    'title' => $line->title,
+                    'reference' => $line->reference,
+                    'quantity' => $line->quantity,
+                    'purchase_price_ht' => $line->purchase_price_ht,
+                    'sale_price_ht' => $line->sale_price_ht,
+                    'sale_price_ttc' => $line->sale_price_ttc,
+                    'margin_amount_ht' => $line->margin_amount_ht,
+                    'margin_rate' => $line->margin_rate,
+                    'tva_rate' => $line->tva_rate,
+                    'position' => $line->position,
+                ])->toArray(),
+            ],
+        ]);
     })->name('atelier.quotes.show');
 
     Route::get('/atelier/devis/{quote}/modifier', function (\App\Models\Quote $quote) {
@@ -148,13 +189,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::delete('/atelier/devis/{quote}', function (\App\Models\Quote $quote) {
         if (! $quote->canDelete()) {
-            return redirect()->route('atelier.quotes.index')
+            return redirect()->route('atelier.index')
                 ->with('error', 'Impossible de supprimer une facture.');
         }
 
         $quote->delete();
 
-        return redirect()->route('atelier.quotes.index')
+        return redirect()->route('atelier.index')
             ->with('message', 'Devis supprimé avec succès.');
     })->name('atelier.quotes.destroy');
 
