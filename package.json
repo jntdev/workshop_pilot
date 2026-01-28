@@ -7,11 +7,20 @@
         "dev": "concurrently -c \"auto\" \"vite\" \"php artisan boost:mcp\" --names=vite,boost"
     },
     "devDependencies": {
+        "@types/react": "^19.2.10",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.2",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
         "sass": "^1.94.0",
         "sass-embedded": "^1.93.3",
+        "typescript": "^5.9.3",
         "vite": "^7.0.7"
+    },
+    "dependencies": {
+        "@inertiajs/react": "^2.3.12",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4"
     }
 }
