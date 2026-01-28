@@ -23,7 +23,22 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     Route::get('/clients', function () {
-        return view('clients.index');
+        $clients = \App\Models\Client::query()
+            ->orderBy('nom')
+            ->orderBy('prenom')
+            ->get()
+            ->map(fn ($client) => [
+                'id' => $client->id,
+                'prenom' => $client->prenom,
+                'nom' => $client->nom,
+                'email' => $client->email,
+                'telephone' => $client->telephone,
+                'adresse' => $client->adresse,
+            ]);
+
+        return Inertia::render('Clients/Index', [
+            'clients' => $clients,
+        ]);
     })->name('clients.index');
 
     Route::get('/clients/nouveau', function () {
