@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::middleware('guest')->group(function () {
     Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
@@ -36,12 +37,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/atelier', function () {
         return view('atelier.index');
     })->name('atelier.index');
-
-    Route::get('/atelier/devis', function () {
-        $quotes = \App\Models\Quote::with('client')->latest()->get();
-
-        return view('atelier.quotes.index', ['quotes' => $quotes]);
-    })->name('atelier.quotes.index');
 
     Route::get('/atelier/devis/nouveau', function () {
         return view('atelier.quotes.create');
@@ -86,4 +81,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/counter', function () {
         return view('counter-demo');
     })->name('counter');
+
+    // Route de test React
+    Route::get('/test-react', function () {
+        return Inertia::render('Test', [
+            'message' => 'Hello depuis Laravel!',
+            'timestamp' => now()->format('d/m/Y H:i:s'),
+        ]);
+    })->name('test.react');
 });
