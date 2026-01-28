@@ -35,7 +35,76 @@ Route::middleware(['auth'])->group(function () {
     })->name('clients.show');
 
     Route::get('/atelier', function () {
-        return view('atelier.index');
+        $year = now()->year;
+        $month = now()->month;
+
+        $availableYears = \App\Models\MonthlyKpi::where('metier', \App\Enums\Metier::Atelier)
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year')
+            ->toArray();
+
+        if (empty($availableYears)) {
+            $availableYears = [$year];
+        }
+
+        $getStats = function (int $y, int $m) {
+            $kpi = \App\Models\MonthlyKpi::where('metier', \App\Enums\Metier::Atelier)
+                ->where('year', $y)
+                ->where('month', $m)
+                ->first();
+
+            if (! $kpi) {
+                return ['revenue' => 0, 'margin' => 0, 'count' => 0, 'margin_rate' => 0];
+            }
+
+            $revenue = (float) $kpi->revenue_ht;
+            $margin = (float) $kpi->margin_ht;
+
+            return [
+                'revenue' => $revenue,
+                'margin' => $margin,
+                'count' => $kpi->invoice_count,
+                'margin_rate' => $revenue > 0 ? ($margin / $revenue) * 100 : 0,
+            ];
+        };
+
+        $quotes = \App\Models\Quote::with('client')
+            ->whereNull('invoiced_at')
+            ->latest()
+            ->get()
+            ->map(fn ($q) => [
+                'id' => $q->id,
+                'reference' => $q->reference,
+                'client_id' => $q->client_id,
+                'client' => [
+                    'id' => $q->client->id,
+                    'prenom' => $q->client->prenom,
+                    'nom' => $q->client->nom,
+                    'email' => $q->client->email,
+                    'telephone' => $q->client->telephone,
+                    'adresse' => $q->client->adresse,
+                ],
+                'bike_description' => $q->bike_description,
+                'total_ht' => $q->total_ht,
+                'total_tva' => $q->total_tva,
+                'total_ttc' => $q->total_ttc,
+                'margin_total_ht' => $q->margin_total_ht,
+                'invoiced_at' => $q->invoiced_at?->toISOString(),
+                'created_at' => $q->created_at->toISOString(),
+                'can_delete' => $q->canDelete(),
+                'is_invoice' => $q->isInvoice(),
+            ]);
+
+        return Inertia::render('Atelier/Index', [
+            'stats' => $getStats($year, $month),
+            'comparisonStats' => $getStats($year - 1, $month),
+            'selectedYear' => $year,
+            'selectedMonth' => $month,
+            'availableYears' => $availableYears,
+            'quotes' => $quotes,
+            'invoices' => [],
+        ]);
     })->name('atelier.index');
 
     Route::get('/atelier/devis/nouveau', function () {
