@@ -159,7 +159,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('atelier.quotes.destroy');
 
     Route::get('/location', function () {
-        return view('location.index');
+        return Inertia::render('Location/Index');
     })->name('location.index');
 
     Route::get('/counter', function () {
