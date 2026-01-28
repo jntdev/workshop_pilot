@@ -3,7 +3,7 @@
         <div class="breadcrumb">
             <a href="{{ route('atelier.index') }}">Atelier</a>
             <span>&gt;</span>
-            <a href="{{ route('atelier.quotes.index') }}">Devis</a>
+            <a href="{{ route('atelier.index') }}">Devis</a>
             <span>&gt;</span>
             <span>{{ $quote->reference }}</span>
         </div>
@@ -121,7 +121,7 @@
         </section>
 
         <div class="quote-show__actions">
-            <a href="{{ route('atelier.quotes.index') }}" class="quote-show__btn quote-show__btn--secondary">
+            <a href="{{ route('atelier.index') }}" class="quote-show__btn quote-show__btn--secondary">
                 Retour
             </a>
             <a href="{{ route('atelier.quotes.pdf', $quote) }}" class="quote-show__btn quote-show__btn--secondary">
