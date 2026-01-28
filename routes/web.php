@@ -15,11 +15,11 @@ Route::middleware('guest')->group(function () {
 // Protected routes - require authentication
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
-        return view('home.dashboard');
+        return Inertia::render('Dashboard');
     })->name('home');
 
     Route::get('/dashboard', function () {
-        return view('home.dashboard');
+        return Inertia::render('Dashboard');
     })->name('dashboard');
 
     Route::get('/clients', function () {
