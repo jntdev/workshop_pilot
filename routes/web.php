@@ -123,7 +123,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('atelier.index');
 
     Route::get('/atelier/devis/nouveau', function () {
-        return view('atelier.quotes.create');
+        return Inertia::render('Atelier/Quotes/Form');
     })->name('atelier.quotes.create');
 
     Route::get('/atelier/devis/{quote}', function (\App\Models\Quote $quote) {
@@ -174,7 +174,50 @@ Route::middleware(['auth'])->group(function () {
     })->name('atelier.quotes.show');
 
     Route::get('/atelier/devis/{quote}/modifier', function (\App\Models\Quote $quote) {
-        return view('atelier.quotes.edit', ['quote' => $quote]);
+        $quote->load('client', 'lines');
+
+        return Inertia::render('Atelier/Quotes/Form', [
+            'quote' => [
+                'id' => $quote->id,
+                'reference' => $quote->reference,
+                'client_id' => $quote->client_id,
+                'client' => [
+                    'id' => $quote->client->id,
+                    'prenom' => $quote->client->prenom,
+                    'nom' => $quote->client->nom,
+                    'email' => $quote->client->email,
+                    'telephone' => $quote->client->telephone,
+                    'adresse' => $quote->client->adresse,
+                ],
+                'bike_description' => $quote->bike_description,
+                'reception_comment' => $quote->reception_comment,
+                'valid_until' => $quote->valid_until->format('Y-m-d'),
+                'discount_type' => $quote->discount_type,
+                'discount_value' => $quote->discount_value,
+                'total_ht' => $quote->total_ht,
+                'total_tva' => $quote->total_tva,
+                'total_ttc' => $quote->total_ttc,
+                'margin_total_ht' => $quote->margin_total_ht,
+                'invoiced_at' => $quote->invoiced_at?->toISOString(),
+                'created_at' => $quote->created_at->toISOString(),
+                'is_invoice' => $quote->isInvoice(),
+                'can_edit' => $quote->canEdit(),
+                'can_delete' => $quote->canDelete(),
+                'lines' => $quote->lines->map(fn ($line) => [
+                    'id' => $line->id,
+                    'title' => $line->title,
+                    'reference' => $line->reference,
+                    'quantity' => $line->quantity,
+                    'purchase_price_ht' => $line->purchase_price_ht,
+                    'sale_price_ht' => $line->sale_price_ht,
+                    'sale_price_ttc' => $line->sale_price_ttc,
+                    'margin_amount_ht' => $line->margin_amount_ht,
+                    'margin_rate' => $line->margin_rate,
+                    'tva_rate' => $line->tva_rate,
+                    'position' => $line->position,
+                ])->toArray(),
+            ],
+        ]);
     })->name('atelier.quotes.edit');
 
     Route::get('/atelier/devis/{quote}/pdf', function (\App\Models\Quote $quote, \App\Services\PdfService $pdfService) {
