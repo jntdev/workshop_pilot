@@ -1,9 +1,15 @@
-import { QuoteLine, LineCalculationResult } from '@/types';
+import { useRef, useCallback } from 'react';
+import { QuoteLine } from '@/types';
 
 interface QuoteLinesTableProps {
     lines: QuoteLine[];
     onLineChange: (index: number, field: keyof QuoteLine, value: string) => void;
-    onLineCalculate: (index: number, calculationType: string, value: string) => void;
+    onLineCalculate: (
+        index: number,
+        calculationType: string,
+        value: string,
+        currentLineValues?: { purchase_price_ht?: string; tva_rate?: string }
+    ) => void;
     onAddLine: () => void;
     onRemoveLine: (index: number) => void;
     disabled?: boolean;
@@ -17,12 +23,38 @@ export default function QuoteLinesTable({
     onRemoveLine,
     disabled,
 }: QuoteLinesTableProps) {
+    // Refs to store references to input elements for each line
+    const rowRefs = useRef<Map<number, Map<string, HTMLInputElement>>>(new Map());
+
+    const setInputRef = useCallback((index: number, field: string, element: HTMLInputElement | null) => {
+        if (!rowRefs.current.has(index)) {
+            rowRefs.current.set(index, new Map());
+        }
+        if (element) {
+            rowRefs.current.get(index)!.set(field, element);
+        }
+    }, []);
+
+    const getInputValue = (index: number, field: string, fallback: string): string => {
+        const rowMap = rowRefs.current.get(index);
+        const input = rowMap?.get(field);
+        return input?.value ?? fallback;
+    };
+
     const handleFieldChange = (index: number, field: keyof QuoteLine, value: string) => {
         onLineChange(index, field, value);
     };
 
     const handleCalculation = (index: number, calculationType: string, value: string) => {
-        onLineCalculate(index, calculationType, value);
+        const line = lines[index];
+        // Get current values directly from DOM inputs
+        const purchasePriceHt = getInputValue(index, 'purchase_price_ht', line.purchase_price_ht);
+        const tvaRate = getInputValue(index, 'tva_rate', line.tva_rate);
+
+        onLineCalculate(index, calculationType, value, {
+            purchase_price_ht: purchasePriceHt,
+            tva_rate: tvaRate,
+        });
     };
 
     return (
@@ -77,11 +109,12 @@ export default function QuoteLinesTable({
                     </div>
                     <div className="quote-lines-table__cell">
                         <input
+                            ref={(el) => setInputRef(index, 'purchase_price_ht', el)}
                             type="number"
                             step="0.01"
                             value={line.purchase_price_ht}
                             onChange={(e) => handleFieldChange(index, 'purchase_price_ht', e.target.value)}
-                            onBlur={(e) => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
+                            onBlur={() => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
                             className="quote-lines-table__input quote-lines-table__input--number"
                             disabled={disabled}
                         />
@@ -122,11 +155,12 @@ export default function QuoteLinesTable({
                     </div>
                     <div className="quote-lines-table__cell">
                         <input
+                            ref={(el) => setInputRef(index, 'tva_rate', el)}
                             type="number"
                             step="1"
                             value={line.tva_rate}
                             onChange={(e) => handleFieldChange(index, 'tva_rate', e.target.value)}
-                            onBlur={(e) => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
+                            onBlur={() => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
                             className="quote-lines-table__input quote-lines-table__input--narrow"
                             disabled={disabled}
                         />

@@ -107,8 +107,16 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         });
     };
 
-    const handleLineCalculate = useCallback(async (index: number, calculationType: string, value: string) => {
+    const handleLineCalculate = useCallback(async (
+        index: number,
+        calculationType: string,
+        value: string,
+        currentLineValues?: { purchase_price_ht?: string; tva_rate?: string }
+    ) => {
+        // Use provided values or fall back to state (for backward compatibility)
         const line = lines[index];
+        const purchasePriceHt = currentLineValues?.purchase_price_ht ?? line.purchase_price_ht;
+        const tvaRate = currentLineValues?.tva_rate ?? line.tva_rate;
 
         try {
             const response = await fetch('/api/quotes/calculate-line', {
@@ -116,8 +124,8 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                 headers: apiHeaders(),
                 credentials: 'same-origin',
                 body: JSON.stringify({
-                    purchase_price_ht: line.purchase_price_ht,
-                    tva_rate: line.tva_rate,
+                    purchase_price_ht: purchasePriceHt,
+                    tva_rate: tvaRate,
                     calculation_type: calculationType,
                     value: value,
                 }),
@@ -129,6 +137,9 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                     const newLines = [...prev];
                     newLines[index] = {
                         ...newLines[index],
+                        // Also update the input values if they were provided
+                        ...(currentLineValues?.purchase_price_ht !== undefined && { purchase_price_ht: currentLineValues.purchase_price_ht }),
+                        ...(currentLineValues?.tva_rate !== undefined && { tva_rate: currentLineValues.tva_rate }),
                         sale_price_ht: result.sale_price_ht,
                         sale_price_ttc: result.sale_price_ttc,
                         margin_amount_ht: result.margin_amount_ht,
@@ -137,8 +148,8 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                     return newLines;
                 });
 
-                // Recalculate totals
-                recalculateTotals();
+                // Recalculate totals after a short delay to ensure state is updated
+                setTimeout(() => recalculateTotals(), 50);
             }
         } catch (error) {
             console.error('Calculation error:', error);
