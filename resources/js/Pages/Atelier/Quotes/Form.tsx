@@ -4,6 +4,18 @@ import MainLayout from '@/Layouts/MainLayout';
 import { ClientSearch, QuoteLinesTable, QuoteTotals, ConvertModal } from '@/Components/Atelier/QuoteForm';
 import { QuoteFormPageProps, QuoteLine, QuoteTotals as QuoteTotalsType, Client } from '@/types';
 
+const getCsrfToken = (): string => {
+    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+};
+
+const apiHeaders = (): HeadersInit => ({
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+    'X-XSRF-TOKEN': getCsrfToken(),
+});
+
 interface ClientFormData {
     id: number | null;
     prenom: string;
@@ -101,7 +113,8 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         try {
             const response = await fetch('/api/quotes/calculate-line', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders(),
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     purchase_price_ht: line.purchase_price_ht,
                     tva_rate: line.tva_rate,
@@ -136,7 +149,8 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         try {
             const response = await fetch('/api/quotes/calculate-totals', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders(),
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     lines: lines.map(l => ({
                         sale_price_ht: l.sale_price_ht,
@@ -204,7 +218,8 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
 
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders(),
+                credentials: 'same-origin',
                 body: JSON.stringify(payload),
             });
 
@@ -240,7 +255,8 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         try {
             const response = await fetch('/api/quotes/' + quote.id + '/convert-to-invoice', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: apiHeaders(),
+                credentials: 'same-origin',
             });
 
             if (response.ok) {

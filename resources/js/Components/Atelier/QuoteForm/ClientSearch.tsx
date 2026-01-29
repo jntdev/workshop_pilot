@@ -20,7 +20,13 @@ export default function ClientSearch({ onClientSelect, disabled }: ClientSearchP
 
         setIsSearching(true);
         try {
-            const response = await fetch('/api/clients?search=' + encodeURIComponent(term));
+            const response = await fetch('/api/clients?search=' + encodeURIComponent(term), {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
             const data = await response.json();
             setClients(data.slice(0, 10));
         } catch (error) {
