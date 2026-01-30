@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { ClientSearch, QuoteLinesTable, QuoteTotals, ConvertModal } from '@/Components/Atelier/QuoteForm';
@@ -88,6 +88,9 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [message, setMessage] = useState<string | null>(null);
 
+    // Ref to track if this is the initial render (skip totals calculation on mount)
+    const isInitialMount = useRef(true);
+
     const handleClientSelect = (selectedClient: Client) => {
         setClient({
             id: selectedClient.id,
@@ -148,38 +151,50 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                     return newLines;
                 });
 
-                // Recalculate totals after a short delay to ensure state is updated
-                setTimeout(() => recalculateTotals(), 50);
+                // Totals will be recalculated automatically via useEffect
             }
         } catch (error) {
             console.error('Calculation error:', error);
         }
     }, [lines]);
 
-    const recalculateTotals = useCallback(async () => {
-        try {
-            const response = await fetch('/api/quotes/calculate-totals', {
-                method: 'POST',
-                headers: apiHeaders(),
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    lines: lines.map(l => ({
-                        sale_price_ht: l.sale_price_ht,
-                        sale_price_ttc: l.sale_price_ttc,
-                        margin_amount_ht: l.margin_amount_ht,
-                    })),
-                    discount_type: discountType,
-                    discount_value: discountValue,
-                }),
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                setTotals(result);
-            }
-        } catch (error) {
-            console.error('Totals calculation error:', error);
+    // Auto-recalculate totals when lines or discount changes
+    useEffect(() => {
+        // Skip initial mount to avoid unnecessary API call
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
         }
+
+        const recalculate = async () => {
+            try {
+                const response = await fetch('/api/quotes/calculate-totals', {
+                    method: 'POST',
+                    headers: apiHeaders(),
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        lines: lines.map(l => ({
+                            sale_price_ht: l.sale_price_ht,
+                            sale_price_ttc: l.sale_price_ttc,
+                            margin_amount_ht: l.margin_amount_ht,
+                        })),
+                        discount_type: discountType,
+                        discount_value: discountValue,
+                    }),
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    setTotals(result);
+                }
+            } catch (error) {
+                console.error('Totals calculation error:', error);
+            }
+        };
+
+        // Debounce the calculation
+        const timeoutId = setTimeout(recalculate, 100);
+        return () => clearTimeout(timeoutId);
     }, [lines, discountType, discountValue]);
 
     const handleAddLine = () => {
@@ -189,17 +204,14 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     const handleRemoveLine = (index: number) => {
         if (lines.length === 1) return;
         setLines(prev => prev.filter((_, i) => i !== index));
-        setTimeout(recalculateTotals, 100);
     };
 
     const handleDiscountChange = (type: 'amount' | 'percent') => {
         setDiscountType(type);
-        setTimeout(recalculateTotals, 100);
     };
 
     const handleDiscountValueChange = (value: string) => {
         setDiscountValue(value);
-        setTimeout(recalculateTotals, 100);
     };
 
     const handleSave = async (stayOnPage: boolean = false) => {
