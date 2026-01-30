@@ -13,7 +13,14 @@
       "Bash(else echo \"Logo file does not exist\")",
       "Bash(fi)",
       "Bash(convert:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat\\(kpis\\): Add monthly KPIs for optimized dashboard stats\n\n- Add Metier enum \\(atelier, vente, location\\) for quotes\n- Create monthly_kpis table with aggregated invoice data\n- Add MonthlyKpiUpdater service to update KPIs on invoice conversion\n- Hook service into Quote::convertToInvoice\\(\\)\n- Add kpis:rebuild-monthly artisan command for backfill\n- Refactor Dashboard to read from monthly_kpis instead of quotes\n- Add comprehensive tests for updater, command and dashboard\n\nFeature 08: Implements all checklist items except post-deployment backfill\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
