@@ -85,10 +85,12 @@ class Quote extends Model
 
         // Trouver le prochain numéro disponible parmi les FACTURES uniquement
         // (les devis et factures peuvent avoir le même numéro)
+        // withTrashed() inclut les enregistrements soft-deleted (contrainte unique en BDD)
         $number = 1;
         do {
             $newReference = sprintf('%s-%d', $datePrefix, $number);
-            $exists = self::where('reference', $newReference)
+            $exists = self::withTrashed()
+                ->where('reference', $newReference)
                 ->whereNotNull('invoiced_at') // Seulement les factures
                 ->where('id', '!=', $this->id)
                 ->exists();

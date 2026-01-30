@@ -421,10 +421,12 @@ class Form extends Component
 
         // Trouver le prochain numéro disponible parmi les DEVIS uniquement
         // (les devis et factures peuvent avoir le même numéro)
+        // withTrashed() inclut les enregistrements soft-deleted (contrainte unique en BDD)
         $number = 1;
         do {
             $reference = sprintf('%s-%d', $datePrefix, $number);
-            $exists = Quote::where('reference', $reference)
+            $exists = Quote::withTrashed()
+                ->where('reference', $reference)
                 ->whereNull('invoiced_at') // Seulement les devis
                 ->exists();
             $number++;
