@@ -180,11 +180,28 @@
             border: 1px solid #e9ecef;
             border-radius: 4px;
         }
-        .bike-info h3 {
-            margin: 0 0 10px 0;
+        .bike-info-header {
+            display: table;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .bike-info-header h3 {
+            display: table-cell;
+            margin: 0;
             font-size: 14px;
             font-weight: bold;
             color: #333;
+            vertical-align: middle;
+        }
+        .bike-info-header .dates {
+            display: table-cell;
+            text-align: right;
+            font-size: 10px;
+            color: #555;
+            vertical-align: middle;
+        }
+        .bike-info-header .dates span {
+            margin-left: 15px;
         }
         .bike-info p {
             margin: 5px 0;
@@ -228,40 +245,28 @@
         </div>
     </div>
 
-    @if($quote->bike_description || $quote->reception_comment)
-        <div class="bike-info">
+    <div class="bike-info">
+        <div class="bike-info-header">
             <h3>Vélo concerné</h3>
-            @if($quote->bike_description)
-                <p><span class="label">Description :</span> {{ $quote->bike_description }}</p>
-            @endif
-            @if($quote->reception_comment)
-                <p><span class="label">Motif :</span> {{ $quote->reception_comment }}</p>
-            @endif
+            <div class="dates">
+                @if(!$quote->isInvoice())
+                    <span><strong>Émis le :</strong> {{ $quote->created_at->format('d/m/Y') }}</span>
+                    <span><strong>Valide jusqu'au :</strong> {{ $quote->valid_until->format('d/m/Y') }}</span>
+                @else
+                    <span><strong>Facturé le :</strong> {{ $quote->invoiced_at->format('d/m/Y') }}</span>
+                    <span><strong>Paiement :</strong> {{ config('company.payment_terms_text') }}</span>
+                @endif
+            </div>
         </div>
-    @endif
+        @if($quote->bike_description)
+            <p><span class="label">Description :</span> {{ $quote->bike_description }}</p>
+        @endif
+        @if($quote->reception_comment)
+            <p><span class="label">Motif :</span> {{ $quote->reception_comment }}</p>
+        @endif
+    </div>
 
     <div class="section">
-
-        @if(!$quote->isInvoice())
-            <div class="info-row">
-                <span class="info-label">Date d'émission</span>
-                <span class="info-value">{{ $quote->created_at->format('d/m/Y') }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Valide jusqu'au</span>
-                <span class="info-value">{{ $quote->valid_until->format('d/m/Y') }}</span>
-            </div>
-        @else
-            <div class="info-row">
-                <span class="info-label">Date de facturation</span>
-                <span class="info-value">{{ $quote->invoiced_at->format('d/m/Y') }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Conditions de paiement</span>
-                <span class="info-value">{{ config('company.payment_terms_text') }}</span>
-            </div>
-        @endif
-
         <h2 class="section-title">Prestations</h2>
         <table>
             <thead>
