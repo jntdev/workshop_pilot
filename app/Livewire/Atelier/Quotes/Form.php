@@ -419,13 +419,15 @@ class Form extends Component
         $today = now();
         $datePrefix = $today->format('Ymd');
 
-        // Compter les devis créés aujourd'hui
-        $countToday = Quote::whereDate('created_at', $today->toDateString())
-            ->count();
+        // Trouver le prochain numéro disponible en vérifiant les références existantes
+        $number = 1;
+        do {
+            $reference = sprintf('%s-%d', $datePrefix, $number);
+            $exists = Quote::where('reference', $reference)->exists();
+            $number++;
+        } while ($exists);
 
-        $number = $countToday + 1;
-
-        return sprintf('%s-%d', $datePrefix, $number);
+        return $reference;
     }
 
     public function downloadPdf(): void
