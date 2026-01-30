@@ -12,7 +12,7 @@
             color: #333;
             margin: 0;
             padding: 20px;
-            padding-bottom: 150px;
+            padding-bottom: 100px;
         }
         .header {
             text-align: center;
@@ -79,6 +79,10 @@
             margin-top: 20px;
             float: right;
             width: 300px;
+            page-break-inside: avoid;
+        }
+        .section--summary {
+            page-break-inside: avoid;
         }
         .totals-row {
             display: flex;
@@ -149,24 +153,24 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 15px 20px;
+            padding: 8px 20px;
             border-top: 1px solid #ddd;
-            font-size: 9px;
+            font-size: 8px;
             color: #888;
             text-align: center;
             opacity: 0.7;
-            line-height: 1.5;
+            line-height: 1.3;
             background-color: white;
         }
         .legal-mentions p {
-            margin: 4px 0;
+            margin: 2px 0;
         }
         .legal-mentions strong {
             color: #666;
         }
         .legal-info-block {
-            margin-top: 15px;
-            font-size: 8px;
+            margin-top: 8px;
+            font-size: 7px;
             color: #999;
         }
         .bike-info {
@@ -283,7 +287,7 @@
         </table>
     </div>
 
-    <div class="section">
+    <div class="section section--summary">
         <h2 class="section-title">Résumé</h2>
         <div class="totals">
             <div class="totals-row">
