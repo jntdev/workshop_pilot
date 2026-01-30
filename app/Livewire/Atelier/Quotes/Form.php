@@ -419,11 +419,14 @@ class Form extends Component
         $today = now();
         $datePrefix = $today->format('Ymd');
 
-        // Trouver le prochain numéro disponible en vérifiant les références existantes
+        // Trouver le prochain numéro disponible parmi les DEVIS uniquement
+        // (les devis et factures peuvent avoir le même numéro)
         $number = 1;
         do {
             $reference = sprintf('%s-%d', $datePrefix, $number);
-            $exists = Quote::where('reference', $reference)->exists();
+            $exists = Quote::where('reference', $reference)
+                ->whereNull('invoiced_at') // Seulement les devis
+                ->exists();
             $number++;
         } while ($exists);
 
