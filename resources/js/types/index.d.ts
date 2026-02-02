@@ -34,6 +34,10 @@ export interface QuoteLine {
     margin_amount_ht: string;
     margin_rate: string;
     tva_rate: string;
+    line_purchase_ht?: string;
+    line_margin_ht?: string;
+    line_total_ht?: string;
+    line_total_ttc?: string;
     position: number;
 }
 
@@ -112,6 +116,10 @@ export interface LineCalculationResult {
     sale_price_ttc: string;
     margin_amount_ht: string;
     margin_rate: string;
+    line_purchase_ht?: string;
+    line_margin_ht?: string;
+    line_total_ht?: string;
+    line_total_ttc?: string;
 }
 
 declare module '@inertiajs/react' {

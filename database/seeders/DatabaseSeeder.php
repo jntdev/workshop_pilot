@@ -15,16 +15,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
 
         $this->call([
+            // 1. Authorized emails for authentication
+            AuthorizedEmailSeeder::class,
+
+            // 2. Clients (needed by quotes)
             ClientSeeder::class,
+
+            // 3. Demo quotes and invoices
             QuoteSeeder::class,
+
+            // 4. Historical invoices for dashboard stats
+            HistoricalInvoicesSeeder::class,
+
+            // 5. Calculate KPIs from actual invoice data
+            MonthlyKpiSeeder::class,
         ]);
     }
 }

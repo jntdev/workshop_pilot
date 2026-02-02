@@ -110,6 +110,7 @@ class QuoteController extends Controller
             'tva_rate' => 'required|numeric',
             'calculation_type' => 'required|in:sale_price_ht,sale_price_ttc,margin_amount,margin_rate',
             'value' => 'required|numeric',
+            'quantity' => 'nullable|numeric|min:0',
         ]);
 
         $result = match ($validated['calculation_type']) {
@@ -135,6 +136,19 @@ class QuoteController extends Controller
             ),
         };
 
+        // Calculate line totals if quantity is provided
+        $quantity = $validated['quantity'] ?? '1';
+        if ((float) $quantity > 0) {
+            $lineTotals = $this->calculator->calculateLineTotals(
+                $quantity,
+                $validated['purchase_price_ht'],
+                $result['sale_price_ht'],
+                $result['sale_price_ttc'],
+                $result['margin_amount_ht']
+            );
+            $result = array_merge($result, $lineTotals);
+        }
+
         return response()->json($result);
     }
 
@@ -145,6 +159,9 @@ class QuoteController extends Controller
             'lines.*.sale_price_ht' => 'required|numeric',
             'lines.*.sale_price_ttc' => 'required|numeric',
             'lines.*.margin_amount_ht' => 'required|numeric',
+            'lines.*.line_total_ht' => 'nullable|numeric',
+            'lines.*.line_total_ttc' => 'nullable|numeric',
+            'lines.*.line_margin_ht' => 'nullable|numeric',
             'discount_type' => 'nullable|in:amount,percent',
             'discount_value' => 'nullable|numeric',
         ]);
@@ -191,6 +208,10 @@ class QuoteController extends Controller
             'lines.*.margin_amount_ht' => 'required|numeric',
             'lines.*.margin_rate' => 'required|numeric',
             'lines.*.tva_rate' => 'required|numeric|min:0',
+            'lines.*.line_purchase_ht' => 'nullable|numeric',
+            'lines.*.line_margin_ht' => 'nullable|numeric',
+            'lines.*.line_total_ht' => 'nullable|numeric',
+            'lines.*.line_total_ttc' => 'nullable|numeric',
             'totals' => 'required|array',
             'totals.total_ht' => 'required|numeric',
             'totals.total_tva' => 'required|numeric',
@@ -247,6 +268,22 @@ class QuoteController extends Controller
         $quote->lines()->delete();
 
         foreach ($lines as $index => $lineData) {
+            // Calculate line totals if not provided
+            $lineTotals = isset($lineData['line_total_ht'])
+                ? [
+                    'line_purchase_ht' => $lineData['line_purchase_ht'] ?? null,
+                    'line_margin_ht' => $lineData['line_margin_ht'] ?? null,
+                    'line_total_ht' => $lineData['line_total_ht'] ?? null,
+                    'line_total_ttc' => $lineData['line_total_ttc'] ?? null,
+                ]
+                : $this->calculator->calculateLineTotals(
+                    $lineData['quantity'],
+                    $lineData['purchase_price_ht'],
+                    $lineData['sale_price_ht'],
+                    $lineData['sale_price_ttc'],
+                    $lineData['margin_amount_ht']
+                );
+
             QuoteLine::create([
                 'quote_id' => $quote->id,
                 'title' => $lineData['title'],
@@ -258,6 +295,10 @@ class QuoteController extends Controller
                 'margin_amount_ht' => $lineData['margin_amount_ht'],
                 'margin_rate' => $lineData['margin_rate'],
                 'tva_rate' => $lineData['tva_rate'],
+                'line_purchase_ht' => $lineTotals['line_purchase_ht'],
+                'line_margin_ht' => $lineTotals['line_margin_ht'],
+                'line_total_ht' => $lineTotals['line_total_ht'],
+                'line_total_ttc' => $lineTotals['line_total_ttc'],
                 'position' => $index,
             ]);
         }
@@ -312,6 +353,10 @@ class QuoteController extends Controller
                 'margin_amount_ht' => $line->margin_amount_ht,
                 'margin_rate' => $line->margin_rate,
                 'tva_rate' => $line->tva_rate,
+                'line_purchase_ht' => $line->line_purchase_ht,
+                'line_margin_ht' => $line->line_margin_ht,
+                'line_total_ht' => $line->line_total_ht,
+                'line_total_ttc' => $line->line_total_ttc,
                 'position' => $line->position,
             ])->toArray(),
         ];

@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { QuoteLine } from '@/types';
+import Input from '@/Components/ui/Input';
 
 interface QuoteLinesTableProps {
     lines: QuoteLine[];
@@ -8,7 +9,7 @@ interface QuoteLinesTableProps {
         index: number,
         calculationType: string,
         value: string,
-        currentLineValues?: { purchase_price_ht?: string; tva_rate?: string }
+        currentLineValues?: { purchase_price_ht?: string; tva_rate?: string; quantity?: string }
     ) => void;
     onAddLine: () => void;
     onRemoveLine: (index: number) => void;
@@ -50,10 +51,12 @@ export default function QuoteLinesTable({
         // Get current values directly from DOM inputs
         const purchasePriceHt = getInputValue(index, 'purchase_price_ht', line.purchase_price_ht);
         const tvaRate = getInputValue(index, 'tva_rate', line.tva_rate);
+        const quantity = getInputValue(index, 'quantity', line.quantity);
 
         onLineCalculate(index, calculationType, value, {
             purchase_price_ht: purchasePriceHt,
             tva_rate: tvaRate,
+            quantity: quantity,
         });
     };
 
@@ -75,7 +78,7 @@ export default function QuoteLinesTable({
             {lines.map((line, index) => (
                 <div className="quote-lines-table__row" key={index}>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
                             type="text"
                             value={line.title}
                             onChange={(e) => handleFieldChange(index, 'title', e.target.value)}
@@ -86,7 +89,7 @@ export default function QuoteLinesTable({
                         />
                     </div>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
                             type="text"
                             value={line.reference || ''}
                             onChange={(e) => handleFieldChange(index, 'reference', e.target.value)}
@@ -96,65 +99,66 @@ export default function QuoteLinesTable({
                         />
                     </div>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
+                            ref={(el) => setInputRef(index, 'quantity', el)}
                             type="number"
                             step="0.01"
                             value={line.quantity}
                             onChange={(e) => handleFieldChange(index, 'quantity', e.target.value)}
-                            onBlur={(e) => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
-                            className="quote-lines-table__input quote-lines-table__input--number"
+                            onBlur={() => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
+                            className="quote-lines-table__input"
                             required
                             disabled={disabled}
                         />
                     </div>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
                             ref={(el) => setInputRef(index, 'purchase_price_ht', el)}
                             type="number"
                             step="0.01"
                             value={line.purchase_price_ht}
                             onChange={(e) => handleFieldChange(index, 'purchase_price_ht', e.target.value)}
                             onBlur={() => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
-                            className="quote-lines-table__input quote-lines-table__input--number"
+                            className="quote-lines-table__input"
                             disabled={disabled}
                         />
                     </div>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
                             type="number"
                             step="0.01"
                             value={line.sale_price_ht}
                             onChange={(e) => handleFieldChange(index, 'sale_price_ht', e.target.value)}
                             onBlur={(e) => handleCalculation(index, 'sale_price_ht', e.target.value)}
-                            className="quote-lines-table__input quote-lines-table__input--number"
+                            className="quote-lines-table__input"
                             required
                             disabled={disabled}
                         />
                     </div>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
                             type="number"
                             step="0.01"
                             value={line.margin_amount_ht}
                             onChange={(e) => handleFieldChange(index, 'margin_amount_ht', e.target.value)}
                             onBlur={(e) => handleCalculation(index, 'margin_amount', e.target.value)}
-                            className="quote-lines-table__input quote-lines-table__input--number"
+                            className="quote-lines-table__input"
                             disabled={disabled}
                         />
                     </div>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
                             type="number"
                             step="0.0001"
                             value={line.margin_rate}
                             onChange={(e) => handleFieldChange(index, 'margin_rate', e.target.value)}
                             onBlur={(e) => handleCalculation(index, 'margin_rate', e.target.value)}
-                            className="quote-lines-table__input quote-lines-table__input--number"
+                            className="quote-lines-table__input"
                             disabled={disabled}
                         />
                     </div>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
                             ref={(el) => setInputRef(index, 'tva_rate', el)}
                             type="number"
                             step="1"
@@ -166,13 +170,13 @@ export default function QuoteLinesTable({
                         />
                     </div>
                     <div className="quote-lines-table__cell">
-                        <input
+                        <Input
                             type="number"
                             step="0.01"
                             value={line.sale_price_ttc}
                             onChange={(e) => handleFieldChange(index, 'sale_price_ttc', e.target.value)}
                             onBlur={(e) => handleCalculation(index, 'sale_price_ttc', e.target.value)}
-                            className="quote-lines-table__input quote-lines-table__input--number"
+                            className="quote-lines-table__input"
                             disabled={disabled}
                         />
                     </div>

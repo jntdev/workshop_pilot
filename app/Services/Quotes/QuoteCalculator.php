@@ -108,9 +108,31 @@ class QuoteCalculator
     }
 
     /**
-     * Aggregate totals from lines array.
+     * Calculate line totals from unit prices and quantity.
      *
-     * @param  array<int, array{sale_price_ht: string, sale_price_ttc: string, margin_amount_ht: string}>  $lines
+     * @return array{line_purchase_ht: string, line_margin_ht: string, line_total_ht: string, line_total_ttc: string}
+     */
+    public function calculateLineTotals(
+        string $quantity,
+        string $purchasePriceHt,
+        string $salePriceHt,
+        string $salePriceTtc,
+        string $marginAmountHt
+    ): array {
+        $qty = (float) $quantity;
+
+        return [
+            'line_purchase_ht' => $this->floorMoney((float) $purchasePriceHt * $qty),
+            'line_margin_ht' => $this->floorMoney((float) $marginAmountHt * $qty),
+            'line_total_ht' => $this->floorMoney((float) $salePriceHt * $qty),
+            'line_total_ttc' => $this->floorMoney((float) $salePriceTtc * $qty),
+        ];
+    }
+
+    /**
+     * Aggregate totals from lines array (uses line totals if available, otherwise unit prices).
+     *
+     * @param  array<int, array{sale_price_ht?: string, sale_price_ttc?: string, margin_amount_ht?: string, line_total_ht?: string, line_total_ttc?: string, line_margin_ht?: string}>  $lines
      * @return array{total_ht: string, total_tva: string, total_ttc: string, margin_total_ht: string}
      */
     public function aggregateTotals(array $lines): array
@@ -120,9 +142,10 @@ class QuoteCalculator
         $totalMargin = 0.0;
 
         foreach ($lines as $line) {
-            $totalHt += (float) ($line['sale_price_ht'] ?? 0);
-            $totalTtc += (float) ($line['sale_price_ttc'] ?? 0);
-            $totalMargin += (float) ($line['margin_amount_ht'] ?? 0);
+            // Use line totals if available, otherwise fall back to unit prices
+            $totalHt += (float) ($line['line_total_ht'] ?? $line['sale_price_ht'] ?? 0);
+            $totalTtc += (float) ($line['line_total_ttc'] ?? $line['sale_price_ttc'] ?? 0);
+            $totalMargin += (float) ($line['line_margin_ht'] ?? $line['margin_amount_ht'] ?? 0);
         }
 
         $totalTva = $totalTtc - $totalHt;

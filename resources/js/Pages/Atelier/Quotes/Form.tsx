@@ -28,13 +28,17 @@ interface ClientFormData {
 const emptyLine = (): QuoteLine => ({
     title: '',
     reference: null,
-    quantity: '1.00',
-    purchase_price_ht: '0.00',
-    sale_price_ht: '0.00',
-    sale_price_ttc: '0.00',
-    margin_amount_ht: '0.00',
-    margin_rate: '0.0000',
+    quantity: '',
+    purchase_price_ht: '',
+    sale_price_ht: '',
+    sale_price_ttc: '',
+    margin_amount_ht: '',
+    margin_rate: '',
     tva_rate: '20',
+    line_purchase_ht: '',
+    line_margin_ht: '',
+    line_total_ht: '',
+    line_total_ttc: '',
     position: 0,
 });
 
@@ -114,12 +118,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         index: number,
         calculationType: string,
         value: string,
-        currentLineValues?: { purchase_price_ht?: string; tva_rate?: string }
+        currentLineValues?: { purchase_price_ht?: string; tva_rate?: string; quantity?: string }
     ) => {
         // Use provided values or fall back to state (for backward compatibility)
         const line = lines[index];
         const purchasePriceHt = currentLineValues?.purchase_price_ht ?? line.purchase_price_ht;
         const tvaRate = currentLineValues?.tva_rate ?? line.tva_rate;
+        const quantity = currentLineValues?.quantity ?? line.quantity ?? '1';
 
         try {
             const response = await fetch('/api/quotes/calculate-line', {
@@ -131,6 +136,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                     tva_rate: tvaRate,
                     calculation_type: calculationType,
                     value: value,
+                    quantity: quantity,
                 }),
             });
 
@@ -143,10 +149,15 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                         // Also update the input values if they were provided
                         ...(currentLineValues?.purchase_price_ht !== undefined && { purchase_price_ht: currentLineValues.purchase_price_ht }),
                         ...(currentLineValues?.tva_rate !== undefined && { tva_rate: currentLineValues.tva_rate }),
+                        ...(currentLineValues?.quantity !== undefined && { quantity: currentLineValues.quantity }),
                         sale_price_ht: result.sale_price_ht,
                         sale_price_ttc: result.sale_price_ttc,
                         margin_amount_ht: result.margin_amount_ht,
                         margin_rate: result.margin_rate,
+                        line_purchase_ht: result.line_purchase_ht,
+                        line_margin_ht: result.line_margin_ht,
+                        line_total_ht: result.line_total_ht,
+                        line_total_ttc: result.line_total_ttc,
                     };
                     return newLines;
                 });
@@ -177,6 +188,9 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                             sale_price_ht: l.sale_price_ht,
                             sale_price_ttc: l.sale_price_ttc,
                             margin_amount_ht: l.margin_amount_ht,
+                            line_total_ht: l.line_total_ht,
+                            line_total_ttc: l.line_total_ttc,
+                            line_margin_ht: l.line_margin_ht,
                         })),
                         discount_type: discountType,
                         discount_value: discountValue,

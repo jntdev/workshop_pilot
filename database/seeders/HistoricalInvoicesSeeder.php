@@ -11,22 +11,67 @@ use Illuminate\Database\Seeder;
 
 class HistoricalInvoicesSeeder extends Seeder
 {
+    private array $bikeDescriptions = [
+        'VTT Rockrider 540 bleu',
+        'Vélo de ville Elops 520 noir',
+        'Vélo de route Triban RC520 rouge',
+        'VAE Riverside 500E vert',
+        'Gravel Triban GRVL 120 orange',
+        'VTC Riverside 920 anthracite',
+        'Vélo cargo Longtail gris',
+        'VTT électrique E-ST 500 blanc',
+        'Vélo pliant Tilt 500 bleu',
+        'BMX Wipe 520 noir',
+        'Vélo enfant 24 pouces rose',
+        'Tandem ville beige',
+        'Vélo de route carbone',
+        'Fat bike sable',
+        'Vélo hollandais vert foncé',
+    ];
+
+    private array $receptionComments = [
+        'Révision complète avant saison',
+        'Freins qui grincent',
+        'Chaîne usée à remplacer',
+        'Dérailleur mal réglé',
+        'Crevaison + vérification générale',
+        'Changement des pneus usés',
+        'Roue voilée après chute',
+        'Câbles de frein à remplacer',
+        'Pédalier qui fait du bruit',
+        'Direction dure',
+        'Entretien annuel',
+        'Préparation pour vélotaf',
+        'Changement transmission complète',
+        'Installation porte-bagages',
+        'Réglage suspension',
+    ];
+
     public function run(): void
     {
         $calculator = new QuoteCalculator;
 
-        // Générer des factures pour les 6 derniers mois (août 2025 à janvier 2026)
-        $months = [
-            ['year' => 2025, 'month' => 8, 'count' => 12],  // Août 2025
-            ['year' => 2025, 'month' => 9, 'count' => 15],  // Septembre 2025
-            ['year' => 2025, 'month' => 10, 'count' => 18], // Octobre 2025
-            ['year' => 2025, 'month' => 11, 'count' => 14], // Novembre 2025
-            ['year' => 2025, 'month' => 12, 'count' => 20], // Décembre 2025
-            ['year' => 2026, 'month' => 1, 'count' => 8],   // Janvier 2026 (en cours)
-        ];
+        // Générer des factures pour les 6 derniers mois dynamiquement
+        $months = [];
+        $currentDate = now();
 
-        // Générer aussi quelques factures pour l'année précédente (janvier 2025)
-        $months[] = ['year' => 2025, 'month' => 1, 'count' => 10];
+        // Générer pour les 6 derniers mois incluant le mois actuel
+        for ($i = 5; $i >= 0; $i--) {
+            $date = $currentDate->copy()->subMonths($i);
+            $months[] = [
+                'year' => $date->year,
+                'month' => $date->month,
+                'count' => rand(10, 20),
+            ];
+        }
+
+        // Ajouter le mois correspondant de l'année précédente pour comparaison
+        $lastYear = $currentDate->copy()->subYear();
+        $months[] = [
+            'year' => $lastYear->year,
+            'month' => $lastYear->month,
+            'count' => rand(8, 15),
+        ];
 
         $clients = Client::all();
 
@@ -62,6 +107,8 @@ class HistoricalInvoicesSeeder extends Seeder
                     'client_id' => $client->id,
                     'reference' => $reference,
                     'status' => QuoteStatus::Invoiced,
+                    'bike_description' => $this->bikeDescriptions[array_rand($this->bikeDescriptions)],
+                    'reception_comment' => $this->receptionComments[array_rand($this->receptionComments)],
                     'invoiced_at' => $invoicedAt,
                     'valid_until' => $invoicedAt->copy()->addDays(15),
                     'total_ht' => '0.00',
@@ -86,6 +133,7 @@ class HistoricalInvoicesSeeder extends Seeder
                     $purchasePriceHt = rand(50, 500);
                     $marginRate = rand(20, 50); // Marge entre 20% et 50%
                     $tvaRate = 20;
+                    $quantity = rand(1, 3);
 
                     $calculated = $calculator->fromMarginRate(
                         (string) $purchasePriceHt,
@@ -93,24 +141,38 @@ class HistoricalInvoicesSeeder extends Seeder
                         (string) $tvaRate
                     );
 
+                    // Calculate line totals (unit prices × quantity)
+                    $lineTotals = $calculator->calculateLineTotals(
+                        (string) $quantity,
+                        (string) $purchasePriceHt,
+                        $calculated['sale_price_ht'],
+                        $calculated['sale_price_ttc'],
+                        $calculated['margin_amount_ht']
+                    );
+
                     QuoteLine::create([
                         'quote_id' => $quote->id,
                         'title' => fake()->words(3, true),
                         'reference' => fake()->optional(0.6)->bothify('REF-####'),
-                        'quantity' => rand(1, 3),
+                        'quantity' => $quantity,
                         'purchase_price_ht' => $purchasePriceHt,
                         'sale_price_ht' => $calculated['sale_price_ht'],
                         'sale_price_ttc' => $calculated['sale_price_ttc'],
                         'margin_amount_ht' => $calculated['margin_amount_ht'],
                         'margin_rate' => $calculated['margin_rate'],
                         'tva_rate' => $tvaRate,
+                        'line_purchase_ht' => $lineTotals['line_purchase_ht'],
+                        'line_margin_ht' => $lineTotals['line_margin_ht'],
+                        'line_total_ht' => $lineTotals['line_total_ht'],
+                        'line_total_ttc' => $lineTotals['line_total_ttc'],
                         'position' => $j,
                     ]);
 
-                    $totalHt += (float) $calculated['sale_price_ht'];
-                    $totalTva += ((float) $calculated['sale_price_ttc'] - (float) $calculated['sale_price_ht']);
-                    $totalTtc += (float) $calculated['sale_price_ttc'];
-                    $marginTotal += (float) $calculated['margin_amount_ht'];
+                    // Use line totals for quote totals
+                    $totalHt += (float) $lineTotals['line_total_ht'];
+                    $totalTtc += (float) $lineTotals['line_total_ttc'];
+                    $totalTva += (float) $lineTotals['line_total_ttc'] - (float) $lineTotals['line_total_ht'];
+                    $marginTotal += (float) $lineTotals['line_margin_ht'];
                 }
 
                 // Mettre à jour les totaux de la facture

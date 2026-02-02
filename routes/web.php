@@ -257,4 +257,9 @@ Route::middleware(['auth'])->group(function () {
             'timestamp' => now()->format('d/m/Y H:i:s'),
         ]);
     })->name('test.react');
+
+    // Route de test composants
+    Route::get('/test-composant', function () {
+        return Inertia::render('TestComposant');
+    })->name('test.composant');
 });
