@@ -21,6 +21,28 @@ export interface Client {
     email: string | null;
     telephone: string | null;
     adresse: string | null;
+    origine_contact: string | null;
+    commentaires: string | null;
+    avantage_type: 'aucun' | 'pourcentage' | 'montant';
+    avantage_valeur: number;
+    avantage_expiration: string | null;
+}
+
+export interface ClientFormData {
+    prenom: string;
+    nom: string;
+    telephone: string;
+    email: string;
+    adresse: string;
+    origine_contact: string;
+    commentaires: string;
+    avantage_type: 'aucun' | 'pourcentage' | 'montant';
+    avantage_valeur: number;
+    avantage_expiration: string;
+}
+
+export interface ClientFormPageProps extends PageProps {
+    client?: Client;
 }
 
 export interface QuoteLine {

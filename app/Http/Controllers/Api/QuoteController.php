@@ -193,6 +193,11 @@ class QuoteController extends Controller
             'client_email' => 'nullable|email|max:255',
             'client_telephone' => 'nullable|string|max:20',
             'client_adresse' => 'nullable|string|max:500',
+            'client_origine_contact' => 'nullable|string|max:255',
+            'client_commentaires' => 'nullable|string',
+            'client_avantage_type' => 'nullable|in:aucun,pourcentage,montant',
+            'client_avantage_valeur' => 'nullable|numeric|min:0',
+            'client_avantage_expiration' => 'nullable|date',
             'bike_description' => 'required|string|max:255',
             'reception_comment' => 'required|string',
             'valid_until' => 'required|date',
@@ -222,31 +227,30 @@ class QuoteController extends Controller
 
     protected function resolveClient(Request $request, array $validated): Client
     {
-        if ($validated['client_id']) {
-            $client = Client::findOrFail($validated['client_id']);
-
-            $currentData = [
-                'prenom' => $validated['client_prenom'],
-                'nom' => $validated['client_nom'],
-                'email' => $validated['client_email'],
-                'telephone' => $validated['client_telephone'],
-                'adresse' => $validated['client_adresse'],
-            ];
-
-            if ($this->hasClientDataChanged($client, $currentData)) {
-                $client->update($currentData);
-            }
-
-            return $client;
-        }
-
-        return Client::create([
+        $clientData = [
             'prenom' => $validated['client_prenom'],
             'nom' => $validated['client_nom'],
             'email' => $validated['client_email'],
             'telephone' => $validated['client_telephone'],
             'adresse' => $validated['client_adresse'],
-        ]);
+            'origine_contact' => $validated['client_origine_contact'] ?? null,
+            'commentaires' => $validated['client_commentaires'] ?? null,
+            'avantage_type' => $validated['client_avantage_type'] ?? 'aucun',
+            'avantage_valeur' => $validated['client_avantage_valeur'] ?? 0,
+            'avantage_expiration' => $validated['client_avantage_expiration'] ?? null,
+        ];
+
+        if ($validated['client_id']) {
+            $client = Client::findOrFail($validated['client_id']);
+
+            if ($this->hasClientDataChanged($client, $clientData)) {
+                $client->update($clientData);
+            }
+
+            return $client;
+        }
+
+        return Client::create($clientData);
     }
 
     protected function hasClientDataChanged(Client $client, array $currentData): bool

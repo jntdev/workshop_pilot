@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Counter;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -46,7 +47,9 @@ class CounterTest extends TestCase
 
     public function test_counter_demo_page_loads(): void
     {
-        $response = $this->withoutVite()->get('/counter');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->withoutVite()->get('/counter');
 
         $response->assertStatus(200)
             ->assertSee('Livewire Demo');

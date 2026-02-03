@@ -34,6 +34,11 @@ Route::middleware(['auth'])->group(function () {
                 'email' => $client->email,
                 'telephone' => $client->telephone,
                 'adresse' => $client->adresse,
+                'origine_contact' => $client->origine_contact,
+                'commentaires' => $client->commentaires,
+                'avantage_type' => $client->avantage_type,
+                'avantage_valeur' => $client->avantage_valeur,
+                'avantage_expiration' => $client->avantage_expiration?->format('Y-m-d'),
             ]);
 
         return Inertia::render('Clients/Index', [
@@ -42,11 +47,27 @@ Route::middleware(['auth'])->group(function () {
     })->name('clients.index');
 
     Route::get('/clients/nouveau', function () {
-        return view('clients.create');
+        return Inertia::render('Clients/Form');
     })->name('clients.create');
 
     Route::get('/clients/{id}', function ($id) {
-        return view('clients.show', ['clientId' => $id]);
+        $client = \App\Models\Client::findOrFail($id);
+
+        return Inertia::render('Clients/Form', [
+            'client' => [
+                'id' => $client->id,
+                'prenom' => $client->prenom,
+                'nom' => $client->nom,
+                'email' => $client->email,
+                'telephone' => $client->telephone,
+                'adresse' => $client->adresse,
+                'origine_contact' => $client->origine_contact,
+                'commentaires' => $client->commentaires,
+                'avantage_type' => $client->avantage_type,
+                'avantage_valeur' => $client->avantage_valeur,
+                'avantage_expiration' => $client->avantage_expiration?->format('Y-m-d'),
+            ],
+        ]);
     })->name('clients.show');
 
     Route::get('/atelier', function () {
@@ -141,6 +162,11 @@ Route::middleware(['auth'])->group(function () {
                     'email' => $quote->client->email,
                     'telephone' => $quote->client->telephone,
                     'adresse' => $quote->client->adresse,
+                    'origine_contact' => $quote->client->origine_contact,
+                    'commentaires' => $quote->client->commentaires,
+                    'avantage_type' => $quote->client->avantage_type,
+                    'avantage_valeur' => $quote->client->avantage_valeur,
+                    'avantage_expiration' => $quote->client->avantage_expiration?->format('Y-m-d'),
                 ],
                 'bike_description' => $quote->bike_description,
                 'reception_comment' => $quote->reception_comment,
@@ -188,6 +214,11 @@ Route::middleware(['auth'])->group(function () {
                     'email' => $quote->client->email,
                     'telephone' => $quote->client->telephone,
                     'adresse' => $quote->client->adresse,
+                    'origine_contact' => $quote->client->origine_contact,
+                    'commentaires' => $quote->client->commentaires,
+                    'avantage_type' => $quote->client->avantage_type,
+                    'avantage_valeur' => $quote->client->avantage_valeur,
+                    'avantage_expiration' => $quote->client->avantage_expiration?->format('Y-m-d'),
                 ],
                 'bike_description' => $quote->bike_description,
                 'reception_comment' => $quote->reception_comment,

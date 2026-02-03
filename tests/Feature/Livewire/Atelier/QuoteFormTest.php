@@ -103,6 +103,8 @@ class QuoteFormTest extends TestCase
             ->set('clientNom', 'Dubois')
             ->set('clientEmail', 'marie@example.com')
             ->set('clientTelephone', '0987654321')
+            ->set('bikeDescription', 'VTT bleu')
+            ->set('receptionComment', 'Révision complète')
             ->set('lines.0.title', 'Réparation')
             ->set('lines.0.purchase_price_ht', '50.00')
             ->set('lines.0.sale_price_ht', '100.00')

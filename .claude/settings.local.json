@@ -13,7 +13,9 @@
       "Bash(else echo \"Logo file does not exist\")",
       "Bash(fi)",
       "Bash(convert:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(composer dump-autoload:*)",
+      "Bash(composer install:*)"
     ]
   }
 }

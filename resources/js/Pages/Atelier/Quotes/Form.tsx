@@ -23,6 +23,11 @@ interface ClientFormData {
     email: string;
     telephone: string;
     adresse: string;
+    origine_contact: string;
+    commentaires: string;
+    avantage_type: 'aucun' | 'pourcentage' | 'montant';
+    avantage_valeur: number;
+    avantage_expiration: string;
 }
 
 const emptyLine = (): QuoteLine => ({
@@ -61,7 +66,14 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         email: quote?.client?.email ?? '',
         telephone: quote?.client?.telephone ?? '',
         adresse: quote?.client?.adresse ?? '',
+        origine_contact: quote?.client?.origine_contact ?? '',
+        commentaires: quote?.client?.commentaires ?? '',
+        avantage_type: quote?.client?.avantage_type ?? 'aucun',
+        avantage_valeur: quote?.client?.avantage_valeur ?? 0,
+        avantage_expiration: quote?.client?.avantage_expiration ?? '',
     });
+
+    const [showClientDetails, setShowClientDetails] = useState(false);
 
     const [bikeDescription, setBikeDescription] = useState(quote?.bike_description ?? '');
     const [receptionComment, setReceptionComment] = useState(quote?.reception_comment ?? '');
@@ -103,6 +115,11 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             email: selectedClient.email ?? '',
             telephone: selectedClient.telephone ?? '',
             adresse: selectedClient.adresse ?? '',
+            origine_contact: selectedClient.origine_contact ?? '',
+            commentaires: selectedClient.commentaires ?? '',
+            avantage_type: selectedClient.avantage_type ?? 'aucun',
+            avantage_valeur: selectedClient.avantage_valeur ?? 0,
+            avantage_expiration: selectedClient.avantage_expiration ?? '',
         });
     };
 
@@ -233,13 +250,27 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         setErrors({});
         setMessage(null);
 
+        const trimmedPhone = client.telephone.trim();
+        if (!trimmedPhone) {
+            setIsSaving(false);
+            setMessage('Le téléphone du client est obligatoire.');
+            return;
+        }
+
+        const sanitizedClient = { ...client, telephone: trimmedPhone };
+
         const payload = {
-            client_id: client.id,
-            client_prenom: client.prenom,
-            client_nom: client.nom,
-            client_email: client.email || null,
-            client_telephone: client.telephone || null,
-            client_adresse: client.adresse || null,
+            client_id: sanitizedClient.id,
+            client_prenom: sanitizedClient.prenom,
+            client_nom: sanitizedClient.nom,
+            client_email: sanitizedClient.email || null,
+            client_telephone: sanitizedClient.telephone,
+            client_adresse: sanitizedClient.adresse || null,
+            client_origine_contact: sanitizedClient.origine_contact || null,
+            client_commentaires: sanitizedClient.commentaires || null,
+            client_avantage_type: sanitizedClient.avantage_type || 'aucun',
+            client_avantage_valeur: sanitizedClient.avantage_valeur || 0,
+            client_avantage_expiration: sanitizedClient.avantage_expiration || null,
             bike_description: bikeDescription,
             reception_comment: receptionComment,
             valid_until: validUntil,
@@ -272,7 +303,12 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             } else {
                 const errorData = await response.json();
                 if (errorData.errors) {
-                    setErrors(errorData.errors);
+                    // Formater les erreurs : convertir les tableaux en chaînes
+                    const formattedErrors: Record<string, string> = {};
+                    Object.entries(errorData.errors).forEach(([key, value]) => {
+                        formattedErrors[key] = Array.isArray(value) ? value[0] : String(value);
+                    });
+                    setErrors(formattedErrors);
                 } else {
                     setMessage(errorData.message || 'Une erreur est survenue.');
                 }
@@ -346,6 +382,17 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                     </div>
                 )}
 
+                {Object.keys(errors).length > 0 && (
+                    <div className="quote-form__alert quote-form__alert--error">
+                        <strong>Veuillez corriger les erreurs suivantes :</strong>
+                        <ul className="quote-form__error-list">
+                            {Object.entries(errors).map(([field, error]) => (
+                                <li key={field}>{Array.isArray(error) ? error[0] : error}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
                     {/* Section Client */}
                     <section className="quote-form__section">
@@ -371,10 +418,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                         type="text"
                                         value={client.prenom}
                                         onChange={(e) => setClient(prev => ({ ...prev, prenom: e.target.value }))}
-                                        className="quote-form__input"
+                                        className={`quote-form__input ${errors.client_prenom ? 'quote-form__input--error' : ''}`}
                                         required
                                         readOnly={isReadOnly}
                                     />
+                                    {errors.client_prenom && (
+                                        <span className="quote-form__field-error">{errors.client_prenom}</span>
+                                    )}
                                 </div>
                                 <div className="quote-form__field">
                                     <label className="quote-form__label">Nom *</label>
@@ -382,10 +432,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                         type="text"
                                         value={client.nom}
                                         onChange={(e) => setClient(prev => ({ ...prev, nom: e.target.value }))}
-                                        className="quote-form__input"
+                                        className={`quote-form__input ${errors.client_nom ? 'quote-form__input--error' : ''}`}
                                         required
                                         readOnly={isReadOnly}
                                     />
+                                    {errors.client_nom && (
+                                        <span className="quote-form__field-error">{errors.client_nom}</span>
+                                    )}
                                 </div>
                                 <div className="quote-form__field">
                                     <label className="quote-form__label">Email</label>
@@ -393,19 +446,26 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                         type="email"
                                         value={client.email}
                                         onChange={(e) => setClient(prev => ({ ...prev, email: e.target.value }))}
-                                        className="quote-form__input"
+                                        className={`quote-form__input ${errors.client_email ? 'quote-form__input--error' : ''}`}
                                         readOnly={isReadOnly}
                                     />
+                                    {errors.client_email && (
+                                        <span className="quote-form__field-error">{errors.client_email}</span>
+                                    )}
                                 </div>
                                 <div className="quote-form__field">
-                                    <label className="quote-form__label">Téléphone</label>
+                                    <label className="quote-form__label">Téléphone *</label>
                                     <input
                                         type="tel"
                                         value={client.telephone}
                                         onChange={(e) => setClient(prev => ({ ...prev, telephone: e.target.value }))}
-                                        className="quote-form__input"
+                                        className={`quote-form__input ${errors.client_telephone ? 'quote-form__input--error' : ''}`}
                                         readOnly={isReadOnly}
+                                        required={!isReadOnly}
                                     />
+                                    {errors.client_telephone && (
+                                        <span className="quote-form__field-error">{errors.client_telephone}</span>
+                                    )}
                                 </div>
                                 <div className="quote-form__field quote-form__field--full">
                                     <label className="quote-form__label">Adresse</label>
@@ -413,11 +473,89 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                         type="text"
                                         value={client.adresse}
                                         onChange={(e) => setClient(prev => ({ ...prev, adresse: e.target.value }))}
-                                        className="quote-form__input"
+                                        className={`quote-form__input ${errors.client_adresse ? 'quote-form__input--error' : ''}`}
                                         readOnly={isReadOnly}
                                     />
+                                    {errors.client_adresse && (
+                                        <span className="quote-form__field-error">{errors.client_adresse}</span>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* Champs métier client - section dépliable */}
+                            {!isReadOnly && (
+                                <div className="quote-form__client-details">
+                                    <button
+                                        type="button"
+                                        className="quote-form__toggle-details"
+                                        onClick={() => setShowClientDetails(!showClientDetails)}
+                                    >
+                                        {showClientDetails ? '▼' : '▶'} Informations complémentaires client
+                                    </button>
+
+                                    {showClientDetails && (
+                                        <div className="quote-form__grid">
+                                            <div className="quote-form__field">
+                                                <label className="quote-form__label">Origine du contact</label>
+                                                <input
+                                                    type="text"
+                                                    value={client.origine_contact}
+                                                    onChange={(e) => setClient(prev => ({ ...prev, origine_contact: e.target.value }))}
+                                                    className="quote-form__input"
+                                                    placeholder="Bouche à oreille, publicité..."
+                                                />
+                                            </div>
+                                            <div className="quote-form__field">
+                                                <label className="quote-form__label">Type d'avantage</label>
+                                                <select
+                                                    value={client.avantage_type}
+                                                    onChange={(e) => setClient(prev => ({ ...prev, avantage_type: e.target.value as 'aucun' | 'pourcentage' | 'montant' }))}
+                                                    className="quote-form__input"
+                                                >
+                                                    <option value="aucun">Aucun</option>
+                                                    <option value="pourcentage">Pourcentage</option>
+                                                    <option value="montant">Montant</option>
+                                                </select>
+                                            </div>
+                                            {client.avantage_type !== 'aucun' && (
+                                                <>
+                                                    <div className="quote-form__field">
+                                                        <label className="quote-form__label">
+                                                            Valeur de l'avantage {client.avantage_type === 'pourcentage' ? '(%)' : '(€)'}
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={client.avantage_valeur}
+                                                            onChange={(e) => setClient(prev => ({ ...prev, avantage_valeur: parseFloat(e.target.value) || 0 }))}
+                                                            className="quote-form__input"
+                                                        />
+                                                    </div>
+                                                    <div className="quote-form__field">
+                                                        <label className="quote-form__label">Date d'expiration</label>
+                                                        <input
+                                                            type="date"
+                                                            value={client.avantage_expiration}
+                                                            onChange={(e) => setClient(prev => ({ ...prev, avantage_expiration: e.target.value }))}
+                                                            className="quote-form__input"
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
+                                            <div className="quote-form__field quote-form__field--full">
+                                                <label className="quote-form__label">Commentaires</label>
+                                                <textarea
+                                                    value={client.commentaires}
+                                                    onChange={(e) => setClient(prev => ({ ...prev, commentaires: e.target.value }))}
+                                                    className="quote-form__input"
+                                                    rows={3}
+                                                    placeholder="Notes sur le client..."
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -431,23 +569,29 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     type="text"
                                     value={bikeDescription}
                                     onChange={(e) => setBikeDescription(e.target.value)}
-                                    className="quote-form__input"
+                                    className={`quote-form__input ${errors.bike_description ? 'quote-form__input--error' : ''}`}
                                     placeholder="Ex: Nakamura vert, VTT bleu avec roue blanche..."
                                     required
                                     readOnly={isReadOnly}
                                 />
+                                {errors.bike_description && (
+                                    <span className="quote-form__field-error">{errors.bike_description}</span>
+                                )}
                             </div>
                             <div className="quote-form__field quote-form__field--full">
                                 <label className="quote-form__label">Commentaire de réception *</label>
                                 <textarea
                                     value={receptionComment}
                                     onChange={(e) => setReceptionComment(e.target.value)}
-                                    className="quote-form__input"
+                                    className={`quote-form__input ${errors.reception_comment ? 'quote-form__input--error' : ''}`}
                                     rows={4}
                                     placeholder="Ex: Devis révision, le client vient parce que..."
                                     required
                                     readOnly={isReadOnly}
                                 />
+                                {errors.reception_comment && (
+                                    <span className="quote-form__field-error">{errors.reception_comment}</span>
+                                )}
                             </div>
                         </div>
                     </section>

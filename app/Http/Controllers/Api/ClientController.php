@@ -34,6 +34,11 @@ class ClientController extends Controller
             'email' => $client->email,
             'telephone' => $client->telephone,
             'adresse' => $client->adresse,
+            'origine_contact' => $client->origine_contact,
+            'commentaires' => $client->commentaires,
+            'avantage_type' => $client->avantage_type,
+            'avantage_valeur' => $client->avantage_valeur,
+            'avantage_expiration' => $client->avantage_expiration?->format('Y-m-d'),
         ]);
 
         return response()->json($clients);

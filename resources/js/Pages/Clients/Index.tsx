@@ -16,7 +16,13 @@ export default function ClientsIndex({ clients: initialClients }: Props) {
         setIsLoading(true);
         try {
             const url = '/api/clients?search=' + encodeURIComponent(searchQuery);
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
             const data = await response.json();
             setClients(data);
         } catch (error) {

@@ -64,6 +64,26 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                     </div>
                 </section>
 
+                {(quote.bike_description || quote.reception_comment) && (
+                    <section className="quote-show__section">
+                        <h2 className="quote-show__section-title">Identification du vélo</h2>
+                        <div className="quote-show__info">
+                            {quote.bike_description && (
+                                <div className="quote-show__info-row">
+                                    <span className="quote-show__label">Description</span>
+                                    <span className="quote-show__value">{quote.bike_description}</span>
+                                </div>
+                            )}
+                            {quote.reception_comment && (
+                                <div className="quote-show__info-row">
+                                    <span className="quote-show__label">Motif</span>
+                                    <span className="quote-show__value">{quote.reception_comment}</span>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )}
+
                 <section className="quote-show__section">
                     <h2 className="quote-show__section-title">Prestations</h2>
                     <div className="quote-show__lines">
