@@ -15,7 +15,11 @@
       "Bash(convert:*)",
       "Bash(git add:*)",
       "Bash(composer dump-autoload:*)",
-      "Bash(composer install:*)"
+      "Bash(composer install:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp list:*)",
+      "Bash(curl:*)",
+      "Bash(npx:*)"
     ]
   }
 }
