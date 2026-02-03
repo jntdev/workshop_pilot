@@ -194,7 +194,7 @@
 
     &__header {
         display: grid;
-        grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 60px;
+        grid-template-columns: 1.8fr 0.7fr 0.5fr 0.7fr 0.7fr 0.7fr 0.6fr 0.5fr 0.7fr 0.8fr 0.8fr 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         background-color: $color-bg-light;
@@ -206,7 +206,7 @@
 
     &__row {
         display: grid;
-        grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 60px;
+        grid-template-columns: 1.8fr 0.7fr 0.5fr 0.7fr 0.7fr 0.7fr 0.6fr 0.5fr 0.7fr 0.8fr 0.8fr 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         border-bottom: 1px solid $color-border-light;
@@ -220,6 +220,18 @@
     &__cell {
         display: flex;
         align-items: center;
+        min-width: 0; // Prevent grid blowout
+
+        &--readonly {
+            font-weight: 600;
+            color: $color-neutral-dark;
+            font-size: 0.9rem;
+            padding-left: 0.5rem; // Align with input padding
+        }
+    }
+
+    &__header &__cell {
+        padding-left: 0.5rem; // Align header text with input content
     }
 
     &__input {
@@ -662,9 +674,9 @@
     .quote-lines-table {
         &__header,
         &__row {
-            grid-template-columns: 1.5fr 0.6fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 50px;
+            grid-template-columns: 1.4fr 0.5fr 0.4fr 0.5fr 0.5fr 0.5fr 0.5fr 0.4fr 0.5fr 0.6fr 0.6fr 35px;
             gap: 0.25rem;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
     }
 

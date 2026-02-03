@@ -72,6 +72,8 @@ export default function QuoteLinesTable({
                 <div className="quote-lines-table__cell">Marge %</div>
                 <div className="quote-lines-table__cell">TVA %</div>
                 <div className="quote-lines-table__cell">PV TTC</div>
+                <div className="quote-lines-table__cell">Total HT</div>
+                <div className="quote-lines-table__cell">Total TTC</div>
                 <div className="quote-lines-table__cell"></div>
             </div>
 
@@ -179,6 +181,12 @@ export default function QuoteLinesTable({
                             className="quote-lines-table__input"
                             disabled={disabled}
                         />
+                    </div>
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                        {line.line_total_ht ? parseFloat(line.line_total_ht).toFixed(2) : '-'} €
+                    </div>
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                        {line.line_total_ttc ? parseFloat(line.line_total_ttc).toFixed(2) : '-'} €
                     </div>
                     <div className="quote-lines-table__cell">
                         <button

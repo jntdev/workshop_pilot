@@ -99,6 +99,8 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                                     <th>Marge %</th>
                                     <th>TVA %</th>
                                     <th>PV TTC</th>
+                                    <th>Total HT</th>
+                                    <th>Total TTC</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -113,6 +115,8 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                                         <td>{parseFloat(line.margin_rate).toFixed(2)} %</td>
                                         <td>{parseFloat(line.tva_rate).toFixed(0)} %</td>
                                         <td>{formatCurrency(line.sale_price_ttc)}</td>
+                                        <td>{line.line_total_ht ? formatCurrency(line.line_total_ht) : '-'}</td>
+                                        <td>{line.line_total_ttc ? formatCurrency(line.line_total_ttc) : '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>
