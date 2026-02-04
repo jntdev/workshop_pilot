@@ -78,6 +78,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
 
     const [bikeDescription, setBikeDescription] = useState(quote?.bike_description ?? '');
     const [receptionComment, setReceptionComment] = useState(quote?.reception_comment ?? '');
+    const [remarks, setRemarks] = useState(quote?.remarks ?? '');
     const [validUntil, setValidUntil] = useState(
         quote?.valid_until ?? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     );
@@ -291,6 +292,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             client_avantage_expiration: sanitizedClient.avantage_expiration || null,
             bike_description: bikeDescription,
             reception_comment: receptionComment,
+            remarks: remarks || null,
             valid_until: validUntil,
             discount_type: discountType,
             discount_value: discountValue || null,
@@ -651,24 +653,39 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                         />
                     </section>
 
-                    {/* Section Totaux */}
+                    {/* Section Résumé avec Remarques et Totaux */}
                     <section className="quote-form__section">
                         <h2 className="quote-form__section-title">Résumé</h2>
-                        <QuoteTotals
-                            totals={totals}
-                            discountType={discountType}
-                            discountValue={discountValue}
-                            validUntil={validUntil}
-                            totalEstimatedTimeMinutes={totalEstimatedTimeMinutes}
-                            actualTimeMinutes={actualTimeMinutes}
-                            onDiscountTypeChange={handleDiscountChange}
-                            onDiscountValueChange={handleDiscountValueChange}
-                            onValidUntilChange={setValidUntil}
-                            onActualTimeChange={setActualTimeMinutes}
-                            onSaveActualTime={isInvoice ? handleSaveActualTime : undefined}
-                            disabled={isReadOnly}
-                            isInvoice={isInvoice}
-                        />
+                        <div className="quote-form__summary-row">
+                            <div className="quote-form__remarks">
+                                <h3 className="quote-form__subsection-title">Remarques</h3>
+                                <textarea
+                                    value={remarks}
+                                    onChange={(e) => setRemarks(e.target.value)}
+                                    className="quote-form__input quote-form__remarks-input"
+                                    rows={6}
+                                    placeholder="Ex: Chaîne à prévoir, pneu arrière usé, câble de frein à commander..."
+                                    readOnly={isReadOnly}
+                                />
+                            </div>
+                            <div className="quote-form__totals-wrapper">
+                                <QuoteTotals
+                                    totals={totals}
+                                    discountType={discountType}
+                                    discountValue={discountValue}
+                                    validUntil={validUntil}
+                                    totalEstimatedTimeMinutes={totalEstimatedTimeMinutes}
+                                    actualTimeMinutes={actualTimeMinutes}
+                                    onDiscountTypeChange={handleDiscountChange}
+                                    onDiscountValueChange={handleDiscountValueChange}
+                                    onValidUntilChange={setValidUntil}
+                                    onActualTimeChange={setActualTimeMinutes}
+                                    onSaveActualTime={isInvoice ? handleSaveActualTime : undefined}
+                                    disabled={isReadOnly}
+                                    isInvoice={isInvoice}
+                                />
+                            </div>
+                        </div>
                     </section>
 
                     {/* Actions */}

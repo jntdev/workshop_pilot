@@ -79,6 +79,7 @@ export interface QuoteDetail {
     client: Client;
     bike_description: string | null;
     reception_comment: string | null;
+    remarks: string | null;
     valid_until: string;
     discount_type: 'amount' | 'percent' | null;
     discount_value: string | null;

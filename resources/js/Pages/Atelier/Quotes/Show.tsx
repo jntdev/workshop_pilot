@@ -132,34 +132,50 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
 
                 <section className="quote-show__section">
                     <h2 className="quote-show__section-title">Résumé</h2>
-                    <div className="quote-show__totals">
-                        <div className="quote-show__totals-row">
-                            <span className="quote-show__label">Total HT</span>
-                            <span className="quote-show__value">{formatCurrency(quote.total_ht)}</span>
+                    <div className="quote-show__summary-row">
+                        <div className="quote-show__remarks">
+                            <h3 className="quote-show__subsection-title">Remarques</h3>
+                            {quote.remarks ? (
+                                <div className="quote-show__remarks-content">
+                                    {quote.remarks}
+                                </div>
+                            ) : (
+                                <div className="quote-show__remarks-empty">
+                                    Aucune remarque
+                                </div>
+                            )}
                         </div>
-                        <div className="quote-show__totals-row">
-                            <span className="quote-show__label">TVA</span>
-                            <span className="quote-show__value">{formatCurrency(quote.total_tva)}</span>
-                        </div>
-                        <div className="quote-show__totals-row quote-show__totals-row--total">
-                            <span className="quote-show__label">Total TTC</span>
-                            <span className="quote-show__value">{formatCurrency(quote.total_ttc)}</span>
-                        </div>
-                        <div className="quote-show__totals-row">
-                            <span className="quote-show__label">Marge totale</span>
-                            <span className="quote-show__value">{formatCurrency(quote.margin_total_ht)}</span>
-                        </div>
-                    </div>
+                        <div className="quote-show__totals-wrapper">
+                            <div className="quote-show__totals">
+                                <div className="quote-show__totals-row">
+                                    <span className="quote-show__label">Total HT</span>
+                                    <span className="quote-show__value">{formatCurrency(quote.total_ht)}</span>
+                                </div>
+                                <div className="quote-show__totals-row">
+                                    <span className="quote-show__label">TVA</span>
+                                    <span className="quote-show__value">{formatCurrency(quote.total_tva)}</span>
+                                </div>
+                                <div className="quote-show__totals-row quote-show__totals-row--total">
+                                    <span className="quote-show__label">Total TTC</span>
+                                    <span className="quote-show__value">{formatCurrency(quote.total_ttc)}</span>
+                                </div>
+                                <div className="quote-show__totals-row">
+                                    <span className="quote-show__label">Marge totale</span>
+                                    <span className="quote-show__value">{formatCurrency(quote.margin_total_ht)}</span>
+                                </div>
+                            </div>
 
-                    <div className="quote-show__time-section">
-                        <h3 className="quote-show__subsection-title">Temps (interne)</h3>
-                        <div className="quote-show__info-row">
-                            <span className="quote-show__label">Temps estimé total</span>
-                            <span className="quote-show__value">{formatTime(quote.total_estimated_time_minutes)}</span>
-                        </div>
-                        <div className="quote-show__info-row">
-                            <span className="quote-show__label">Temps réel</span>
-                            <span className="quote-show__value">{formatTime(quote.actual_time_minutes)}</span>
+                            <div className="quote-show__time-section">
+                                <h3 className="quote-show__subsection-title">Temps (interne)</h3>
+                                <div className="quote-show__info-row">
+                                    <span className="quote-show__label">Temps estimé total</span>
+                                    <span className="quote-show__value">{formatTime(quote.total_estimated_time_minutes)}</span>
+                                </div>
+                                <div className="quote-show__info-row">
+                                    <span className="quote-show__label">Temps réel</span>
+                                    <span className="quote-show__value">{formatTime(quote.actual_time_minutes)}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

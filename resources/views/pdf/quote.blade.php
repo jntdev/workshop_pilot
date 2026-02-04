@@ -11,51 +11,51 @@
             line-height: 1.6;
             color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 5px 20px;
             padding-bottom: 150px;
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         }
         .header img {
             max-height: 80px;
             max-width: 200px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         .header h1 {
-            margin: 10px 0 5px 0;
+            margin: 0 0 3px 0;
             font-size: 24px;
             color: #333;
         }
         .header .reference {
             font-size: 14px;
             color: #666;
-            margin-top: 5px;
+            margin-top: 3px;
         }
         .section {
-            margin-bottom: 25px;
+            margin-bottom: 15px;
         }
         .section-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: #333;
             border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
+            padding-bottom: 3px;
+            margin-bottom: 10px;
         }
         .info-row {
-            display: flex;
-            padding: 5px 0;
+            padding: 3px 0;
         }
         .info-label {
-            width: 150px;
             font-weight: bold;
             color: #555;
+            display: inline;
         }
         .info-value {
-            flex: 1;
             color: #333;
+            display: inline;
+            margin-left: 5px;
         }
         table {
             width: 100%;
@@ -75,18 +75,62 @@
             border: 1px solid #ddd;
             font-size: 11px;
         }
+        .summary-row {
+            width: 100%;
+            margin-top: 15px;
+        }
+        .summary-row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        .remarks {
+            float: left;
+            width: 55%;
+        }
+        .remarks-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .remarks-content {
+            background-color: #f8f9fa;
+            padding: 10px 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #555;
+            white-space: pre-wrap;
+        }
+        .remarks-empty {
+            color: #999;
+            font-style: italic;
+            font-size: 11px;
+        }
         .totals {
-            margin-top: 20px;
             float: right;
-            width: 300px;
+            width: 38%;
         }
-        .totals-row {
-            display: flex;
-            justify-content: space-between;
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+        }
+        .totals-table td {
             padding: 8px;
+            border: none;
             border-bottom: 1px solid #ddd;
+            font-size: 12px;
         }
-        .totals-row--total {
+        .totals-table .totals-label {
+            text-align: left;
+        }
+        .totals-table .totals-value {
+            text-align: right;
+        }
+        .totals-table .totals-row--total td {
             font-weight: bold;
             font-size: 14px;
             background-color: #f5f5f5;
@@ -115,8 +159,8 @@
         }
         .contact-row {
             width: 100%;
-            margin-bottom: 30px;
-            padding: 15px 0 10px 0;
+            margin-bottom: 15px;
+            padding: 10px 0 8px 0;
             border-top: 2px solid #333;
             border-bottom: 2px solid #333;
         }
@@ -169,25 +213,61 @@
             font-size: 8px;
             color: #999;
         }
-        .bike-info {
-            margin-bottom: 25px;
-            padding: 15px;
+        .info-box {
+            margin-bottom: 15px;
+            padding: 10px 12px;
             background-color: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 4px;
         }
-        .bike-info h3 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
+        .info-box-row {
+            width: 100%;
+        }
+        .info-box-row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        .info-box-col {
+            float: left;
+            font-size: 11px;
+        }
+        .info-box-col--bike {
+            width: 28%;
+        }
+        .info-box-col--motif {
+            width: 32%;
+            padding: 0 2%;
+        }
+        .info-box-col--dates {
+            width: 34%;
+            text-align: right;
+        }
+        .info-box-col .info-row {
+            padding: 2px 0;
+        }
+        .info-box-col .info-label {
+            font-weight: bold;
+            color: #555;
+            display: inline;
+        }
+        .info-box-col .info-value {
+            color: #333;
+            display: inline;
+            margin-left: 5px;
+        }
+        .info-box h3 {
+            margin: 0 0 6px 0;
+            font-size: 12px;
             font-weight: bold;
             color: #333;
         }
-        .bike-info p {
-            margin: 5px 0;
+        .info-box p {
+            margin: 4px 0;
             font-size: 11px;
             color: #555;
         }
-        .bike-info .label {
+        .info-box .label {
             font-weight: bold;
             color: #333;
         }
@@ -224,40 +304,45 @@
         </div>
     </div>
 
-    @if($quote->bike_description || $quote->reception_comment)
-        <div class="bike-info">
-            <h3>Vélo concerné</h3>
-            @if($quote->bike_description)
-                <p><span class="label">Description :</span> {{ $quote->bike_description }}</p>
-            @endif
-            @if($quote->reception_comment)
-                <p><span class="label">Motif :</span> {{ $quote->reception_comment }}</p>
-            @endif
+    <div class="info-box">
+        <div class="info-box-row">
+            <div class="info-box-col info-box-col--bike">
+                @if($quote->bike_description)
+                    <h3>Vélo concerné</h3>
+                    <p>{{ $quote->bike_description }}</p>
+                @endif
+            </div>
+            <div class="info-box-col info-box-col--motif">
+                @if($quote->reception_comment)
+                    <h3>Motif</h3>
+                    <p>{{ $quote->reception_comment }}</p>
+                @endif
+            </div>
+            <div class="info-box-col info-box-col--dates">
+                @if(!$quote->isInvoice())
+                    <div class="info-row">
+                        <span class="info-label">Émis le :</span>
+                        <span class="info-value">{{ $quote->created_at->format('d/m/Y') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Valide jusqu'au :</span>
+                        <span class="info-value">{{ $quote->valid_until->format('d/m/Y') }}</span>
+                    </div>
+                @else
+                    <div class="info-row">
+                        <span class="info-label">Facturé le :</span>
+                        <span class="info-value">{{ $quote->invoiced_at->format('d/m/Y') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Paiement :</span>
+                        <span class="info-value">{{ config('company.payment_terms_text') }}</span>
+                    </div>
+                @endif
+            </div>
         </div>
-    @endif
+    </div>
 
     <div class="section">
-
-        @if(!$quote->isInvoice())
-            <div class="info-row">
-                <span class="info-label">Date d'émission</span>
-                <span class="info-value">{{ $quote->created_at->format('d/m/Y') }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Valide jusqu'au</span>
-                <span class="info-value">{{ $quote->valid_until->format('d/m/Y') }}</span>
-            </div>
-        @else
-            <div class="info-row">
-                <span class="info-label">Date de facturation</span>
-                <span class="info-value">{{ $quote->invoiced_at->format('d/m/Y') }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Conditions de paiement</span>
-                <span class="info-value">{{ config('company.payment_terms_text') }}</span>
-            </div>
-        @endif
-
         <h2 class="section-title">Prestations</h2>
         <table>
             <thead>
@@ -283,23 +368,31 @@
         </table>
     </div>
 
-    <div class="section">
-        <h2 class="section-title">Résumé</h2>
-        <div class="totals">
-            <div class="totals-row">
-                <span>Total HT</span>
-                <span>{{ number_format((float)$quote->total_ht, 2, ',', ' ') }} €</span>
-            </div>
-            <div class="totals-row">
-                <span>TVA</span>
-                <span>{{ number_format((float)$quote->total_tva, 2, ',', ' ') }} €</span>
-            </div>
-            <div class="totals-row totals-row--total">
-                <span>Total TTC</span>
-                <span>{{ number_format((float)$quote->total_ttc, 2, ',', ' ') }} €</span>
-            </div>
+    <div class="summary-row">
+        <div class="remarks">
+            <div class="remarks-title">Remarques</div>
+            @if($quote->remarks)
+                <div class="remarks-content">{{ $quote->remarks }}</div>
+            @else
+                <div class="remarks-empty">Aucune remarque</div>
+            @endif
         </div>
-        <div style="clear: both;"></div>
+        <div class="totals">
+            <table class="totals-table">
+                <tr>
+                    <td class="totals-label">Total HT</td>
+                    <td class="totals-value">{{ number_format((float)$quote->total_ht, 2, ',', ' ') }} €</td>
+                </tr>
+                <tr>
+                    <td class="totals-label">TVA</td>
+                    <td class="totals-value">{{ number_format((float)$quote->total_tva, 2, ',', ' ') }} €</td>
+                </tr>
+                <tr class="totals-row--total">
+                    <td class="totals-label">Total TTC</td>
+                    <td class="totals-value">{{ number_format((float)$quote->total_ttc, 2, ',', ' ') }} €</td>
+                </tr>
+            </table>
+        </div>
     </div>
 
     <div class="legal-mentions">

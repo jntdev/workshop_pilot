@@ -186,6 +186,33 @@
             }
         }
     }
+
+    &__summary-row {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    &__remarks {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__totals-wrapper {
+        flex: 0 0 400px;
+    }
+
+    &__subsection-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin-bottom: 0.75rem;
+    }
+
+    &__remarks-input {
+        min-height: 150px;
+        resize: vertical;
+    }
 }
 
 // Quote Lines Table
@@ -509,12 +536,40 @@
         }
     }
 
+    &__summary-row {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    &__remarks {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__remarks-content {
+        background-color: $color-bg-light;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        line-height: 1.6;
+        color: $color-neutral-dark;
+    }
+
+    &__remarks-empty {
+        color: $color-neutral-medium;
+        font-style: italic;
+        padding: 1rem 0;
+    }
+
+    &__totals-wrapper {
+        flex: 0 0 400px;
+    }
+
     &__totals {
         background-color: $color-bg-light;
         padding: 1.5rem;
         border-radius: 8px;
-        max-width: 500px;
-        margin-left: auto;
     }
 
     &__totals-row {

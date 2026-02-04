@@ -23,6 +23,7 @@ class Quote extends Model
         'client_id',
         'bike_description',
         'reception_comment',
+        'remarks',
         'metier',
         'reference',
         'status',
