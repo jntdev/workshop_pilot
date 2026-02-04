@@ -34,7 +34,7 @@ const emptyLine = (): QuoteLine => ({
     title: '',
     reference: null,
     quantity: '',
-    purchase_price_ht: '',
+    purchase_price_ht: '0',
     sale_price_ht: '',
     sale_price_ttc: '',
     margin_amount_ht: '',

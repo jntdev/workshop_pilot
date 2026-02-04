@@ -114,7 +114,7 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                                     <tr key={line.id}>
                                         <td>{line.title}</td>
                                         <td>{line.reference || '-'}</td>
-                                        <td>{parseFloat(line.quantity).toFixed(2)}</td>
+                                        <td>{Math.round(parseFloat(line.quantity))}</td>
                                         <td>{formatCurrency(line.purchase_price_ht)}</td>
                                         <td>{formatCurrency(line.sale_price_ht)}</td>
                                         <td>{formatCurrency(line.margin_amount_ht)}</td>

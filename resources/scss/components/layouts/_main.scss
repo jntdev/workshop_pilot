@@ -19,7 +19,7 @@
   border-bottom: 1px solid $color-border-light;
 
   &__inner {
-    max-width: 1200px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: $spacing-lg $spacing-md;
   }
@@ -83,7 +83,7 @@
   border-bottom: 1px solid $color-border-light;
 
   &__inner {
-    max-width: 1200px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: $spacing-sm $spacing-md;
   }
@@ -91,7 +91,7 @@
 
 // Main content
 .layout-main {
-  max-width: 1200px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: $spacing-2xl $spacing-md;
   flex: 1;

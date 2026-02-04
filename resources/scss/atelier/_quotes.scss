@@ -3,7 +3,7 @@
 
 // Quote Form
 .quote-form {
-    max-width: 1400px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: 2rem;
 
@@ -194,7 +194,7 @@
 
     &__header {
         display: grid;
-        grid-template-columns: 1.8fr 0.7fr 0.5fr 0.7fr 0.7fr 0.7fr 0.6fr 0.5fr 0.7fr 0.8fr 0.8fr 45px;
+        grid-template-columns: 1.8fr 0.7fr 0.5fr 0.7fr 0.7fr 0.7fr 0.6fr 0.5fr 0.7fr 0.8fr 0.8fr 0.5fr 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         background-color: $color-bg-light;
@@ -206,7 +206,7 @@
 
     &__row {
         display: grid;
-        grid-template-columns: 1.8fr 0.7fr 0.5fr 0.7fr 0.7fr 0.7fr 0.6fr 0.5fr 0.7fr 0.8fr 0.8fr 45px;
+        grid-template-columns: 1.8fr 0.7fr 0.5fr 0.7fr 0.7fr 0.7fr 0.6fr 0.5fr 0.7fr 0.8fr 0.8fr 0.5fr 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         border-bottom: 1px solid $color-border-light;
@@ -270,6 +270,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        margin-left: 0.75rem;
 
         &:hover {
             background-color: darken($color-danger-red, 10%);
@@ -438,7 +439,7 @@
 
 // Quote Show Page
 .quote-show {
-    max-width: 1200px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: 2rem;
 
@@ -596,7 +597,7 @@
 
 // Quotes List Page
 .quotes-list {
-    max-width: 1200px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: 2rem;
 
@@ -742,7 +743,7 @@
     .quote-lines-table {
         &__header,
         &__row {
-            grid-template-columns: 1.4fr 0.5fr 0.4fr 0.5fr 0.5fr 0.5fr 0.5fr 0.4fr 0.5fr 0.6fr 0.6fr 35px;
+            grid-template-columns: 1.4fr 0.5fr 0.4fr 0.5fr 0.5fr 0.5fr 0.5fr 0.4fr 0.5fr 0.6fr 0.6fr 0.4fr 35px;
             gap: 0.25rem;
             font-size: 0.75rem;
         }
