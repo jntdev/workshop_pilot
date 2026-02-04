@@ -34,6 +34,8 @@ class Quote extends Model
         'total_tva',
         'total_ttc',
         'margin_total_ht',
+        'total_estimated_time_minutes',
+        'actual_time_minutes',
     ];
 
     protected function casts(): array
@@ -48,6 +50,8 @@ class Quote extends Model
             'total_tva' => 'decimal:2',
             'total_ttc' => 'decimal:2',
             'margin_total_ht' => 'decimal:2',
+            'total_estimated_time_minutes' => 'integer',
+            'actual_time_minutes' => 'integer',
         ];
     }
 

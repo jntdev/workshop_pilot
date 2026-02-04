@@ -74,6 +74,7 @@ export default function QuoteLinesTable({
                 <div className="quote-lines-table__cell">PV TTC</div>
                 <div className="quote-lines-table__cell">Total HT</div>
                 <div className="quote-lines-table__cell">Total TTC</div>
+                <div className="quote-lines-table__cell" title="Temps estimé (heures)">Temps</div>
                 <div className="quote-lines-table__cell"></div>
             </div>
 
@@ -187,6 +188,23 @@ export default function QuoteLinesTable({
                     </div>
                     <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
                         {line.line_total_ttc ? parseFloat(line.line_total_ttc).toFixed(2) : '-'} €
+                    </div>
+                    <div className="quote-lines-table__cell">
+                        <Input
+                            type="number"
+                            step="0.25"
+                            min="0"
+                            value={line.estimated_time_minutes ? (parseFloat(String(line.estimated_time_minutes)) / 60).toFixed(2) : ''}
+                            onChange={(e) => {
+                                const hours = parseFloat(e.target.value) || 0;
+                                const minutes = Math.round(hours * 60);
+                                handleFieldChange(index, 'estimated_time_minutes', String(minutes));
+                            }}
+                            className="quote-lines-table__input quote-lines-table__input--narrow"
+                            placeholder="h"
+                            title="Temps estimé en heures"
+                            disabled={disabled}
+                        />
                     </div>
                     <div className="quote-lines-table__cell">
                         <button

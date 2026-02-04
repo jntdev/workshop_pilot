@@ -28,6 +28,8 @@ class QuoteController extends Controller
 
         $client = $this->resolveClient($request, $validated);
 
+        $totalEstimatedTime = $this->calculateTotalEstimatedTime($validated['lines']);
+
         $quote = Quote::create([
             'client_id' => $client->id,
             'bike_description' => $validated['bike_description'],
@@ -41,6 +43,8 @@ class QuoteController extends Controller
             'total_tva' => $validated['totals']['total_tva'],
             'total_ttc' => $validated['totals']['total_ttc'],
             'margin_total_ht' => $validated['totals']['margin_total_ht'],
+            'total_estimated_time_minutes' => $totalEstimatedTime,
+            'actual_time_minutes' => $validated['actual_time_minutes'] ?? null,
         ]);
 
         $this->syncLines($quote, $validated['lines']);
@@ -60,6 +64,8 @@ class QuoteController extends Controller
 
         $client = $this->resolveClient($request, $validated);
 
+        $totalEstimatedTime = $this->calculateTotalEstimatedTime($validated['lines']);
+
         $quote->update([
             'client_id' => $client->id,
             'bike_description' => $validated['bike_description'],
@@ -71,6 +77,8 @@ class QuoteController extends Controller
             'total_tva' => $validated['totals']['total_tva'],
             'total_ttc' => $validated['totals']['total_ttc'],
             'margin_total_ht' => $validated['totals']['margin_total_ht'],
+            'total_estimated_time_minutes' => $totalEstimatedTime,
+            'actual_time_minutes' => $validated['actual_time_minutes'] ?? null,
         ]);
 
         $this->syncLines($quote, $validated['lines']);
@@ -98,6 +106,21 @@ class QuoteController extends Controller
         }
 
         $quote->convertToInvoice();
+        $quote->load('client', 'lines');
+
+        return response()->json($this->formatQuote($quote));
+    }
+
+    public function updateActualTime(Request $request, Quote $quote): JsonResponse
+    {
+        $validated = $request->validate([
+            'actual_time_minutes' => 'nullable|integer|min:0',
+        ]);
+
+        $quote->update([
+            'actual_time_minutes' => $validated['actual_time_minutes'],
+        ]);
+
         $quote->load('client', 'lines');
 
         return response()->json($this->formatQuote($quote));
@@ -217,6 +240,8 @@ class QuoteController extends Controller
             'lines.*.line_margin_ht' => 'nullable|numeric',
             'lines.*.line_total_ht' => 'nullable|numeric',
             'lines.*.line_total_ttc' => 'nullable|numeric',
+            'lines.*.estimated_time_minutes' => 'nullable|integer|min:0',
+            'actual_time_minutes' => 'nullable|integer|min:0',
             'totals' => 'required|array',
             'totals.total_ht' => 'required|numeric',
             'totals.total_tva' => 'required|numeric',
@@ -304,8 +329,24 @@ class QuoteController extends Controller
                 'line_total_ht' => $lineTotals['line_total_ht'],
                 'line_total_ttc' => $lineTotals['line_total_ttc'],
                 'position' => $index,
+                'estimated_time_minutes' => $lineData['estimated_time_minutes'] ?? null,
             ]);
         }
+    }
+
+    protected function calculateTotalEstimatedTime(array $lines): ?int
+    {
+        $total = 0;
+        $hasAnyTime = false;
+
+        foreach ($lines as $line) {
+            if (isset($line['estimated_time_minutes']) && $line['estimated_time_minutes'] !== null) {
+                $total += (int) $line['estimated_time_minutes'];
+                $hasAnyTime = true;
+            }
+        }
+
+        return $hasAnyTime ? $total : null;
     }
 
     protected function generateReference(): string
@@ -341,6 +382,8 @@ class QuoteController extends Controller
             'total_tva' => $quote->total_tva,
             'total_ttc' => $quote->total_ttc,
             'margin_total_ht' => $quote->margin_total_ht,
+            'total_estimated_time_minutes' => $quote->total_estimated_time_minutes,
+            'actual_time_minutes' => $quote->actual_time_minutes,
             'invoiced_at' => $quote->invoiced_at?->toISOString(),
             'created_at' => $quote->created_at->toISOString(),
             'is_invoice' => $quote->isInvoice(),
@@ -362,6 +405,7 @@ class QuoteController extends Controller
                 'line_total_ht' => $line->line_total_ht,
                 'line_total_ttc' => $line->line_total_ttc,
                 'position' => $line->position,
+                'estimated_time_minutes' => $line->estimated_time_minutes,
             ])->toArray(),
         ];
     }

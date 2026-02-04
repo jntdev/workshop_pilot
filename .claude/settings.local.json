@@ -19,7 +19,11 @@
       "Bash(claude mcp add:*)",
       "Bash(claude mcp list:*)",
       "Bash(curl:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(APP_ENV=testing php artisan:*)",
+      "Bash(DB_DATABASE=workshop_pilot_test php artisan migrate:*)"
     ]
   }
 }

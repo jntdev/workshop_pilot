@@ -61,6 +61,7 @@ export interface QuoteLine {
     line_total_ht?: string;
     line_total_ttc?: string;
     position: number;
+    estimated_time_minutes?: number | null;
 }
 
 export interface QuoteTotals {
@@ -68,6 +69,7 @@ export interface QuoteTotals {
     total_tva: string;
     total_ttc: string;
     margin_total_ht: string;
+    total_estimated_time_minutes?: number | null;
 }
 
 export interface QuoteDetail {
@@ -84,6 +86,8 @@ export interface QuoteDetail {
     total_tva: string;
     total_ttc: string;
     margin_total_ht: string;
+    total_estimated_time_minutes: number | null;
+    actual_time_minutes: number | null;
     invoiced_at: string | null;
     created_at: string;
     is_invoice: boolean;

@@ -39,6 +39,14 @@ class QuoteLineFactory extends Factory
             'margin_rate' => $calculated['margin_rate'],
             'tva_rate' => $tvaRate,
             'position' => 0,
+            'estimated_time_minutes' => null,
         ];
+    }
+
+    public function withEstimatedTime(int $minutes = 60): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'estimated_time_minutes' => $minutes,
+        ]);
     }
 }

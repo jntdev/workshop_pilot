@@ -177,6 +177,8 @@ Route::middleware(['auth'])->group(function () {
                 'total_tva' => $quote->total_tva,
                 'total_ttc' => $quote->total_ttc,
                 'margin_total_ht' => $quote->margin_total_ht,
+                'total_estimated_time_minutes' => $quote->total_estimated_time_minutes,
+                'actual_time_minutes' => $quote->actual_time_minutes,
                 'invoiced_at' => $quote->invoiced_at?->toISOString(),
                 'created_at' => $quote->created_at->toISOString(),
                 'is_invoice' => $quote->isInvoice(),
@@ -198,6 +200,7 @@ Route::middleware(['auth'])->group(function () {
                     'line_total_ht' => $line->line_total_ht,
                     'line_total_ttc' => $line->line_total_ttc,
                     'position' => $line->position,
+                    'estimated_time_minutes' => $line->estimated_time_minutes,
                 ])->toArray(),
             ],
         ]);
@@ -233,6 +236,8 @@ Route::middleware(['auth'])->group(function () {
                 'total_tva' => $quote->total_tva,
                 'total_ttc' => $quote->total_ttc,
                 'margin_total_ht' => $quote->margin_total_ht,
+                'total_estimated_time_minutes' => $quote->total_estimated_time_minutes,
+                'actual_time_minutes' => $quote->actual_time_minutes,
                 'invoiced_at' => $quote->invoiced_at?->toISOString(),
                 'created_at' => $quote->created_at->toISOString(),
                 'is_invoice' => $quote->isInvoice(),
@@ -254,6 +259,7 @@ Route::middleware(['auth'])->group(function () {
                     'line_total_ht' => $line->line_total_ht,
                     'line_total_ttc' => $line->line_total_ttc,
                     'position' => $line->position,
+                    'estimated_time_minutes' => $line->estimated_time_minutes,
                 ])->toArray(),
             ],
         ]);

@@ -24,6 +24,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/quotes/{quote}', [QuoteController::class, 'update']);
     Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy']);
     Route::post('/quotes/{quote}/convert-to-invoice', [QuoteController::class, 'convertToInvoice']);
+    Route::patch('/quotes/{quote}/actual-time', [QuoteController::class, 'updateActualTime']);
     Route::post('/quotes/calculate-line', [QuoteController::class, 'calculateLine']);
     Route::post('/quotes/calculate-totals', [QuoteController::class, 'calculateTotals']);
 });

@@ -310,6 +310,58 @@
         font-weight: 600;
         color: $color-neutral-dark;
     }
+
+    &__time-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px dashed $color-border-light;
+    }
+
+    &__time-value {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    &__time-input {
+        width: 80px;
+        padding: 0.5rem;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        text-align: right;
+
+        &:focus {
+            outline: none;
+            border-color: $color-primary-blue;
+        }
+    }
+
+    &__time-unit {
+        color: $color-neutral-medium;
+        font-size: 0.9rem;
+    }
+
+    &__save-time-btn {
+        margin-left: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        background-color: $color-success-green;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: darken($color-success-green, 10%);
+        }
+
+        &:disabled {
+            background-color: $color-neutral-medium;
+            cursor: not-allowed;
+        }
+    }
 }
 
 // Client Search
@@ -486,6 +538,22 @@
         margin-top: 1.5rem;
         display: grid;
         gap: 1rem;
+    }
+
+    &__time-section {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: lighten($color-bg-light, 2%);
+        border-radius: 6px;
+        border-left: 3px solid $color-neutral-medium;
+    }
+
+    &__subsection-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: $color-neutral-medium;
+        margin-bottom: 1rem;
+        font-style: italic;
     }
 
     &__actions {

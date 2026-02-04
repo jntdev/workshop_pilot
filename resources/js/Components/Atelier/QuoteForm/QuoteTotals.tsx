@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { QuoteTotals as QuoteTotalsType } from '@/types';
 
 interface QuoteTotalsProps {
@@ -5,10 +6,15 @@ interface QuoteTotalsProps {
     discountType: 'amount' | 'percent';
     discountValue: string;
     validUntil: string;
+    totalEstimatedTimeMinutes: number | null;
+    actualTimeMinutes: number | null;
     onDiscountTypeChange: (type: 'amount' | 'percent') => void;
     onDiscountValueChange: (value: string) => void;
     onValidUntilChange: (date: string) => void;
+    onActualTimeChange: (minutes: number | null) => void;
+    onSaveActualTime?: () => Promise<void>;
     disabled?: boolean;
+    isInvoice?: boolean;
 }
 
 function formatCurrency(value: string | number): string {
@@ -19,16 +25,49 @@ function formatCurrency(value: string | number): string {
     }).format(num) + ' €';
 }
 
+function formatTime(minutes: number | null): string {
+    if (minutes === null || minutes === undefined) return '-';
+    const hours = minutes / 60;
+    return hours.toFixed(2) + ' h';
+}
+
 export default function QuoteTotals({
     totals,
     discountType,
     discountValue,
     validUntil,
+    totalEstimatedTimeMinutes,
+    actualTimeMinutes,
     onDiscountTypeChange,
     onDiscountValueChange,
     onValidUntilChange,
+    onActualTimeChange,
+    onSaveActualTime,
     disabled,
+    isInvoice,
 }: QuoteTotalsProps) {
+    const [isSavingTime, setIsSavingTime] = useState(false);
+
+    const handleActualTimeHoursChange = (hoursString: string) => {
+        if (hoursString === '' || hoursString === null) {
+            onActualTimeChange(null);
+        } else {
+            const hours = parseFloat(hoursString) || 0;
+            const minutes = Math.round(hours * 60);
+            onActualTimeChange(minutes);
+        }
+    };
+
+    const handleSaveActualTime = async () => {
+        if (!onSaveActualTime) return;
+        setIsSavingTime(true);
+        try {
+            await onSaveActualTime();
+        } finally {
+            setIsSavingTime(false);
+        }
+    };
+
     return (
         <div>
             <div className="quote-totals">
@@ -47,6 +86,45 @@ export default function QuoteTotals({
                 <div className="quote-totals__row">
                     <span className="quote-totals__label">Marge totale</span>
                     <span className="quote-totals__value">{formatCurrency(totals.margin_total_ht)}</span>
+                </div>
+
+                {/* Section temps - usage interne */}
+                <div className="quote-totals__time-section">
+                    <div className="quote-totals__row">
+                        <span className="quote-totals__label" title="Usage interne - non visible sur PDF">
+                            Temps estimé total
+                        </span>
+                        <span className="quote-totals__value">{formatTime(totalEstimatedTimeMinutes)}</span>
+                    </div>
+                    <div className="quote-totals__row">
+                        <span className="quote-totals__label" title="Usage interne - non visible sur PDF">
+                            Temps réel
+                        </span>
+                        <span className="quote-totals__value quote-totals__time-value">
+                            <input
+                                type="number"
+                                step="0.25"
+                                min="0"
+                                value={actualTimeMinutes !== null ? (actualTimeMinutes / 60).toFixed(2) : ''}
+                                onChange={(e) => handleActualTimeHoursChange(e.target.value)}
+                                className="quote-totals__time-input"
+                                placeholder="h"
+                                title="Temps réel en heures (éditable même sur facture)"
+                            />
+                            <span className="quote-totals__time-unit">h</span>
+                            {isInvoice && onSaveActualTime && (
+                                <button
+                                    type="button"
+                                    onClick={handleSaveActualTime}
+                                    disabled={isSavingTime}
+                                    className="quote-totals__save-time-btn"
+                                    title="Enregistrer le temps réel"
+                                >
+                                    {isSavingTime ? '...' : 'Enregistrer'}
+                                </button>
+                            )}
+                        </span>
+                    </div>
                 </div>
             </div>
 

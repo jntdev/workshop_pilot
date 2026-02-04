@@ -45,6 +45,7 @@ const emptyLine = (): QuoteLine => ({
     line_total_ht: '',
     line_total_ttc: '',
     position: 0,
+    estimated_time_minutes: null,
 });
 
 const emptyTotals = (): QuoteTotalsType => ({
@@ -98,11 +99,28 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         } : emptyTotals()
     );
 
+    const [actualTimeMinutes, setActualTimeMinutes] = useState<number | null>(
+        quote?.actual_time_minutes ?? null
+    );
+
     const [isSaving, setIsSaving] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
     const [showConvertModal, setShowConvertModal] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [message, setMessage] = useState<string | null>(null);
+
+    // Calculate total estimated time from lines (same logic as backend)
+    const totalEstimatedTimeMinutes = (() => {
+        let total = 0;
+        let hasAnyEstimated = false;
+        for (const line of lines) {
+            if (line.estimated_time_minutes !== null && line.estimated_time_minutes !== undefined) {
+                total += Number(line.estimated_time_minutes);
+                hasAnyEstimated = true;
+            }
+        }
+        return hasAnyEstimated ? total : null;
+    })();
 
     // Ref to track if this is the initial render (skip totals calculation on mount)
     const isInitialMount = useRef(true);
@@ -278,6 +296,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             discount_value: discountValue || null,
             lines: lines.map((l, i) => ({ ...l, position: i })),
             totals: totals,
+            actual_time_minutes: actualTimeMinutes,
         };
 
         try {
@@ -344,6 +363,29 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             setMessage('Une erreur est survenue lors de la conversion.');
         } finally {
             setIsConverting(false);
+        }
+    };
+
+    const handleSaveActualTime = async () => {
+        if (!quote) return;
+
+        try {
+            const response = await fetch('/api/quotes/' + quote.id + '/actual-time', {
+                method: 'PATCH',
+                headers: apiHeaders(),
+                credentials: 'same-origin',
+                body: JSON.stringify({ actual_time_minutes: actualTimeMinutes }),
+            });
+
+            if (response.ok) {
+                setMessage('Temps réel enregistré avec succès.');
+            } else {
+                const errorData = await response.json();
+                setMessage(errorData.message || 'Une erreur est survenue.');
+            }
+        } catch (error) {
+            console.error('Save actual time error:', error);
+            setMessage('Une erreur est survenue lors de la sauvegarde du temps réel.');
         }
     };
 
@@ -617,10 +659,15 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                             discountType={discountType}
                             discountValue={discountValue}
                             validUntil={validUntil}
+                            totalEstimatedTimeMinutes={totalEstimatedTimeMinutes}
+                            actualTimeMinutes={actualTimeMinutes}
                             onDiscountTypeChange={handleDiscountChange}
                             onDiscountValueChange={handleDiscountValueChange}
                             onValidUntilChange={setValidUntil}
+                            onActualTimeChange={setActualTimeMinutes}
+                            onSaveActualTime={isInvoice ? handleSaveActualTime : undefined}
                             disabled={isReadOnly}
+                            isInvoice={isInvoice}
                         />
                     </section>
 

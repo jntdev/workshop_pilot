@@ -15,6 +15,12 @@ function formatDate(dateString: string): string {
     return date.toLocaleDateString('fr-FR');
 }
 
+function formatTime(minutes: number | null): string {
+    if (minutes === null || minutes === undefined) return '-';
+    const hours = minutes / 60;
+    return hours.toFixed(2) + ' h';
+}
+
 export default function QuoteShow({ quote }: QuoteShowPageProps) {
     const title = `${quote.is_invoice ? 'Facture' : 'Devis'} ${quote.reference}`;
 
@@ -142,6 +148,18 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                         <div className="quote-show__totals-row">
                             <span className="quote-show__label">Marge totale</span>
                             <span className="quote-show__value">{formatCurrency(quote.margin_total_ht)}</span>
+                        </div>
+                    </div>
+
+                    <div className="quote-show__time-section">
+                        <h3 className="quote-show__subsection-title">Temps (interne)</h3>
+                        <div className="quote-show__info-row">
+                            <span className="quote-show__label">Temps estimé total</span>
+                            <span className="quote-show__value">{formatTime(quote.total_estimated_time_minutes)}</span>
+                        </div>
+                        <div className="quote-show__info-row">
+                            <span className="quote-show__label">Temps réel</span>
+                            <span className="quote-show__value">{formatTime(quote.actual_time_minutes)}</span>
                         </div>
                     </div>
 

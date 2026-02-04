@@ -26,6 +26,7 @@ class QuoteLine extends Model
         'line_total_ht',
         'line_total_ttc',
         'position',
+        'estimated_time_minutes',
     ];
 
     protected function casts(): array
@@ -42,6 +43,7 @@ class QuoteLine extends Model
             'line_margin_ht' => 'decimal:2',
             'line_total_ht' => 'decimal:2',
             'line_total_ttc' => 'decimal:2',
+            'estimated_time_minutes' => 'integer',
         ];
     }
 
