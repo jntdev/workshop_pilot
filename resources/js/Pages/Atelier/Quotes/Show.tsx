@@ -98,14 +98,14 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                                 <tr>
                                     <th>Intitulé</th>
                                     <th>Réf.</th>
-                                    <th>Qté</th>
                                     <th>PA HT</th>
-                                    <th>PV HT</th>
                                     <th>TVA %</th>
                                     <th>PV TTC</th>
-                                    <th>Total HT</th>
+                                    <th>Qté</th>
+                                    <th>Total PA</th>
                                     <th>Marge €</th>
                                     <th>Marge %</th>
+                                    <th>Total HT</th>
                                     <th>Total TTC</th>
                                 </tr>
                             </thead>
@@ -114,18 +114,18 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                                     <tr key={line.id}>
                                         <td>{line.title}</td>
                                         <td>{line.reference || '-'}</td>
-                                        <td>{Math.round(parseFloat(line.quantity))}</td>
                                         <td>{formatCurrency(line.purchase_price_ht)}</td>
-                                        <td>{formatCurrency(line.sale_price_ht)}</td>
                                         <td>{parseFloat(line.tva_rate).toFixed(0)} %</td>
                                         <td>{formatCurrency(line.sale_price_ttc)}</td>
-                                        <td>{line.line_total_ht ? formatCurrency(line.line_total_ht) : '-'}</td>
+                                        <td>{Math.round(parseFloat(line.quantity))}</td>
+                                        <td>{line.line_purchase_ht ? formatCurrency(line.line_purchase_ht) : '-'}</td>
                                         <td>{line.line_margin_ht ? formatCurrency(line.line_margin_ht) : '-'}</td>
                                         <td>
                                             {line.line_total_ht && line.line_margin_ht && parseFloat(line.line_total_ht) > 0
                                                 ? ((parseFloat(line.line_margin_ht) / parseFloat(line.line_total_ht)) * 100).toFixed(1)
                                                 : '-'} %
                                         </td>
+                                        <td>{line.line_total_ht ? formatCurrency(line.line_total_ht) : '-'}</td>
                                         <td>{line.line_total_ttc ? formatCurrency(line.line_total_ttc) : '-'}</td>
                                     </tr>
                                 ))}

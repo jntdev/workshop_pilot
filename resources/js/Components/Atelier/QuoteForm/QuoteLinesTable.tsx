@@ -50,7 +50,7 @@ export default function QuoteLinesTable({
         const line = lines[index];
         // Get current values directly from DOM inputs
         const purchasePriceHt = getInputValue(index, 'purchase_price_ht', line.purchase_price_ht);
-        const tvaRate = getInputValue(index, 'tva_rate', line.tva_rate);
+        const tvaRate = line.tva_rate; // TVA is now readonly, use state value
         const quantity = getInputValue(index, 'quantity', line.quantity);
 
         onLineCalculate(index, calculationType, value, {
@@ -80,11 +80,11 @@ export default function QuoteLinesTable({
             <div className="quote-lines-table__header">
                 <div className="quote-lines-table__cell">Intitulé</div>
                 <div className="quote-lines-table__cell">Réf.</div>
-                <div className="quote-lines-table__cell">Qté</div>
                 <div className="quote-lines-table__cell">PA HT</div>
-                <div className="quote-lines-table__cell">PV HT</div>
                 <div className="quote-lines-table__cell">TVA %</div>
                 <div className="quote-lines-table__cell">PV TTC</div>
+                <div className="quote-lines-table__cell">Qté</div>
+                <div className="quote-lines-table__cell">Total PA</div>
                 <div className="quote-lines-table__cell">Marge €</div>
                 <div className="quote-lines-table__cell">Marge %</div>
                 <div className="quote-lines-table__cell">Total HT</div>
@@ -95,6 +95,7 @@ export default function QuoteLinesTable({
 
             {lines.map((line, index) => (
                 <div className="quote-lines-table__row" key={index}>
+                    {/* Intitulé */}
                     <div className="quote-lines-table__cell">
                         <Input
                             type="text"
@@ -107,6 +108,7 @@ export default function QuoteLinesTable({
                             disabled={disabled}
                         />
                     </div>
+                    {/* Réf. */}
                     <div className="quote-lines-table__cell">
                         <Input
                             type="text"
@@ -118,20 +120,7 @@ export default function QuoteLinesTable({
                             disabled={disabled}
                         />
                     </div>
-                    <div className="quote-lines-table__cell">
-                        <Input
-                            ref={(el) => setInputRef(index, 'quantity', el)}
-                            type="number"
-                            step="1"
-                            value={Math.round(parseFloat(line.quantity) || 0)}
-                            onChange={(e) => handleFieldChange(index, 'quantity', e.target.value)}
-                            onBlur={() => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
-                            onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input"
-                            required
-                            disabled={disabled}
-                        />
-                    </div>
+                    {/* PA HT */}
                     <div className="quote-lines-table__cell">
                         <Input
                             ref={(el) => setInputRef(index, 'purchase_price_ht', el)}
@@ -139,38 +128,17 @@ export default function QuoteLinesTable({
                             step="0.01"
                             value={line.purchase_price_ht}
                             onChange={(e) => handleFieldChange(index, 'purchase_price_ht', e.target.value)}
-                            onBlur={() => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
+                            onBlur={() => handleCalculation(index, 'sale_price_ttc', line.sale_price_ttc)}
                             onKeyDown={handleKeyDown}
                             className="quote-lines-table__input"
                             disabled={disabled}
                         />
                     </div>
-                    <div className="quote-lines-table__cell">
-                        <Input
-                            type="number"
-                            step="0.01"
-                            value={line.sale_price_ht}
-                            onChange={(e) => handleFieldChange(index, 'sale_price_ht', e.target.value)}
-                            onBlur={(e) => handleCalculation(index, 'sale_price_ht', e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input"
-                            required
-                            disabled={disabled}
-                        />
+                    {/* TVA % (readonly) */}
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                        {Math.round(parseFloat(line.tva_rate) || 0)} %
                     </div>
-                    <div className="quote-lines-table__cell">
-                        <Input
-                            ref={(el) => setInputRef(index, 'tva_rate', el)}
-                            type="number"
-                            step="1"
-                            value={Math.round(parseFloat(line.tva_rate) || 0)}
-                            onChange={(e) => handleFieldChange(index, 'tva_rate', e.target.value)}
-                            onBlur={() => handleCalculation(index, 'sale_price_ht', line.sale_price_ht)}
-                            onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input quote-lines-table__input--narrow"
-                            disabled={disabled}
-                        />
-                    </div>
+                    {/* PV TTC */}
                     <div className="quote-lines-table__cell">
                         <Input
                             type="number"
@@ -183,20 +151,44 @@ export default function QuoteLinesTable({
                             disabled={disabled}
                         />
                     </div>
+                    {/* Qté */}
+                    <div className="quote-lines-table__cell">
+                        <Input
+                            ref={(el) => setInputRef(index, 'quantity', el)}
+                            type="number"
+                            step="1"
+                            value={Math.round(parseFloat(line.quantity) || 0)}
+                            onChange={(e) => handleFieldChange(index, 'quantity', e.target.value)}
+                            onBlur={() => handleCalculation(index, 'sale_price_ttc', line.sale_price_ttc)}
+                            onKeyDown={handleKeyDown}
+                            className="quote-lines-table__input"
+                            required
+                            disabled={disabled}
+                        />
+                    </div>
+                    {/* Total PA HT (readonly) */}
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                        {line.line_purchase_ht ? parseFloat(line.line_purchase_ht).toFixed(2) : '-'} €
+                    </div>
+                    {/* Marge € (readonly) */}
                     <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
                         {line.line_margin_ht ? parseFloat(line.line_margin_ht).toFixed(2) : '-'} €
                     </div>
+                    {/* Marge % (readonly) */}
                     <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
                         {line.line_total_ht && line.line_margin_ht && parseFloat(line.line_total_ht) > 0
                             ? ((parseFloat(line.line_margin_ht) / parseFloat(line.line_total_ht)) * 100).toFixed(1)
                             : '-'} %
                     </div>
+                    {/* Total HT (readonly) */}
                     <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
                         {line.line_total_ht ? parseFloat(line.line_total_ht).toFixed(2) : '-'} €
                     </div>
+                    {/* Total TTC (readonly) */}
                     <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
                         {line.line_total_ttc ? parseFloat(line.line_total_ttc).toFixed(2) : '-'} €
                     </div>
+                    {/* Temps */}
                     <div className="quote-lines-table__cell">
                         <Input
                             type="number"
@@ -215,6 +207,7 @@ export default function QuoteLinesTable({
                             disabled={disabled}
                         />
                     </div>
+                    {/* Supprimer */}
                     <div className="quote-lines-table__cell">
                         <button
                             type="button"
