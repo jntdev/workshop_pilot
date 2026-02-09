@@ -138,6 +138,36 @@ export interface QuoteFormPageProps extends PageProps {
     quote?: QuoteDetail;
 }
 
+// Location vélos
+export type BikeCategory = 'VAE' | 'VTC';
+export type BikeSize = 'S' | 'M' | 'L' | 'XL';
+export type BikeStatus = 'OK' | 'HS';
+
+export interface BikeDefinition {
+    id: string;
+    category: BikeCategory;
+    size: BikeSize;
+    label: string;
+    status: BikeStatus;
+    notes: string | null;
+}
+
+export type AvailabilityStatus = 'available' | 'reserved' | 'pre_reserved' | 'maintenance';
+
+export interface DayInfo {
+    date: string; // Format ISO YYYY-MM-DD
+    dayOfWeek: number; // 0 = dimanche, 6 = samedi
+    dayNumber: number;
+    monthShort: string;
+    isToday: boolean;
+    isWeekend: boolean;
+}
+
+export interface LocationPageProps extends PageProps {
+    bikes: BikeDefinition[];
+    year: number;
+}
+
 export interface LineCalculationResult {
     sale_price_ht: string;
     sale_price_ttc: string;

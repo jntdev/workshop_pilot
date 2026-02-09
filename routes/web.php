@@ -290,7 +290,10 @@ Route::middleware(['auth'])->group(function () {
     })->name('atelier.quotes.destroy');
 
     Route::get('/location', function () {
-        return Inertia::render('Location/Index');
+        return Inertia::render('Location/Index', [
+            'bikes' => config('bikes.fleet'),
+            'year' => now()->year,
+        ]);
     })->name('location.index');
 
     Route::get('/counter', function () {

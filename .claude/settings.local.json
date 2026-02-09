@@ -29,7 +29,11 @@
       "Bash(vendorbinpint:*)",
       "Bash(dir:*)",
       "Bash(magick convert:*)",
-      "Bash(php -d memory_limit=512M -r:*)"
+      "Bash(php -d memory_limit=512M -r:*)",
+      "Bash(git checkout:*)",
+      "Bash(/usr/local/bin/npm install @tanstack/react-table @tanstack/react-virtual)",
+      "Bash(/opt/homebrew/bin/npm install @tanstack/react-table @tanstack/react-virtual)",
+      "Bash(git rebase:*)"
     ]
   }
 }
