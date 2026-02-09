@@ -83,11 +83,11 @@ export default function QuoteLinesTable({
                 <div className="quote-lines-table__cell">Qté</div>
                 <div className="quote-lines-table__cell">PA HT</div>
                 <div className="quote-lines-table__cell">PV HT</div>
-                <div className="quote-lines-table__cell">Marge €</div>
-                <div className="quote-lines-table__cell">Marge %</div>
                 <div className="quote-lines-table__cell">TVA %</div>
                 <div className="quote-lines-table__cell">PV TTC</div>
                 <div className="quote-lines-table__cell">Total HT</div>
+                <div className="quote-lines-table__cell">Marge €</div>
+                <div className="quote-lines-table__cell">Marge %</div>
                 <div className="quote-lines-table__cell">Total TTC</div>
                 <div className="quote-lines-table__cell" title="Temps estimé (heures)">Temps</div>
                 <div className="quote-lines-table__cell"></div>
@@ -160,30 +160,6 @@ export default function QuoteLinesTable({
                     </div>
                     <div className="quote-lines-table__cell">
                         <Input
-                            type="number"
-                            step="0.01"
-                            value={line.margin_amount_ht}
-                            onChange={(e) => handleFieldChange(index, 'margin_amount_ht', e.target.value)}
-                            onBlur={(e) => handleCalculation(index, 'margin_amount', e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input"
-                            disabled={disabled}
-                        />
-                    </div>
-                    <div className="quote-lines-table__cell">
-                        <Input
-                            type="number"
-                            step="0.01"
-                            value={parseFloat(line.margin_rate || '0').toFixed(2)}
-                            onChange={(e) => handleFieldChange(index, 'margin_rate', e.target.value)}
-                            onBlur={(e) => handleCalculation(index, 'margin_rate', e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input"
-                            disabled={disabled}
-                        />
-                    </div>
-                    <div className="quote-lines-table__cell">
-                        <Input
                             ref={(el) => setInputRef(index, 'tva_rate', el)}
                             type="number"
                             step="1"
@@ -209,6 +185,14 @@ export default function QuoteLinesTable({
                     </div>
                     <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
                         {line.line_total_ht ? parseFloat(line.line_total_ht).toFixed(2) : '-'} €
+                    </div>
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                        {line.line_margin_ht ? parseFloat(line.line_margin_ht).toFixed(2) : '-'} €
+                    </div>
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                        {line.line_total_ht && line.line_margin_ht && parseFloat(line.line_total_ht) > 0
+                            ? ((parseFloat(line.line_margin_ht) / parseFloat(line.line_total_ht)) * 100).toFixed(1)
+                            : '-'} %
                     </div>
                     <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
                         {line.line_total_ttc ? parseFloat(line.line_total_ttc).toFixed(2) : '-'} €
