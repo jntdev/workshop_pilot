@@ -8,6 +8,8 @@ interface DashboardMetricsProps {
     availableYears: number[];
     onYearChange: (year: number) => void;
     onMonthChange: (month: number) => void;
+    onRebuildStats?: () => void;
+    isRebuilding?: boolean;
 }
 
 const MONTHS = [
@@ -73,6 +75,8 @@ export default function DashboardMetrics({
     availableYears,
     onYearChange,
     onMonthChange,
+    onRebuildStats,
+    isRebuilding,
 }: DashboardMetricsProps) {
     const monthName = MONTHS[selectedMonth - 1];
     const period = `${monthName} ${selectedYear}`;
@@ -131,6 +135,19 @@ export default function DashboardMetrics({
                         ))}
                     </select>
                 </div>
+
+                {onRebuildStats && (
+                    <div className="atelier-dashboard__filter-group atelier-dashboard__filter-group--action">
+                        <button
+                            type="button"
+                            onClick={onRebuildStats}
+                            disabled={isRebuilding}
+                            className="atelier-dashboard__btn-rebuild"
+                        >
+                            {isRebuilding ? 'Recalcul...' : 'Recalculer les stats'}
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className="atelier-dashboard__metrics">

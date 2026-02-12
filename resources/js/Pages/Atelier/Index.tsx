@@ -22,6 +22,7 @@ export default function AtelierIndex({
     const [currentComparisonStats, setCurrentComparisonStats] = useState(comparisonStats);
     const [invoices, setInvoices] = useState<Quote[]>(initialInvoices);
     const [invoicesLoaded, setInvoicesLoaded] = useState(false);
+    const [isRebuilding, setIsRebuilding] = useState(false);
 
     const handleYearChange = useCallback(async (year: number) => {
         setCurrentYear(year);
@@ -68,6 +69,33 @@ export default function AtelierIndex({
         }
     }, [currentYear, currentMonth, invoicesLoaded]);
 
+    const handleRebuildStats = useCallback(async () => {
+        setIsRebuilding(true);
+        try {
+            const response = await fetch('/api/atelier/stats/rebuild', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+            if (response.ok) {
+                // Reload stats after rebuild
+                const statsResponse = await fetch(`/api/atelier/stats?year=${currentYear}&month=${currentMonth}`);
+                const data = await statsResponse.json();
+                setCurrentStats(data.stats);
+                setCurrentComparisonStats(data.comparisonStats);
+                // Reset invoices to force reload
+                setInvoicesLoaded(false);
+                setInvoices([]);
+            }
+        } catch (error) {
+            console.error('Failed to rebuild stats:', error);
+        } finally {
+            setIsRebuilding(false);
+        }
+    }, [currentYear, currentMonth]);
+
     return (
         <MainLayout>
             <Head title="Atelier" />
@@ -86,6 +114,8 @@ export default function AtelierIndex({
                         availableYears={availableYears}
                         onYearChange={handleYearChange}
                         onMonthChange={handleMonthChange}
+                        onRebuildStats={handleRebuildStats}
+                        isRebuilding={isRebuilding}
                     />
                 </div>
 

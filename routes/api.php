@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['web', 'auth'])->group(function () {
     // Atelier API routes
     Route::get('/atelier/stats', [AtelierController::class, 'stats']);
+    Route::post('/atelier/stats/rebuild', [AtelierController::class, 'rebuildStats']);
     Route::get('/atelier/invoices', [AtelierController::class, 'invoices']);
     Route::get('/atelier/clients/search', [AtelierController::class, 'searchClients']);
 
