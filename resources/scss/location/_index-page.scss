@@ -3,8 +3,8 @@
 @use '../base/rules' as *;
 
 // Couleurs statut vélos
-$color-status-ok: #22c55e;  // Vert
-$color-status-hs: #9ca3af;  // Gris foncé pour HS
+$color-status-ok: #22c55e; // Vert
+$color-status-hs: #9ca3af; // Gris foncé pour HS
 
 // Highlight
 $highlight-brightness: 0.92;
@@ -13,21 +13,28 @@ $highlight-brightness: 0.92;
 $category-gap: 120px;
 
 // Couleurs catégories vélos (Les Vélos d'Armor)
-$color-category-vae: #FFD233;  // Jaune VAE
-$color-category-vtc: #005D66;  // Bleu-vert VTC
+$color-category-vae: #FFD233; // Jaune VAE
+$color-category-vtc: #005D66; // Bleu-vert VTC
 
 // Page Location - Disponibilités vélos
 
+// Bloquer le scroll global quand le calendrier location est présent
+body:has(#location_calendar) {
+  overflow: hidden;
+}
+
 .location {
   display: flex;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 84px);
+  max-height: calc(100vh - 84px);
   overflow: hidden;
-  width: 99vw;
+  width: 100vw;
   box-sizing: border-box;
 
   @media (max-width: 1279px) {
     flex-direction: column;
     height: auto;
+    max-height: none;
     overflow: visible;
     width: 100%;
   }
@@ -39,22 +46,40 @@ $color-category-vtc: #005D66;  // Bleu-vert VTC
     overflow: hidden;
     padding: 1rem;
     box-sizing: border-box;
+    max-height: calc(100vh - 84px);
+
+    @media (min-width: 1800px) {
+      flex: 1;
+      width: auto;
+    }
 
     @media (max-width: 1279px) {
       width: 100%;
+      max-height: none;
     }
   }
 
   &__form-panel {
     width: 33vw;
+    max-width: 600px;
+    height: calc(100vh - 84px);
+    max-height: calc(100vh - 84px);
     background: $color-bg-light;
     border-left: 1px solid $color-border-light;
     padding: 1rem;
     overflow-y: auto;
     box-sizing: border-box;
+    flex-shrink: 0;
+
+    @media (min-width: 1800px) {
+      width: 600px;
+    }
 
     @media (max-width: 1279px) {
       width: 100%;
+      max-width: none;
+      height: auto;
+      max-height: none;
       min-height: 200px;
       border-left: none;
       border-top: 1px solid $color-border-light;

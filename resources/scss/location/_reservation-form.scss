@@ -1,0 +1,513 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+
+// Formulaire de réservation - Panneau droit Location
+
+.location {
+  &__form-header {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $color-border-light;
+    margin-bottom: 1rem;
+  }
+
+  &__form-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $color-neutral-dark;
+    margin: 0;
+  }
+
+  &__form-content {
+    height: calc(100% - 60px);
+    overflow-y: auto;
+  }
+}
+
+.reservation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  // Messages flash
+  &__message {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+
+    &--success {
+      background: rgba($color-status-ok, 0.1);
+      color: darken($color-status-ok, 15%);
+      border: 1px solid rgba($color-status-ok, 0.3);
+    }
+
+    &--error {
+      background: rgba($color-status-error, 0.1);
+      color: darken($color-status-error, 10%);
+      border: 1px solid rgba($color-status-error, 0.3);
+    }
+  }
+
+  // Récap vélos sélectionnés
+  &__recap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba($color-primary-blue, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba($color-primary-blue, 0.2);
+  }
+
+  &__recap-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    background: $color-primary-blue;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 4px;
+  }
+
+  // Sections
+  &__section {
+    padding: 1rem;
+    background: $color-bg-white;
+    border: 1px solid $color-border-light;
+    border-radius: 8px;
+  }
+
+  &__section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $color-neutral-dark;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid $color-border-light;
+  }
+
+  // Client sélectionné
+  &__client-selected {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba($color-status-ok, 0.05);
+    border: 1px solid rgba($color-status-ok, 0.2);
+    border-radius: 6px;
+  }
+
+  &__client-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    strong {
+      font-size: 0.875rem;
+      color: $color-neutral-dark;
+    }
+
+    span {
+      font-size: 0.75rem;
+      color: $color-neutral-medium;
+    }
+  }
+
+  &__client-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    background: $color-category-vae;
+    color: $color-neutral-dark;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 4px;
+    width: fit-content;
+  }
+
+  // Divider
+  &__divider {
+    display: flex;
+    align-items: center;
+    margin: 1rem 0;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: $color-border-light;
+    }
+
+    span {
+      padding: 0 0.75rem;
+      font-size: 0.75rem;
+      color: $color-neutral-medium;
+    }
+  }
+
+  // Nouveau client
+  &__new-client {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: $color-bg-light;
+    border-radius: 6px;
+  }
+
+  // Rows et fields
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+
+    @media (max-width: 1400px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: $color-neutral-dark;
+    }
+
+    input,
+    textarea,
+    select {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid $color-border-light;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      color: $color-neutral-dark;
+      background: $color-bg-white;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+      &:focus {
+        outline: none;
+        border-color: $color-primary-blue;
+        box-shadow: 0 0 0 2px rgba($color-primary-blue, 0.1);
+      }
+
+      &::placeholder {
+        color: $color-neutral-light;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+  }
+
+  &__input--error {
+    border-color: $color-status-error !important;
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba($color-status-error, 0.1) !important;
+    }
+  }
+
+  &__error {
+    font-size: 0.75rem;
+    color: $color-status-error;
+    margin-top: 0.25rem;
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: $color-neutral-medium;
+    margin-top: 0.25rem;
+  }
+
+  &__input-with-suffix {
+    display: flex;
+    align-items: stretch;
+
+    input {
+      flex: 1;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      border-right: none;
+    }
+  }
+
+  &__suffix {
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
+    background: $color-bg-light;
+    border: 1px solid $color-border-light;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.875rem;
+    color: $color-neutral-medium;
+  }
+
+  // Checkboxes
+  &__checkbox-group {
+    margin: 0.5rem 0;
+  }
+
+  &__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: $color-primary-blue;
+    }
+
+    span {
+      font-size: 0.875rem;
+      color: $color-neutral-dark;
+    }
+  }
+
+  &__nested {
+    margin-left: 1.5rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid $color-border-light;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  // Tags
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 4px;
+    width: fit-content;
+
+    &--neutral {
+      background: $color-bg-light;
+      color: $color-neutral-medium;
+    }
+
+    &--success {
+      background: rgba($color-status-ok, 0.1);
+      color: darken($color-status-ok, 15%);
+    }
+  }
+
+  // Vélos
+  &__help {
+    padding: 0.75rem;
+    background: rgba($color-primary-blue, 0.05);
+    border: 1px dashed rgba($color-primary-blue, 0.3);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: $color-neutral-medium;
+    text-align: center;
+  }
+
+  &__bike-category {
+    margin-bottom: 1rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__bike-category-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $color-neutral-dark;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__bike-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+  }
+
+  &__bike-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    background: $color-bg-white;
+    border: 1px solid $color-border-light;
+    border-radius: 6px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+
+    &--selected {
+      border-color: $color-primary-blue;
+      background: rgba($color-primary-blue, 0.05);
+    }
+  }
+
+  &__bike-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $color-neutral-dark;
+    margin-bottom: 0.25rem;
+  }
+
+  &__bike-stock {
+    font-size: 0.625rem;
+    color: $color-neutral-medium;
+    margin-bottom: 0.5rem;
+  }
+
+  &__bike-quantity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    button {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid $color-border-light;
+      border-radius: 4px;
+      background: $color-bg-white;
+      color: $color-neutral-dark;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+
+      &:hover:not(:disabled) {
+        background: $color-bg-light;
+        border-color: $color-primary-blue;
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+
+    span {
+      min-width: 20px;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: $color-neutral-dark;
+    }
+  }
+
+  // Summary
+  &__summary {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: $color-bg-light;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: $color-neutral-dark;
+
+    &--total {
+      padding-top: 0.5rem;
+      border-top: 1px solid $color-border-light;
+      font-weight: 600;
+    }
+  }
+
+  // Buttons
+  &__btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease;
+    border: none;
+
+    &--primary {
+      background: $color-primary-blue;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: darken($color-primary-blue, 5%);
+      }
+    }
+
+    &--secondary {
+      background: $color-bg-light;
+      color: $color-neutral-dark;
+      border: 1px solid $color-border-light;
+
+      &:hover:not(:disabled) {
+        background: darken($color-bg-light, 3%);
+      }
+    }
+
+    &--text {
+      background: transparent;
+      color: $color-neutral-medium;
+
+      &:hover:not(:disabled) {
+        color: $color-neutral-dark;
+      }
+    }
+
+    &--large {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: $color-primary-blue;
+    font-size: 0.75rem;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover {
+      color: darken($color-primary-blue, 10%);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  // Footer
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid $color-border-light;
+  }
+}

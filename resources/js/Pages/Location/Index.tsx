@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import MainLayout from '@/Layouts/MainLayout';
+import ReservationForm from '@/Components/Location/ReservationForm';
 import type { DayInfo, LocationPageProps } from '@/types';
 import { generateYearDays, formatDayHeader } from '@/utils/calendar';
 
@@ -17,7 +18,7 @@ interface RowData extends DayInfo {
 
 const columnHelper = createColumnHelper<RowData>();
 
-export default function LocationIndex({ bikes, year }: LocationPageProps) {
+export default function LocationIndex({ bikes, bikeTypes, year }: LocationPageProps) {
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     const handleColumnHover = useCallback((bikeId: string | null) => {
@@ -113,7 +114,7 @@ export default function LocationIndex({ bikes, year }: LocationPageProps) {
                         onMouseLeave={() => handleColumnHover(null)}
                     >
                         <span className="location-table__header-category">{bike.category}</span>
-                        <span className="location-table__header-size">{bike.size}</span>
+                        <span className="location-table__header-size">{bike.size}{bike.frame_type}</span>
                     </div>
                 ),
                 cell: (info) => {
@@ -202,7 +203,7 @@ export default function LocationIndex({ bikes, year }: LocationPageProps) {
         <MainLayout>
             <Head title="Location" />
 
-            <div className="location">
+            <div id="location_calendar" className="location">
                 <div className="location__table-panel">
                     <div className="location__header">
                         <h1 className="location__title">Disponibilités {year}</h1>
@@ -288,9 +289,11 @@ export default function LocationIndex({ bikes, year }: LocationPageProps) {
                 </div>
 
                 <div className="location__form-panel">
-                    <div className="location__form-placeholder">
-                        <p>Panneau de réservation</p>
-                        <p className="location__form-hint">Cliquez sur une cellule pour sélectionner</p>
+                    <div className="location__form-header">
+                        <h2 className="location__form-title">Nouvelle réservation</h2>
+                    </div>
+                    <div className="location__form-content">
+                        <ReservationForm bikeTypes={bikeTypes} />
                     </div>
                 </div>
             </div>

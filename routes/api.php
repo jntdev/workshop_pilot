@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AtelierController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\QuoteController;
+use App\Http\Controllers\Api\ReservationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['web', 'auth'])->group(function () {
@@ -29,4 +30,11 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);
     Route::post('/quotes/calculate-line', [QuoteController::class, 'calculateLine']);
     Route::post('/quotes/calculate-totals', [QuoteController::class, 'calculateTotals']);
+
+    // Reservations API routes
+    Route::get('/reservations', [ReservationController::class, 'index']);
+    Route::get('/reservations/{id}', [ReservationController::class, 'show']);
+    Route::post('/reservations', [ReservationController::class, 'store']);
+    Route::put('/reservations/{id}', [ReservationController::class, 'update']);
+    Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
 });

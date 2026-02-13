@@ -292,6 +292,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/location', function () {
         return Inertia::render('Location/Index', [
             'bikes' => config('bikes.fleet'),
+            'bikeTypes' => \App\Models\BikeType::orderBy('category')
+                ->orderByRaw("FIELD(size, 'S', 'M', 'L', 'XL')")
+                ->orderBy('frame_type')
+                ->get(),
             'year' => now()->year,
         ]);
     })->name('location.index');

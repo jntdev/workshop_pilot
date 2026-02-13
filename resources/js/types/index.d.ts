@@ -141,12 +141,14 @@ export interface QuoteFormPageProps extends PageProps {
 // Location vélos
 export type BikeCategory = 'VAE' | 'VTC';
 export type BikeSize = 'S' | 'M' | 'L' | 'XL';
+export type BikeFrameType = 'b' | 'h'; // b = cadre bas, h = cadre haut
 export type BikeStatus = 'OK' | 'HS';
 
 export interface BikeDefinition {
     id: string;
     category: BikeCategory;
     size: BikeSize;
+    frame_type: BikeFrameType;
     label: string;
     status: BikeStatus;
     notes: string | null;
@@ -165,6 +167,7 @@ export interface DayInfo {
 
 export interface LocationPageProps extends PageProps {
     bikes: BikeDefinition[];
+    bikeTypes: BikeType[];
     year: number;
 }
 
@@ -177,6 +180,77 @@ export interface LineCalculationResult {
     line_margin_ht?: string;
     line_total_ht?: string;
     line_total_ttc?: string;
+}
+
+// Réservations location
+export type ReservationStatut = 'reserve' | 'en_attente_acompte' | 'en_cours' | 'paye' | 'annule';
+
+export interface BikeType {
+    id: string; // ex: VAE_sb
+    category: BikeCategory;
+    size: BikeSize;
+    frame_type: BikeFrameType;
+    label: string;
+    stock: number;
+}
+
+export interface ReservationItem {
+    id?: number;
+    bike_type_id: string;
+    bike_type?: BikeType;
+    quantite: number;
+}
+
+export interface Reservation {
+    id: number;
+    client_id: number;
+    client?: Client;
+    date_contact: string;
+    date_reservation: string;
+    date_retour: string;
+    livraison_necessaire: boolean;
+    adresse_livraison: string | null;
+    contact_livraison: string | null;
+    creneau_livraison: string | null;
+    recuperation_necessaire: boolean;
+    adresse_recuperation: string | null;
+    contact_recuperation: string | null;
+    creneau_recuperation: string | null;
+    prix_total_ttc: string;
+    acompte_demande: boolean;
+    acompte_montant: string | null;
+    acompte_paye_le: string | null;
+    paiement_final_le: string | null;
+    statut: ReservationStatut;
+    raison_annulation: string | null;
+    commentaires: string | null;
+    items: ReservationItem[];
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ReservationFormData {
+    client_id: number | null;
+    date_contact: string;
+    date_reservation: string;
+    date_retour: string;
+    livraison_necessaire: boolean;
+    adresse_livraison: string;
+    contact_livraison: string;
+    creneau_livraison: string;
+    recuperation_necessaire: boolean;
+    adresse_recuperation: string;
+    contact_recuperation: string;
+    creneau_recuperation: string;
+    prix_total_ttc: string;
+    acompte_demande: boolean;
+    acompte_montant: string;
+    acompte_paye_le: string;
+    paiement_final_le: string;
+    statut: ReservationStatut;
+    raison_annulation: string;
+    commentaires: string;
+    items: ReservationItem[];
 }
 
 declare module '@inertiajs/react' {
