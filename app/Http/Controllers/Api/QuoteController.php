@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\QuoteStatus;
 use App\Http\Controllers\Controller;
+use App\Mail\QuoteMail;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteLine;
 use App\Services\Quotes\QuoteCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class QuoteController extends Controller
 {
@@ -126,6 +128,30 @@ class QuoteController extends Controller
         $quote->load('client', 'lines');
 
         return response()->json($this->formatQuote($quote));
+    }
+
+    public function sendEmail(Request $request, Quote $quote): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $quote->load('client', 'lines');
+
+        try {
+            Mail::to($validated['email'])->send(new QuoteMail($quote));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email envoyé avec succès',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'envoi de l\'email',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function calculateLine(Request $request): JsonResponse

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { QuoteShowPageProps } from '@/types';
@@ -23,6 +24,47 @@ function formatTime(minutes: number | null): string {
 
 export default function QuoteShow({ quote }: QuoteShowPageProps) {
     const title = `${quote.is_invoice ? 'Facture' : 'Devis'} ${quote.reference}`;
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailTo, setEmailTo] = useState(quote.client.email || '');
+    const [isSending, setIsSending] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
+    const [emailError, setEmailError] = useState('');
+
+    const handleSendEmail = async () => {
+        if (!emailTo) {
+            setEmailError('Veuillez saisir une adresse email');
+            return;
+        }
+
+        setIsSending(true);
+        setEmailError('');
+
+        try {
+            const response = await fetch(`/api/quotes/${quote.id}/send-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ email: emailTo }),
+            });
+
+            if (response.ok) {
+                setEmailSent(true);
+                setTimeout(() => {
+                    setShowEmailModal(false);
+                    setEmailSent(false);
+                }, 2000);
+            } else {
+                const data = await response.json();
+                setEmailError(data.message || 'Erreur lors de l\'envoi');
+            }
+        } catch (error) {
+            setEmailError('Erreur de connexion');
+        } finally {
+            setIsSending(false);
+        }
+    };
 
     return (
         <MainLayout>
@@ -217,6 +259,13 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                     >
                         Télécharger PDF
                     </a>
+                    <button
+                        type="button"
+                        onClick={() => setShowEmailModal(true)}
+                        className="quote-show__btn quote-show__btn--secondary"
+                    >
+                        Envoyer par email
+                    </button>
                     {quote.can_edit && (
                         <Link
                             href={'/atelier/devis/' + quote.id + '/modifier'}
@@ -226,6 +275,72 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                         </Link>
                     )}
                 </div>
+
+                {showEmailModal && (
+                    <div className="modal-overlay" onClick={() => !isSending && setShowEmailModal(false)}>
+                        <div className="modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal__header">
+                                <h3 className="modal__title">
+                                    Envoyer {quote.is_invoice ? 'la facture' : 'le devis'} par email
+                                </h3>
+                                <button
+                                    type="button"
+                                    className="modal__close"
+                                    onClick={() => !isSending && setShowEmailModal(false)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="modal__body">
+                                {emailSent ? (
+                                    <div className="modal__success">
+                                        Email envoyé avec succès !
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="modal__field">
+                                            <label htmlFor="email-to" className="modal__label">
+                                                Adresse email du destinataire
+                                            </label>
+                                            <input
+                                                id="email-to"
+                                                type="email"
+                                                value={emailTo}
+                                                onChange={(e) => setEmailTo(e.target.value)}
+                                                className="modal__input"
+                                                placeholder="email@exemple.com"
+                                                disabled={isSending}
+                                            />
+                                        </div>
+                                        {emailError && (
+                                            <div className="modal__error">{emailError}</div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                            {!emailSent && (
+                                <div className="modal__footer">
+                                    <button
+                                        type="button"
+                                        className="quote-show__btn quote-show__btn--secondary"
+                                        onClick={() => setShowEmailModal(false)}
+                                        disabled={isSending}
+                                    >
+                                        Annuler
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="quote-show__btn quote-show__btn--primary"
+                                        onClick={handleSendEmail}
+                                        disabled={isSending}
+                                    >
+                                        {isSending ? 'Envoi...' : 'Envoyer'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </MainLayout>
     );

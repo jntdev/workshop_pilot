@@ -107,6 +107,11 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     const [isSaving, setIsSaving] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
     const [showConvertModal, setShowConvertModal] = useState(false);
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailTo, setEmailTo] = useState(quote?.client?.email ?? '');
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
+    const [emailError, setEmailError] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [message, setMessage] = useState<string | null>(null);
 
@@ -365,6 +370,41 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             setMessage('Une erreur est survenue lors de la conversion.');
         } finally {
             setIsConverting(false);
+        }
+    };
+
+    const handleSendEmail = async () => {
+        if (!quote) return;
+        if (!emailTo) {
+            setEmailError('Veuillez saisir une adresse email');
+            return;
+        }
+
+        setIsSendingEmail(true);
+        setEmailError('');
+
+        try {
+            const response = await fetch('/api/quotes/' + quote.id + '/send-email', {
+                method: 'POST',
+                headers: apiHeaders(),
+                credentials: 'same-origin',
+                body: JSON.stringify({ email: emailTo }),
+            });
+
+            if (response.ok) {
+                setEmailSent(true);
+                setTimeout(() => {
+                    setShowEmailModal(false);
+                    setEmailSent(false);
+                }, 2000);
+            } else {
+                const data = await response.json();
+                setEmailError(data.message || 'Erreur lors de l\'envoi');
+            }
+        } catch (error) {
+            setEmailError('Erreur de connexion');
+        } finally {
+            setIsSendingEmail(false);
         }
     };
 
@@ -693,16 +733,25 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                         <Link href="/atelier" className="quote-form__btn quote-form__btn--secondary">
                             Retour
                         </Link>
+                        {isEdit && (
+                            <>
+                                <a
+                                    href={'/atelier/devis/' + quote.id + '/pdf'}
+                                    className="quote-form__btn quote-form__btn--secondary"
+                                >
+                                    Télécharger PDF
+                                </a>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEmailModal(true)}
+                                    className="quote-form__btn quote-form__btn--secondary"
+                                >
+                                    Envoyer par email
+                                </button>
+                            </>
+                        )}
                         {!isReadOnly && (
                             <>
-                                {isEdit && (
-                                    <a
-                                        href={'/atelier/devis/' + quote.id + '/pdf'}
-                                        className="quote-form__btn quote-form__btn--secondary"
-                                    >
-                                        Télécharger PDF
-                                    </a>
-                                )}
                                 <button
                                     type="button"
                                     onClick={() => handleSave(true)}
@@ -738,6 +787,72 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                     onConfirm={handleConvertToInvoice}
                     isLoading={isConverting}
                 />
+
+                {showEmailModal && (
+                    <div className="modal-overlay" onClick={() => !isSendingEmail && setShowEmailModal(false)}>
+                        <div className="modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal__header">
+                                <h3 className="modal__title">
+                                    Envoyer {isInvoice ? 'la facture' : 'le devis'} par email
+                                </h3>
+                                <button
+                                    type="button"
+                                    className="modal__close"
+                                    onClick={() => !isSendingEmail && setShowEmailModal(false)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="modal__body">
+                                {emailSent ? (
+                                    <div className="modal__success">
+                                        Email envoyé avec succès !
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="modal__field">
+                                            <label htmlFor="email-to" className="modal__label">
+                                                Adresse email du destinataire
+                                            </label>
+                                            <input
+                                                id="email-to"
+                                                type="email"
+                                                value={emailTo}
+                                                onChange={(e) => setEmailTo(e.target.value)}
+                                                className="modal__input"
+                                                placeholder="email@exemple.com"
+                                                disabled={isSendingEmail}
+                                            />
+                                        </div>
+                                        {emailError && (
+                                            <div className="modal__error">{emailError}</div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                            {!emailSent && (
+                                <div className="modal__footer">
+                                    <button
+                                        type="button"
+                                        className="quote-form__btn quote-form__btn--secondary"
+                                        onClick={() => setShowEmailModal(false)}
+                                        disabled={isSendingEmail}
+                                    >
+                                        Annuler
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="quote-form__btn quote-form__btn--primary"
+                                        onClick={handleSendEmail}
+                                        disabled={isSendingEmail}
+                                    >
+                                        {isSendingEmail ? 'Envoi...' : 'Envoyer'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </MainLayout>
     );

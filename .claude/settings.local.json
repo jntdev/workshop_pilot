@@ -26,7 +26,10 @@
       "Bash(DB_DATABASE=workshop_pilot_test php artisan migrate:*)",
       "Bash(cd:*)",
       "Bash(c:)",
-      "Bash(vendorbinpint:*)"
+      "Bash(vendorbinpint:*)",
+      "Bash(dir:*)",
+      "Bash(magick convert:*)",
+      "Bash(php -d memory_limit=512M -r:*)"
     ]
   }
 }
