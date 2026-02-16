@@ -41,6 +41,9 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
                             <Link href="/location" className="layout-nav__link">
                                 Location
                             </Link>
+                            <Link href="/bikes" className="layout-nav__link">
+                                Velos
+                            </Link>
 
                             <form onSubmit={handleLogout} style={{ display: 'inline' }}>
                                 <button

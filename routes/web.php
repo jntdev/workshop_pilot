@@ -367,6 +367,8 @@ Route::middleware(['auth'])->group(function () {
         ]);
     })->name('location.index');
 
+    Route::get('/bikes', [\App\Http\Controllers\BikeController::class, 'index'])->name('bikes.index');
+
     Route::get('/counter', function () {
         return view('counter-demo');
     })->name('counter');

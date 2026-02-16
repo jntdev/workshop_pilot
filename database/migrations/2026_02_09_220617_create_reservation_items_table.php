@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('reservation_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('reservation_id')->constrained()->cascadeOnDelete();
-            $table->string('bike_type_id');
+            $table->string('bike_type_id', 50);
             $table->unsignedInteger('quantite');
             $table->timestamps();
 

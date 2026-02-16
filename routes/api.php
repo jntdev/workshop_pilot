@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AtelierController;
+use App\Http\Controllers\Api\BikeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\QuoteController;
@@ -45,4 +46,11 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Location API routes
     Route::get('/location/planning', [LocationController::class, 'planning']);
+
+    // Bikes API routes
+    Route::get('/bikes', [BikeController::class, 'index']);
+    Route::post('/bikes', [BikeController::class, 'store']);
+    Route::put('/bikes/{id}', [BikeController::class, 'update']);
+    Route::delete('/bikes/{id}', [BikeController::class, 'destroy']);
+    Route::post('/bikes/reorder', [BikeController::class, 'reorder']);
 });

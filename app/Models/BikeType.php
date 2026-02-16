@@ -34,4 +34,9 @@ class BikeType extends Model
     {
         return $this->hasMany(ReservationItem::class);
     }
+
+    public function bikes(): HasMany
+    {
+        return $this->hasMany(Bike::class);
+    }
 }

@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bike_types', function (Blueprint $table) {
-            $table->string('id')->primary(); // VAE_sb, VTC_mh, etc.
+            $table->string('id', 50)->primary(); // VAE_sb, VTC_mh, etc.
             $table->enum('category', ['VAE', 'VTC']);
             $table->enum('size', ['S', 'M', 'L', 'XL']);
             $table->enum('frame_type', ['b', 'h']); // b = bas, h = haut
