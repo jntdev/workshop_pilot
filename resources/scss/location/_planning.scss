@@ -429,14 +429,16 @@ $reservation-colors: (
     color: $color-neutral-medium;
   }
 
-  &__comments {
+  &__comments,
+  &__comment {
     font-size: 0.8125rem;
     color: $color-neutral-medium;
     font-style: italic;
-    margin-bottom: 0.75rem;
+    margin-top: 0.5rem;
     padding: 0.5rem;
     background: $color-bg-light;
     border-radius: 4px;
+    border-left: 2px solid $color-border-medium;
   }
 
   &__actions {

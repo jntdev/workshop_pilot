@@ -164,6 +164,12 @@ function ReservationCard({ reservation, type, onReservationClick }: ReservationC
                     {slot && <div className="planning-card__slot">Créneau : {slot}</div>}
                 </div>
             )}
+
+            {reservation.commentaires && (
+                <div className="planning-card__comment">
+                    {reservation.commentaires}
+                </div>
+            )}
         </div>
     );
 }
