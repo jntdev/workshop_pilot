@@ -31,6 +31,7 @@ class QuoteCalculator
 
     /**
      * Calculate line values from sale price TTC.
+     * PV TTC is user-entered, so we preserve it exactly as given.
      *
      * @return array{sale_price_ht: string, sale_price_ttc: string, margin_amount_ht: string, margin_rate: string}
      */
@@ -48,7 +49,7 @@ class QuoteCalculator
 
         return [
             'sale_price_ht' => $this->floorMoney($saleHt),
-            'sale_price_ttc' => $this->formatMoney($saleTtc),
+            'sale_price_ttc' => $this->formatMoney($saleTtc), // Preserve user-entered value
             'margin_amount_ht' => $this->floorMoney($marginHt),
             'margin_rate' => $this->formatRate($marginRate),
         ];
@@ -109,6 +110,7 @@ class QuoteCalculator
 
     /**
      * Calculate line totals from unit prices and quantity.
+     * PV TTC is user-entered, so line_total_ttc uses exact multiplication (no floor).
      *
      * @return array{line_purchase_ht: string, line_margin_ht: string, line_total_ht: string, line_total_ttc: string}
      */
@@ -125,12 +127,13 @@ class QuoteCalculator
             'line_purchase_ht' => $this->floorMoney((float) $purchasePriceHt * $qty),
             'line_margin_ht' => $this->floorMoney((float) $marginAmountHt * $qty),
             'line_total_ht' => $this->floorMoney((float) $salePriceHt * $qty),
-            'line_total_ttc' => $this->floorMoney((float) $salePriceTtc * $qty),
+            'line_total_ttc' => $this->formatMoney((float) $salePriceTtc * $qty), // User-entered TTC, no floor
         ];
     }
 
     /**
      * Aggregate totals from lines array (uses line totals if available, otherwise unit prices).
+     * Total TTC is based on user-entered PV TTC values, so no floor rounding.
      *
      * @param  array<int, array{sale_price_ht?: string, sale_price_ttc?: string, margin_amount_ht?: string, line_total_ht?: string, line_total_ttc?: string, line_margin_ht?: string}>  $lines
      * @return array{total_ht: string, total_tva: string, total_ttc: string, margin_total_ht: string}
@@ -152,8 +155,8 @@ class QuoteCalculator
 
         return [
             'total_ht' => $this->floorMoney($totalHt),
-            'total_tva' => $this->floorMoney($totalTva),
-            'total_ttc' => $this->floorMoney($totalTtc),
+            'total_tva' => $this->formatMoney($totalTva), // TVA derived from TTC - HT
+            'total_ttc' => $this->formatMoney($totalTtc), // User-entered TTC, no floor
             'margin_total_ht' => $this->floorMoney($totalMargin),
         ];
     }
@@ -191,8 +194,8 @@ class QuoteCalculator
 
         return [
             'total_ht' => $this->floorMoney($ht),
-            'total_tva' => $this->floorMoney($tva),
-            'total_ttc' => $this->floorMoney($ttc),
+            'total_tva' => $this->formatMoney($tva),
+            'total_ttc' => $this->formatMoney($ttc), // TTC based on user-entered values, no floor
         ];
     }
 

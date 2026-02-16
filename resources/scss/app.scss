@@ -21,3 +21,5 @@
 @use 'clients/index-page' as clients-page;
 @use 'atelier/index-page' as atelier-page;
 @use 'location/index-page' as location-page;
+@use 'location/reservation-form';
+@use 'location/planning';

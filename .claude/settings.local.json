@@ -29,7 +29,24 @@
       "Bash(vendorbinpint:*)",
       "Bash(dir:*)",
       "Bash(magick convert:*)",
-      "Bash(php -d memory_limit=512M -r:*)"
+      "Bash(php -d memory_limit=512M -r:*)",
+      "Bash(git checkout:*)",
+      "Bash(/usr/local/bin/npm install @tanstack/react-table @tanstack/react-virtual)",
+      "Bash(/opt/homebrew/bin/npm install @tanstack/react-table @tanstack/react-virtual)",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)",
+      "Bash(git push:*)",
+      "Bash(/usr/local/bin/npm run build)",
+      "Bash(/opt/homebrew/bin/npm run build)",
+      "Bash(export PATH:*)",
+      "Bash(/opt/homebrew/bin/php artisan make:migration:*)",
+      "Bash(ls:*)",
+      "Bash(xargs:*)",
+      "Bash(/opt/homebrew/opt/php@8.2/bin/php artisan boost:mcp:*)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$HOME/.nvm/versions/node/v22.14.0/bin:$PATH\")",
+      "Bash(./vendor/bin/sail artisan make:test:*)",
+      "Bash(./vendor/bin/pint:*)",
+      "Bash(/opt/homebrew/bin/php ./vendor/bin/pint:*)"
     ]
   }
 }

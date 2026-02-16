@@ -2,10 +2,579 @@
 @use '../base/typos' as *;
 @use '../base/rules' as *;
 
-// Page Location Index
+// Couleurs statut vélos
+$color-status-ok: #22c55e; // Vert
+$color-status-hs: #9ca3af; // Gris foncé pour HS
 
-.location-index {
-  &__placeholder {
+// Highlight
+$highlight-brightness: 0.92;
+
+// Palette de 30 couleurs distinctes pour les réservations
+// 0-9: Couleurs saturées, 10-19: Claires (40% blanc), 20-29: Très claires (60% blanc)
+$reservation-colors: (
+  // Couleurs saturées
+  0: #3b82f6,  // Bleu (défaut)
+  1: #ef4444,  // Rouge
+  2: #22c55e,  // Vert
+  3: #f59e0b,  // Orange
+  4: #8b5cf6,  // Violet
+  5: #ec4899,  // Rose
+  6: #14b8a6,  // Turquoise
+  7: #f97316,  // Orange foncé
+  8: #6366f1,  // Indigo
+  9: #84cc16,  // Lime
+  // Versions claires (40% blanc)
+  10: #8fb8f9, // Bleu clair
+  11: #f59090, // Rouge clair
+  12: #7dda9b, // Vert clair
+  13: #f9c56b, // Orange clair
+  14: #b99cf9, // Violet clair
+  15: #f3a0c4, // Rose clair
+  16: #6dd4c8, // Turquoise clair
+  17: #fba76f, // Orange foncé clair
+  18: #a1a3f7, // Indigo clair
+  19: #b5de6d, // Lime clair
+  // Versions très claires (60% blanc)
+  20: #b8d4fb, // Bleu très clair
+  21: #f9b8b8, // Rouge très clair
+  22: #a8e8be, // Vert très clair
+  23: #fbda9e, // Orange très clair
+  24: #d4c4fb, // Violet très clair
+  25: #f7c5da, // Rose très clair
+  26: #9de5dd, // Turquoise très clair
+  27: #fcc9a3, // Orange foncé très clair
+  28: #c5c6f9, // Indigo très clair
+  29: #d1e9a0, // Lime très clair
+);
+
+// Gap entre catégories (équivalent à 3 colonnes de 40px)
+$category-gap: 120px;
+
+// Couleurs catégories vélos (Les Vélos d'Armor)
+$color-category-vae: #FFD233; // Jaune VAE
+$color-category-vtc: #005D66; // Bleu-vert VTC
+
+// Page Location - Disponibilités vélos
+
+// Bloquer le scroll global quand le calendrier location est présent
+body:has(#location_calendar) {
+  overflow: hidden;
+}
+
+// Largeurs des panneaux
+$side-panel-width-reservation: 450px;
+$side-panel-width-planning: 700px;
+
+.location {
+  display: flex;
+  height: calc(100vh - 84px);
+  max-height: calc(100vh - 84px);
+  overflow: hidden;
+  width: 100vw;
+  box-sizing: border-box;
+
+  @media (max-width: 1279px) {
+    flex-direction: column;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    width: 100%;
+  }
+
+  &__table-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 1rem;
+    box-sizing: border-box;
+    max-height: calc(100vh - 84px);
+    transition: flex 0.3s ease;
+
+    @media (max-width: 1279px) {
+      width: 100%;
+      max-height: none;
+    }
+  }
+
+  // Panneau latéral contextuel (sliding)
+  &__side-panel {
+    width: 0;
+    height: calc(100vh - 84px);
+    max-height: calc(100vh - 84px);
+    overflow: hidden;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    transition: width 0.3s ease;
+
+    &--open {
+      border-left: 1px solid $color-border-light;
+    }
+
+    @media (max-width: 1279px) {
+      width: 100% !important;
+      height: auto;
+      max-height: none;
+      min-height: 200px;
+      border-left: none;
+      border-top: 1px solid $color-border-light;
+    }
+  }
+
+  // Quand le panneau est ouvert
+  &--panel-open {
+    .location__side-panel {
+      width: $side-panel-width-reservation;
+    }
+  }
+
+  // Quand le panneau planning est ouvert (plus large)
+  &--panel-planning {
+    .location__side-panel {
+      width: $side-panel-width-planning;
+    }
+  }
+
+  &__form-panel {
+    width: 100%;
+    height: 100%;
+    background: $color-bg-light;
+    padding: 1rem;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $color-neutral-dark;
+    margin: 0;
+  }
+
+  &__loading-indicator {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: $color-neutral-medium;
+    margin-left: 0.5rem;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  &__viewing-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__viewing-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $color-neutral-dark;
+  }
+
+  &__viewing-phone {
+    font-size: 1.5rem;
+    font-weight: 500;
     color: $color-neutral-medium;
   }
+
+  &__btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    &--primary {
+      background: $color-primary-blue;
+      color: $color-bg-white;
+
+      &:hover {
+        background: darken($color-primary-blue, 8%);
+      }
+    }
+
+    &--secondary {
+      background: $color-neutral-light;
+      color: $color-neutral-dark;
+
+      &:hover {
+        background: darken($color-neutral-light, 8%);
+      }
+    }
+
+    &--icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      background: transparent;
+      color: $color-neutral-medium;
+      border-radius: 4px;
+
+      &:hover {
+        background: $color-neutral-light;
+        color: $color-neutral-dark;
+      }
+    }
+  }
+
+  &__form-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__form-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: $color-neutral-medium;
+    text-align: center;
+  }
+
+  &__form-hint {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+  }
+
+  &__form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+  }
+
+  &__form-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $color-neutral-dark;
+    margin: 0;
+  }
+}
+
+// Tableau des disponibilités
+
+.location-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+
+  &__container {
+    flex: 1;
+    overflow: auto;
+    background: $color-bg-white;
+    border: 1px solid $color-border-light;
+    border-radius: 8px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  &__head {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: $color-bg-light;
+  }
+
+  &__header-row {
+    border-bottom: 2px solid $color-border-medium;
+  }
+
+  &__th {
+    padding: 0.25rem 0.125rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.625rem;
+    color: $color-neutral-dark;
+    border-bottom: 1px solid $color-border-medium;
+    background: $color-bg-light;
+
+    &:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 11;
+      text-align: left;
+      padding-left: 1rem;
+    }
+  }
+
+  &__header-date {
+    font-size: 0.875rem;
+  }
+
+  &__category-row {
+    height: 20px;
+  }
+
+  &__th--category-empty {
+    background: $color-bg-light;
+    position: sticky;
+    left: 0;
+    z-index: 11;
+  }
+
+  &__th--category {
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: $color-bg-white;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__th--category-vae {
+    background: $color-category-vae;
+    color: $color-neutral-dark;
+  }
+
+  &__th--category-vtc {
+    background: $color-category-vtc;
+    color: $color-bg-white;
+  }
+
+  // Spacer entre les catégories
+  &__spacer {
+    background: $color-bg-light;
+    height: 100%;
+  }
+
+  &__th--category-spacer {
+    background: $color-bg-light;
+  }
+
+  &__header-bike {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 0.25rem 0.125rem;
+    border-radius: 2px;
+    font-size: 0.625rem;
+
+    &--ok {
+      background: $color-status-ok;
+    }
+
+    &--hs {
+      background: $color-status-hs;
+    }
+
+    &[data-column-hovered="true"] {
+      filter: brightness($highlight-brightness);
+    }
+  }
+
+  &__header-category {
+    font-weight: 700;
+    color: $color-primary-blue;
+  }
+
+  &__header-size {
+    font-weight: 500;
+    color: $color-neutral-medium;
+  }
+
+
+  &__row {
+    &:hover {
+      .location-table__date-cell {
+        background: rgba($color-primary-blue, 0.12);
+        font-weight: 600;
+      }
+
+      .location-table__cell {
+        filter: brightness($highlight-brightness);
+      }
+    }
+  }
+
+  &__td {
+    padding: 0;
+    border-bottom: 1px solid $color-border-light;
+    height: 24px;
+
+    &:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      background: $color-bg-white;
+      border-right: 1px solid $color-border-light;
+    }
+  }
+
+  &__date-cell {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 0.5rem;
+    font-size: 0.625rem;
+    color: $color-neutral-dark;
+
+    &--weekend {
+      background: rgba($color-neutral-light, 0.5);
+      color: $color-neutral-medium;
+    }
+  }
+
+  &__date-label {
+    white-space: nowrap;
+  }
+
+  &__cell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    cursor: pointer;
+    transition: background 0.15s ease, filter 0.15s ease;
+
+    background: $color-bg-white;
+
+    &:hover {
+      filter: brightness(0.95);
+    }
+
+    &--today {
+      .location-table__cell-banner {
+        background: $color-primary-blue;
+      }
+    }
+
+    &[data-column-hovered="true"] {
+      filter: brightness($highlight-brightness);
+    }
+
+    &--hs {
+      background: $color-status-hs !important;
+      cursor: not-allowed;
+
+      &:hover {
+        filter: none;
+      }
+    }
+
+    &--selectable {
+      cursor: crosshair;
+      user-select: none;
+
+      &:hover {
+        background: rgba($color-primary-blue, 0.15);
+      }
+    }
+
+    &--selected {
+      background: map-get($reservation-colors, 0) !important;
+
+      .location-table__cell-content {
+        &::after {
+          content: '✓';
+          color: $color-bg-white;
+          font-size: 0.75rem;
+          font-weight: 700;
+        }
+      }
+
+      &.location-table__cell--hs {
+        background: darken($color-status-hs, 15%) !important;
+      }
+
+      // Couleurs de réservation via data-attribute
+      @each $index, $color in $reservation-colors {
+        &[data-color="#{$index}"] {
+          background: $color !important;
+        }
+      }
+    }
+
+    // Cellules avec réservation existante (non en cours d'édition)
+    &--reserved {
+      background: map-get($reservation-colors, 0);
+      cursor: pointer;
+
+      // Couleurs de réservation via data-attribute
+      @each $index, $color in $reservation-colors {
+        &[data-color="#{$index}"] {
+          background: $color;
+        }
+      }
+
+      &:hover {
+        filter: brightness(1.1);
+      }
+    }
+
+    // Mode visualisation : les cellules visualisées gardent leur opacité normale
+    &--viewing {
+      opacity: 1 !important;
+    }
+
+    // Dimmer les cellules non-visualisées quand on est en mode visualisation
+    &--dimmed {
+      opacity: 0.25;
+    }
+  }
+
+  &__cell-banner {
+    flex: 0 0 4px;
+    background: transparent;
+    transition: background 0.15s ease;
+  }
+
+  &__cell-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  // Label du nom client dans la première cellule
+  &__cell-label {
+    font-size: 0.5rem;
+    font-weight: 600;
+    color: $color-bg-white;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    padding: 0 2px;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+  }
+
+  // Séparateurs verticaux - 3 niveaux d'importance
+  &__separator--bike {
+    border-left: 1px solid $color-border-light;
+  }
+
+  &__separator--size {
+    border-left: 2px solid $color-border-medium;
+  }
+
 }

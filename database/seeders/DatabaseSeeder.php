@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
             // 1. Authorized emails for authentication
             AuthorizedEmailSeeder::class,
 
-            // 2. Clients (needed by quotes)
+            // 2. Clients (needed by quotes and reservations)
             ClientSeeder::class,
 
             // 3. Demo quotes and invoices
@@ -35,6 +35,9 @@ class DatabaseSeeder extends Seeder
 
             // 5. Calculate KPIs from actual invoice data
             MonthlyKpiSeeder::class,
+
+            // 6. Reservations de location vélos
+            ReservationSeeder::class,
         ]);
     }
 }

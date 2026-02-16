@@ -290,7 +290,81 @@ Route::middleware(['auth'])->group(function () {
     })->name('atelier.quotes.destroy');
 
     Route::get('/location', function () {
-        return Inertia::render('Location/Index');
+        $year = now()->year;
+
+        // Fenêtre glissante : J-15 à J+30
+        $startWindow = now()->subDays(15)->startOfDay();
+        $endWindow = now()->addDays(30)->endOfDay();
+
+        // Charger les réservations dans la fenêtre glissante
+        // Règles :
+        // 1. date_reservation entre J-15 et J+30
+        // 2. OU réservation démarrée avant J-15 mais date_retour >= aujourd'hui (toujours active)
+        // On exclut les réservations annulées
+        $reservations = \App\Models\Reservation::with(['client', 'items'])
+            ->where('statut', '!=', 'annule')
+            ->where(function ($query) use ($startWindow, $endWindow) {
+                $query->whereBetween('date_reservation', [$startWindow, $endWindow])
+                    ->orWhere(function ($q) use ($startWindow) {
+                        $q->where('date_reservation', '<', $startWindow)
+                            ->where('date_retour', '>=', now()->startOfDay());
+                    });
+            })
+            ->orderBy('date_reservation')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'client_id' => $r->client_id,
+                'client_name' => $r->client ? "{$r->client->prenom} {$r->client->nom}" : 'Client inconnu',
+                'client' => $r->client ? [
+                    'id' => $r->client->id,
+                    'prenom' => $r->client->prenom,
+                    'nom' => $r->client->nom,
+                    'email' => $r->client->email,
+                    'telephone' => $r->client->telephone,
+                    'adresse' => $r->client->adresse,
+                    'origine_contact' => $r->client->origine_contact,
+                    'commentaires' => $r->client->commentaires,
+                    'avantage_type' => $r->client->avantage_type,
+                    'avantage_valeur' => $r->client->avantage_valeur,
+                    'avantage_expiration' => $r->client->avantage_expiration,
+                ] : null,
+                'date_contact' => $r->date_contact?->format('Y-m-d\TH:i'),
+                'date_reservation' => $r->date_reservation->format('Y-m-d'),
+                'date_retour' => $r->date_retour->format('Y-m-d'),
+                'livraison_necessaire' => $r->livraison_necessaire,
+                'adresse_livraison' => $r->adresse_livraison,
+                'contact_livraison' => $r->contact_livraison,
+                'creneau_livraison' => $r->creneau_livraison,
+                'recuperation_necessaire' => $r->recuperation_necessaire,
+                'adresse_recuperation' => $r->adresse_recuperation,
+                'contact_recuperation' => $r->contact_recuperation,
+                'creneau_recuperation' => $r->creneau_recuperation,
+                'prix_total_ttc' => $r->prix_total_ttc,
+                'acompte_demande' => $r->acompte_demande,
+                'acompte_montant' => $r->acompte_montant,
+                'acompte_paye_le' => $r->acompte_paye_le?->format('Y-m-d'),
+                'paiement_final_le' => $r->paiement_final_le?->format('Y-m-d'),
+                'statut' => $r->statut,
+                'raison_annulation' => $r->raison_annulation,
+                'commentaires' => $r->commentaires,
+                'color' => $r->color ?? 0,
+                'selection' => $r->selection ?? [],
+                'items' => $r->items->map(fn ($item) => [
+                    'bike_type_id' => $item->bike_type_id,
+                    'quantite' => $item->quantite,
+                ])->toArray(),
+            ]);
+
+        return Inertia::render('Location/Index', [
+            'bikes' => config('bikes.fleet'),
+            'bikeTypes' => \App\Models\BikeType::orderBy('category')
+                ->orderByRaw("FIELD(size, 'S', 'M', 'L', 'XL')")
+                ->orderBy('frame_type')
+                ->get(),
+            'year' => $year,
+            'reservations' => $reservations,
+        ]);
     })->name('location.index');
 
     Route::get('/counter', function () {
