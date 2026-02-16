@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -40,13 +41,23 @@ return new class extends Migration
 
         // Supprimer bike_type_id si elle existe
         if (Schema::hasColumn('bikes', 'bike_type_id')) {
-            Schema::table('bikes', function (Blueprint $table) {
-                // Essayer de supprimer la foreign key si elle existe
-                try {
+            // Vérifier si la FK existe avant de la supprimer
+            $fkExists = DB::select("
+                SELECT CONSTRAINT_NAME
+                FROM information_schema.TABLE_CONSTRAINTS
+                WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = 'bikes'
+                AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+                AND CONSTRAINT_NAME = 'bikes_bike_type_id_foreign'
+            ");
+
+            if (count($fkExists) > 0) {
+                Schema::table('bikes', function (Blueprint $table) {
                     $table->dropForeign(['bike_type_id']);
-                } catch (\Exception $e) {
-                    // Ignorer si la FK n'existe pas
-                }
+                });
+            }
+
+            Schema::table('bikes', function (Blueprint $table) {
                 $table->dropColumn('bike_type_id');
             });
         }
