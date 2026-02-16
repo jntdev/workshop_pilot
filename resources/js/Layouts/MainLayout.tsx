@@ -1,6 +1,7 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { ReactNode } from 'react';
 import { PageProps } from '@/types';
+import { useServerWarmup } from '@/hooks/useServerWarmup';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -9,6 +10,9 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children, title }: MainLayoutProps) {
     const { flash } = usePage<PageProps>().props;
+
+    // Warmup silencieux du serveur pour les hébergements mutualisés
+    useServerWarmup();
 
     const handleLogout = (e: React.FormEvent) => {
         e.preventDefault();

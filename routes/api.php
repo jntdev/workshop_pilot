@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ReservationController;
 use Illuminate\Support\Facades\Route;
 
+// Health check endpoint (sans auth) pour warmup serveur mutualisé
+Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
 Route::middleware(['web', 'auth'])->group(function () {
     // Atelier API routes
     Route::get('/atelier/stats', [AtelierController::class, 'stats']);
