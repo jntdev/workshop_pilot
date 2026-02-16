@@ -267,6 +267,15 @@ $side-panel-width-planning: 700px;
       }
     }
 
+    &--danger {
+      background: #fee2e2;
+      color: #dc2626;
+
+      &:hover {
+        background: #fecaca;
+      }
+    }
+
     &--icon {
       width: 32px;
       height: 32px;

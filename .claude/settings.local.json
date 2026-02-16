@@ -47,7 +47,11 @@
       "Bash(./vendor/bin/sail artisan make:test:*)",
       "Bash(./vendor/bin/pint:*)",
       "Bash(/opt/homebrew/bin/php ./vendor/bin/pint:*)",
-      "Bash(./node_modules/.bin/tsc:*)"
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(./vendor/bin/sail artisan migrate:fresh:*)",
+      "Bash(/opt/homebrew/bin/php artisan migrate:fresh:*)",
+      "Bash(/usr/bin/php:*)",
+      "Bash(/opt/homebrew/opt/php@8.2/bin/php artisan migrate:fresh:*)"
     ]
   }
 }

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Bike;
 use App\Models\Client;
 use App\Models\Reservation;
-use App\Models\ReservationItem;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -23,7 +23,17 @@ class ReservationSeeder extends Seeder
             return;
         }
 
-        $fleet = config('bikes.fleet');
+        $bikes = Bike::ordered()->get();
+
+        if ($bikes->isEmpty()) {
+            $this->command->warn('Aucun vélo trouvé. Lancez BikeSeeder d\'abord.');
+
+            return;
+        }
+
+        // Indexer les vélos par nom pour faciliter la sélection
+        $bikesByName = $bikes->keyBy('name');
+
         $today = Carbon::today();
 
         // Réservation 1: Famille en vacances (bleu - couleur 0)
@@ -31,7 +41,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->addDays(2),
             endDate: $today->copy()->addDays(8),
-            bikes: ['vae-m-01', 'vae-m-02', 'vtc-s-01', 'vtc-s-02'],
+            bikeNames: ['EM1', 'EM2', 'S1', 'S2'],
+            bikesByName: $bikesByName,
             color: 0,
             prixTotal: 420.00,
             statut: 'reserve',
@@ -45,7 +56,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->addDays(5),
             endDate: $today->copy()->addDays(7),
-            bikes: ['vae-l-01', 'vae-l-02'],
+            bikeNames: ['EL1', 'EL2'],
+            bikesByName: $bikesByName,
             color: 1,
             prixTotal: 120.00,
             statut: 'en_attente_acompte',
@@ -58,7 +70,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->addDays(10),
             endDate: $today->copy()->addDays(14),
-            bikes: ['vtc-m-01', 'vtc-m-02', 'vtc-m-03', 'vtc-m-04', 'vtc-l-01', 'vtc-l-02'],
+            bikeNames: ['M1', 'M2', 'M3', 'M4', 'L1', 'L2'],
+            bikesByName: $bikesByName,
             color: 2,
             prixTotal: 540.00,
             statut: 'reserve',
@@ -70,7 +83,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->addDays(1),
             endDate: $today->copy()->addDays(2),
-            bikes: ['vae-s-01'],
+            bikeNames: ['ES1'],
+            bikesByName: $bikesByName,
             color: 3,
             prixTotal: 45.00,
             statut: 'en_cours',
@@ -84,7 +98,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->addDays(15),
             endDate: $today->copy()->addDays(22),
-            bikes: ['vae-xl-01', 'vae-xl-02', 'vae-l-03', 'vae-l-04'],
+            bikeNames: ['EXL1', 'EXL2', 'EL3', 'EL4'],
+            bikesByName: $bikesByName,
             color: 4,
             prixTotal: 560.00,
             statut: 'reserve',
@@ -100,7 +115,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->subDays(10),
             endDate: $today->copy()->subDays(5),
-            bikes: ['vtc-l-03', 'vtc-l-04'],
+            bikeNames: ['L3', 'L4'],
+            bikesByName: $bikesByName,
             color: 5,
             prixTotal: 150.00,
             statut: 'paye',
@@ -112,7 +128,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->subDays(2),
             endDate: $today->copy()->addDays(3),
-            bikes: ['vae-m-03', 'vtc-m-05'],
+            bikeNames: ['EM3', 'M5'],
+            bikesByName: $bikesByName,
             color: 6,
             prixTotal: 175.00,
             statut: 'en_cours',
@@ -126,7 +143,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->addDays(20),
             endDate: $today->copy()->addDays(25),
-            bikes: ['vae-s-02', 'vae-s-04'],
+            bikeNames: ['ES2', 'ES3'],
+            bikesByName: $bikesByName,
             color: 7,
             prixTotal: 200.00,
             statut: 'annule',
@@ -138,13 +156,14 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->addDays(25),
             endDate: $today->copy()->addDays(32),
-            bikes: ['vae-s-01', 'vae-m-05', 'vae-m-06', 'vae-l-05', 'vae-l-06', 'vtc-s-03', 'vtc-m-06'],
+            bikeNames: ['ES1', 'EM5', 'EM6', 'EL6', 'S3'],
+            bikesByName: $bikesByName,
             color: 8,
             prixTotal: 840.00,
             statut: 'en_attente_acompte',
             acompteDemande: true,
             acompteMontant: 250.00,
-            commentaires: 'Grande famille - 7 personnes',
+            commentaires: "Grande famille - 5 personnes\nBesoin de 2 sièges enfants",
             livraison: true,
             adresseLivraison: 'Villa Les Hortensias, 22560 Trebeurden',
         );
@@ -154,7 +173,8 @@ class ReservationSeeder extends Seeder
             client: $clients->random(),
             startDate: $today->copy()->addDays(12),
             endDate: $today->copy()->addDays(14),
-            bikes: ['vtc-xl-01', 'vtc-xl-02', 'vtc-xl-03'],
+            bikeNames: ['XL1', 'XL2', 'XL3'],
+            bikesByName: $bikesByName,
             color: 9,
             prixTotal: 135.00,
             statut: 'reserve',
@@ -181,25 +201,16 @@ class ReservationSeeder extends Seeder
     }
 
     /**
-     * Génère le label court d'un vélo.
-     */
-    private function bikeToLabel(array $bike): string
-    {
-        $prefix = $bike['category'] === 'VAE' ? 'E' : '';
-        $parts = explode('-', $bike['id']);
-        $num = count($parts) >= 3 ? (int) $parts[2] : 0;
-
-        return $prefix.$bike['size'].$bike['frame_type'].$num;
-    }
-
-    /**
      * Crée une réservation complète.
+     *
+     * @param  \Illuminate\Support\Collection<string, Bike>  $bikesByName
      */
     private function createReservation(
         Client $client,
         Carbon $startDate,
         Carbon $endDate,
-        array $bikes,
+        array $bikeNames,
+        $bikesByName,
         int $color,
         float $prixTotal,
         string $statut,
@@ -214,27 +225,26 @@ class ReservationSeeder extends Seeder
         ?Carbon $paiementFinalLe = null,
         ?string $raisonAnnulation = null,
     ): void {
-        $fleet = collect(config('bikes.fleet'))->keyBy('id');
         $dates = $this->generateDates($startDate, $endDate);
 
-        // Construire la sélection
+        // Construire la sélection avec les vrais bike_id (bike_X)
         $selection = [];
-        foreach ($bikes as $bikeId) {
-            $bike = $fleet->get($bikeId);
+        foreach ($bikeNames as $bikeName) {
+            $bike = $bikesByName->get($bikeName);
             if ($bike) {
                 $selection[] = [
-                    'bike_id' => $bikeId,
-                    'label' => $this->bikeToLabel($bike),
+                    'bike_id' => 'bike_'.$bike->id,
+                    'label' => $bike->name,
                     'start_date' => $startDate->format('Y-m-d'),
                     'end_date' => $endDate->format('Y-m-d'),
                     'dates' => $dates,
-                    'is_hs' => $bike['status'] === 'HS',
+                    'is_hs' => $bike->status === 'HS',
                 ];
             }
         }
 
         // Créer la réservation
-        $reservation = Reservation::create([
+        Reservation::create([
             'client_id' => $client->id,
             'date_contact' => now()->subDays(rand(1, 30)),
             'date_reservation' => $startDate,
@@ -258,23 +268,5 @@ class ReservationSeeder extends Seeder
             'selection' => $selection,
             'color' => $color,
         ]);
-
-        // Créer les items (groupés par type)
-        $itemsByType = [];
-        foreach ($bikes as $bikeId) {
-            $bike = $fleet->get($bikeId);
-            if ($bike) {
-                $typeId = $bike['category'].'_'.strtolower($bike['size']).$bike['frame_type'];
-                $itemsByType[$typeId] = ($itemsByType[$typeId] ?? 0) + 1;
-            }
-        }
-
-        foreach ($itemsByType as $typeId => $quantite) {
-            ReservationItem::create([
-                'reservation_id' => $reservation->id,
-                'bike_type_id' => $typeId,
-                'quantite' => $quantite,
-            ]);
-        }
     }
 }

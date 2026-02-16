@@ -738,7 +738,7 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                         </h1>
                         <button
                             type="button"
-                            className={`location__btn ${sidePanelMode === 'planning' ? 'location__btn--primary' : 'location__btn--secondary'}`}
+                            className="location__btn location__btn--secondary"
                             onClick={handleTogglePlanning}
                         >
                             {sidePanelMode === 'planning' ? 'Fermer planning' : 'Voir aujourd\'hui'}
@@ -797,7 +797,7 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                         ) : (
                             <button
                                 type="button"
-                                className="location__btn location__btn--secondary"
+                                className="location__btn location__btn--danger"
                                 onClick={() => {
                                     setViewingReservationId(null);
                                     setEditingReservation(null);
