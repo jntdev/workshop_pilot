@@ -152,6 +152,7 @@ export interface BikeDefinition {
     frame_type: BikeFrameType;
     name: string; // Nom affiché dans le header
     status: BikeStatus;
+    notes: string | null; // Commentaires (ex: pourquoi HS)
 }
 
 export type AvailabilityStatus = 'available' | 'reserved' | 'pre_reserved' | 'maintenance';

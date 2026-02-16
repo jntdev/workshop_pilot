@@ -189,6 +189,53 @@ $side-panel-width-planning: 700px;
     color: $color-neutral-medium;
   }
 
+  // Infos vélo dans la bannière
+  &__viewing-info--bike {
+    background: rgba($color-neutral-light, 0.5);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+  }
+
+  &__bike-status {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+
+    &--ok {
+      background: $color-status-ok;
+      color: $color-bg-white;
+    }
+
+    &--hs {
+      background: $color-status-hs;
+      color: $color-bg-white;
+    }
+  }
+
+  &__bike-type {
+    font-size: 0.875rem;
+    color: $color-neutral-medium;
+  }
+
+  &__bike-notes {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: $color-neutral-dark;
+    background: rgba($color-bg-white, 0.8);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    max-width: 400px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__btn--close-bike {
+    margin-left: auto;
+  }
+
   &__btn {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
@@ -367,6 +414,46 @@ $side-panel-width-planning: 700px;
     background: $color-bg-light;
   }
 
+  // Ligne des tailles
+  &__size-row {
+    height: 18px;
+  }
+
+  &__th--size-empty {
+    background: $color-bg-light;
+    position: sticky;
+    left: 0;
+    z-index: 11;
+  }
+
+  &__th--size {
+    font-weight: 600;
+    font-size: 0.625rem;
+    color: $color-bg-white;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  &__th--size-s {
+    background: #6366f1; // Indigo
+  }
+
+  &__th--size-m {
+    background: #8b5cf6; // Violet
+  }
+
+  &__th--size-l {
+    background: #a855f7; // Violet clair
+  }
+
+  &__th--size-xl {
+    background: #c084fc; // Violet très clair
+  }
+
+  &__th--size-spacer {
+    background: $color-bg-light;
+  }
+
   &__header-bike {
     display: flex;
     flex-direction: column;
@@ -375,6 +462,8 @@ $side-panel-width-planning: 700px;
     padding: 0.25rem 0.125rem;
     border-radius: 2px;
     font-size: 0.625rem;
+    cursor: pointer;
+    transition: filter 0.15s ease, box-shadow 0.15s ease;
 
     &--ok {
       background: $color-status-ok;
@@ -386,6 +475,11 @@ $side-panel-width-planning: 700px;
 
     &[data-column-hovered="true"] {
       filter: brightness($highlight-brightness);
+    }
+
+    &--selected {
+      box-shadow: inset 0 0 0 2px $color-primary-blue, 0 2px 4px rgba(0, 0, 0, 0.2);
+      filter: brightness(1.1);
     }
   }
 

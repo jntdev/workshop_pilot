@@ -365,6 +365,7 @@ Route::middleware(['auth'])->group(function () {
             'frame_type' => $bike->frame_type,
             'name' => $bike->name,
             'status' => $bike->status,
+            'notes' => $bike->notes,
         ]);
 
         return Inertia::render('Location/Index', [
