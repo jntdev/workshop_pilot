@@ -32,6 +32,8 @@ class Reservation extends Model
         'statut',
         'raison_annulation',
         'commentaires',
+        'selection',
+        'color',
     ];
 
     protected function casts(): array
@@ -47,6 +49,8 @@ class Reservation extends Model
             'acompte_montant' => 'decimal:2',
             'acompte_paye_le' => 'date',
             'paiement_final_le' => 'date',
+            'selection' => 'array',
+            'color' => 'integer',
         ];
     }
 

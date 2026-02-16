@@ -7,6 +7,7 @@ use App\Http\Requests\StoreReservationRequest;
 use App\Http\Requests\UpdateReservationRequest;
 use App\Models\Client;
 use App\Models\Reservation;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,88 @@ class ReservationController extends Controller
         $reservations = $query->get()->map(fn (Reservation $reservation) => $this->formatReservation($reservation));
 
         return response()->json($reservations);
+    }
+
+    /**
+     * Charge les réservations pour une fenêtre de dates spécifique.
+     * Utilisé pour le lazy loading quand l'utilisateur scroll au-delà de la fenêtre initiale.
+     */
+    public function window(Request $request): JsonResponse
+    {
+        $request->validate([
+            'start' => ['required', 'date'],
+            'end' => ['required', 'date', 'after_or_equal:start'],
+        ]);
+
+        $start = Carbon::parse($request->start)->startOfDay();
+        $end = Carbon::parse($request->end)->endOfDay();
+
+        $reservations = Reservation::with(['client', 'items.bikeType'])
+            ->where('statut', '!=', 'annule')
+            ->where(function ($query) use ($start, $end) {
+                // Réservations dans la fenêtre demandée
+                $query->whereBetween('date_reservation', [$start, $end])
+                    // OU réservations commencées avant mais toujours actives dans la fenêtre
+                    ->orWhere(function ($q) use ($start) {
+                        $q->where('date_reservation', '<', $start)
+                            ->where('date_retour', '>=', $start);
+                    });
+            })
+            ->orderBy('date_reservation')
+            ->get()
+            ->map(fn (Reservation $reservation) => $this->formatReservationForCalendar($reservation));
+
+        return response()->json($reservations);
+    }
+
+    /**
+     * Format réservation pour l'affichage calendrier (même format que la page /location).
+     */
+    private function formatReservationForCalendar(Reservation $r): array
+    {
+        return [
+            'id' => $r->id,
+            'client_id' => $r->client_id,
+            'client_name' => $r->client ? "{$r->client->prenom} {$r->client->nom}" : 'Client inconnu',
+            'client' => $r->client ? [
+                'id' => $r->client->id,
+                'prenom' => $r->client->prenom,
+                'nom' => $r->client->nom,
+                'email' => $r->client->email,
+                'telephone' => $r->client->telephone,
+                'adresse' => $r->client->adresse,
+                'origine_contact' => $r->client->origine_contact,
+                'commentaires' => $r->client->commentaires,
+                'avantage_type' => $r->client->avantage_type,
+                'avantage_valeur' => $r->client->avantage_valeur,
+                'avantage_expiration' => $r->client->avantage_expiration,
+            ] : null,
+            'date_contact' => $r->date_contact?->format('Y-m-d\TH:i'),
+            'date_reservation' => $r->date_reservation->format('Y-m-d'),
+            'date_retour' => $r->date_retour->format('Y-m-d'),
+            'livraison_necessaire' => $r->livraison_necessaire,
+            'adresse_livraison' => $r->adresse_livraison,
+            'contact_livraison' => $r->contact_livraison,
+            'creneau_livraison' => $r->creneau_livraison,
+            'recuperation_necessaire' => $r->recuperation_necessaire,
+            'adresse_recuperation' => $r->adresse_recuperation,
+            'contact_recuperation' => $r->contact_recuperation,
+            'creneau_recuperation' => $r->creneau_recuperation,
+            'prix_total_ttc' => $r->prix_total_ttc,
+            'acompte_demande' => $r->acompte_demande,
+            'acompte_montant' => $r->acompte_montant,
+            'acompte_paye_le' => $r->acompte_paye_le?->format('Y-m-d'),
+            'paiement_final_le' => $r->paiement_final_le?->format('Y-m-d'),
+            'statut' => $r->statut,
+            'raison_annulation' => $r->raison_annulation,
+            'commentaires' => $r->commentaires,
+            'color' => $r->color ?? 0,
+            'selection' => $r->selection ?? [],
+            'items' => $r->items->map(fn ($item) => [
+                'bike_type_id' => $item->bike_type_id,
+                'quantite' => $item->quantite,
+            ])->toArray(),
+        ];
     }
 
     public function show(string $id): JsonResponse
@@ -212,6 +295,8 @@ class ReservationController extends Controller
                 ] : null,
                 'quantite' => $item->quantite,
             ])->toArray(),
+            'selection' => $reservation->selection,
+            'color' => $reservation->color ?? 0,
             'created_at' => $reservation->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $reservation->updated_at?->format('Y-m-d H:i:s'),
         ];

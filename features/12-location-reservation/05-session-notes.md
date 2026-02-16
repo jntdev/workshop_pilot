@@ -1,68 +1,26 @@
-# Session Notes - Feature 12
+# Session Notes — Feature 12
 
-## Travaux effectués
+## Décisions prises
+1. **Store partagé calendrier ↔ formulaire**  
+   - Implémenter un hook `useReservationDraft` exposant l’état de sélection et les actions (sélection cellule, suppression vélo, reset).  
+   - `LocationIndex` et `ReservationForm` se branchent dessus au lieu de gérer chacun leur `useState`.
 
-### 1. Tests API - Correction email unique
-- **Fichier**: `tests/Feature/ReservationApiTest.php`
-- Correction du test qui échouait à cause d'un email en doublon
-- Utilisation de `time()` pour générer des emails uniques: `'email' => 'jean.nouveau-'.time().'@example.com'`
-- Ajout du test `it_can_update_client_when_creating_reservation`
-- **Résultat**: 20 tests passent
+2. **Vélos HS sélectionnables**  
+   - Pas de blocage : seules des alertes visuelles sont affichées dans la grille et le formulaire.
 
-### 2. Layout CSS - Responsive Design
-- **Fichier**: `resources/scss/location/_index-page.scss`
+3. **Accessoires génériques**  
+   - En attendant un inventaire précis, un simple tableau de configuration suffit. Les quantités sont stockées dans `formData.accessories`.
 
-#### Modifications apportées:
-- **max-width: 600px** sur le panneau formulaire (`.location__form-panel`)
-- **Breakpoint >= 1800px**: Le panneau tableau occupe tout l'espace disponible (`flex: 1`), le formulaire reste fixe à 600px
-- **Hauteur viewport**: Utilisation de `calc(100vh - 84px)` pour tenir compte du header (84px)
-- **Blocage du scroll global**: Ajout de `body:has(#location_calendar) { overflow: hidden; }`
+4. **Payload enrichi**  
+   - Ajout d’une clé `selection` (détaillée dans `02-dates-logistique.md`).  
+   - Backend doit loguer les anomalies mais n’empêche pas la création.
 
-### 3. Composant React - ID pour ciblage CSS
-- **Fichier**: `resources/js/Pages/Location/Index.tsx`
-- Ajout de l'ID `location_calendar` sur l'élément racine `.location`
-- Permet au sélecteur CSS `:has()` de cibler spécifiquement cette page
+## TODO techniques
+- [x] Créer le hook `useReservationDraft` (`resources/js/hooks/useReservationDraft.ts`).
+- [x] Ajouter les classes CSS `location-table__cell--selected` et `location-table__cell--selectable`.
+- [x] Étendre le contrôleur API pour accepter `selection` (migration + model + validation).
+- [ ] Écrire des tests Feature pour vérifier la création avec nouveau client + sélection.
 
-## Structure CSS finale
-
-```scss
-body:has(#location_calendar) {
-  overflow: hidden;
-}
-
-.location {
-  display: flex;
-  height: calc(100vh - 84px);
-  max-height: calc(100vh - 84px);
-  overflow: hidden;
-
-  &__table-panel {
-    width: 66vw;
-    max-height: calc(100vh - 84px);
-
-    @media (min-width: 1800px) {
-      flex: 1;
-      width: auto;
-    }
-  }
-
-  &__form-panel {
-    width: 33vw;
-    max-width: 600px;
-    height: calc(100vh - 84px);
-    flex-shrink: 0;
-
-    @media (min-width: 1800px) {
-      width: 600px;
-    }
-  }
-}
-```
-
-## Fichiers modifiés
-
-| Fichier | Type de modification |
-|---------|---------------------|
-| `resources/scss/location/_index-page.scss` | Layout responsive, scroll control |
-| `resources/js/Pages/Location/Index.tsx` | Ajout ID `location_calendar` |
-| `tests/Feature/ReservationApiTest.php` | Fix email unique, nouveau test update_client |
+## Questions ouvertes
+- Doit-on gérer la sélection multi-périodes pour un même vélo (ex. 3–5 avr et 10–12 avr) ? Pour l’instant on impose une plage unique par vélo.  
+- Comment afficher les conflits s’il existe déjà une réservation sur la même plage ? (non prévu en 12.0).

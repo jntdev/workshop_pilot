@@ -1,9 +1,25 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { router } from '@inertiajs/react';
 import ClientSearch from '@/Components/Atelier/QuoteForm/ClientSearch';
-import type { Client, BikeType, ReservationFormData, ReservationItem, ReservationStatut } from '@/types';
+import ColorPicker from '@/Components/Location/ColorPicker';
+import type {
+    Client,
+    BikeType,
+    ReservationFormData,
+    ReservationStatut,
+    ReservationDraft,
+    ReservationDraftActions,
+    ReservationDraftSelectors,
+    LoadedReservation,
+} from '@/types';
 
 interface ReservationFormProps {
     bikeTypes: BikeType[];
+    draft: ReservationDraft;
+    selectors: ReservationDraftSelectors;
+    actions: ReservationDraftActions;
+    editingReservation?: LoadedReservation | null;
+    viewingMode?: boolean;
     onSuccess?: () => void;
 }
 
@@ -37,9 +53,10 @@ const initialFormData: ReservationFormData = {
     raison_annulation: '',
     commentaires: '',
     items: [],
+    selection: [],
 };
 
-export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFormProps) {
+export default function ReservationForm({ bikeTypes, draft, selectors, actions, editingReservation, viewingMode = false, onSuccess }: ReservationFormProps) {
     const [formData, setFormData] = useState<ReservationFormData>(initialFormData);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -59,6 +76,67 @@ export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFor
         avantage_valeur: 0,
         avantage_expiration: '',
     });
+
+    // Charger les données d'une réservation existante
+    useEffect(() => {
+        if (!editingReservation) return;
+
+        // Remplir le formulaire avec les données de la réservation
+        setFormData({
+            client_id: editingReservation.client_id,
+            date_contact: editingReservation.date_contact || new Date().toISOString().slice(0, 16),
+            date_reservation: editingReservation.date_reservation,
+            date_retour: editingReservation.date_retour,
+            livraison_necessaire: editingReservation.livraison_necessaire,
+            adresse_livraison: editingReservation.adresse_livraison || '',
+            contact_livraison: editingReservation.contact_livraison || '',
+            creneau_livraison: editingReservation.creneau_livraison || '',
+            recuperation_necessaire: editingReservation.recuperation_necessaire,
+            adresse_recuperation: editingReservation.adresse_recuperation || '',
+            contact_recuperation: editingReservation.contact_recuperation || '',
+            creneau_recuperation: editingReservation.creneau_recuperation || '',
+            prix_total_ttc: editingReservation.prix_total_ttc?.toString() || '',
+            acompte_demande: editingReservation.acompte_demande,
+            acompte_montant: editingReservation.acompte_montant?.toString() || '',
+            acompte_paye_le: editingReservation.acompte_paye_le || '',
+            paiement_final_le: editingReservation.paiement_final_le || '',
+            statut: editingReservation.statut,
+            raison_annulation: editingReservation.raison_annulation || '',
+            commentaires: editingReservation.commentaires || '',
+            items: editingReservation.items || [],
+            selection: editingReservation.selection || [],
+        });
+
+        // Remplir les données du client
+        if (editingReservation.client) {
+            setSelectedClient(editingReservation.client);
+            setNewClientData({
+                prenom: editingReservation.client.prenom || '',
+                nom: editingReservation.client.nom || '',
+                telephone: editingReservation.client.telephone || '',
+                email: editingReservation.client.email || '',
+                adresse: editingReservation.client.adresse || '',
+                origine_contact: editingReservation.client.origine_contact || '',
+                commentaires: editingReservation.client.commentaires || '',
+                avantage_type: editingReservation.client.avantage_type || 'aucun',
+                avantage_valeur: editingReservation.client.avantage_valeur || 0,
+                avantage_expiration: editingReservation.client.avantage_expiration || '',
+            });
+        }
+    }, [editingReservation]);
+
+    // Synchroniser le formulaire avec la sélection du calendrier (seulement pour nouvelle réservation)
+    useEffect(() => {
+        if (!draft.isActive || draft.editingReservationId) return;
+
+        setFormData((prev) => ({
+            ...prev,
+            date_reservation: selectors.globalMinDate || prev.date_reservation,
+            date_retour: selectors.globalMaxDate || prev.date_retour,
+            items: selectors.items.length > 0 ? selectors.items : prev.items,
+            selection: selectors.selectedBikes,
+        }));
+    }, [draft.isActive, draft.editingReservationId, selectors.globalMinDate, selectors.globalMaxDate, selectors.items, selectors.selectedBikes]);
 
     // Grouper les bikeTypes par catégorie
     const bikeTypesByCategory = useMemo(() => {
@@ -173,6 +251,7 @@ export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFor
                 acompte_paye_le: formData.acompte_paye_le || null,
                 paiement_final_le: formData.paiement_final_le || null,
                 raison_annulation: formData.statut === 'annule' ? formData.raison_annulation : null,
+                color: draft.color,
             };
 
             // Si nouveau client (pas de client existant sélectionné mais formulaire valide), envoyer new_client
@@ -203,8 +282,13 @@ export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFor
                 };
             }
 
-            const response = await fetch('/api/reservations', {
-                method: 'POST',
+            const isEditing = !!draft.editingReservationId;
+            const url = isEditing
+                ? `/api/reservations/${draft.editingReservationId}`
+                : '/api/reservations';
+
+            const response = await fetch(url, {
+                method: isEditing ? 'PUT' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
@@ -235,7 +319,13 @@ export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFor
                 return;
             }
 
-            setMessage({ type: 'success', text: 'Réservation créée avec succès' });
+            setMessage({ type: 'success', text: isEditing ? 'Réservation mise à jour avec succès' : 'Réservation créée avec succès' });
+
+            // Rafraîchir la page après un court délai pour voir le message de succès
+            setTimeout(() => {
+                router.reload({ only: ['reservations'] });
+            }, 800);
+
             setFormData(initialFormData);
             setSelectedClient(null);
             setNewClientData({
@@ -250,14 +340,15 @@ export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFor
                 avantage_valeur: 0,
                 avantage_expiration: '',
             });
+            actions.cancelSelection();
             onSuccess?.();
         } catch (error) {
-            console.error('Error creating reservation:', error);
-            setMessage({ type: 'error', text: 'Erreur lors de la création de la réservation' });
+            console.error('Error saving reservation:', error);
+            setMessage({ type: 'error', text: `Erreur lors de ${draft.editingReservationId ? 'la mise à jour' : 'la création'} de la réservation` });
         } finally {
             setIsSaving(false);
         }
-    }, [formData, isNewClientValid, newClientData, onSuccess]);
+    }, [formData, isNewClientValid, newClientData, onSuccess, draft.color, draft.editingReservationId, actions]);
 
     const isReadyToSubmit = useMemo(() => {
         const hasClient = formData.client_id || isNewClientValid;
@@ -278,12 +369,34 @@ export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFor
                 </div>
             )}
 
+            {/* Sélecteur de couleur - visible en mode sélection */}
+            {draft.isActive && (
+                <div className="reservation-form__color-row">
+                    <span className="reservation-form__color-label">Couleur :</span>
+                    <ColorPicker value={draft.color} onChange={actions.setColor} />
+                </div>
+            )}
+
             {/* Récap vélos sélectionnés */}
             {selectedBikesRecap.length > 0 && (
                 <div className="reservation-form__recap">
                     {selectedBikesRecap.map((recap, index) => (
                         <span key={index} className="reservation-form__recap-chip">{recap}</span>
                     ))}
+                </div>
+            )}
+
+            {/* Avertissement vélos HS */}
+            {selectors.hasHSBikes && (
+                <div className="reservation-form__warning">
+                    Attention : un ou plusieurs vélos sélectionnés sont marqués HS (hors service).
+                </div>
+            )}
+
+            {/* Mode sélection actif */}
+            {draft.isActive && selectors.selectedBikes.length === 0 && (
+                <div className="reservation-form__help reservation-form__help--selection">
+                    Cliquez sur les cellules du calendrier pour sélectionner les vélos et les dates.
                 </div>
             )}
 
@@ -526,14 +639,74 @@ export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFor
             <section className="reservation-form__section">
                 <h3 className="reservation-form__section-title">Vélos</h3>
 
-                {formData.items.length === 0 && (
+                {formData.items.length === 0 && !draft.isActive && (
                     <div className="reservation-form__help">
                         Sélectionnez au moins un vélo pour enregistrer la réservation
                     </div>
                 )}
                 {errors.items && <span className="reservation-form__error">{errors.items}</span>}
 
-                {Object.entries(bikeTypesByCategory).map(([category, types]) => (
+                {/* Vélos sélectionnés depuis le calendrier - groupés par période */}
+                {selectors.selectedBikes.length > 0 && (() => {
+                    // Grouper les vélos par dates exactes (pas juste start/end)
+                    const byPeriod = new Map<string, typeof selectors.selectedBikes>();
+                    for (const bike of selectors.selectedBikes) {
+                        // Utiliser le tableau dates complet comme clé (trié)
+                        const sortedDates = [...bike.dates].sort();
+                        const key = sortedDates.join(',');
+                        const group = byPeriod.get(key) || [];
+                        group.push(bike);
+                        byPeriod.set(key, group);
+                    }
+
+                    return (
+                        <div className="reservation-form__selected-bikes">
+                            <h4 className="reservation-form__selected-bikes-title">Vélos sélectionnés</h4>
+                            <div className="reservation-form__selected-bikes-list">
+                                {Array.from(byPeriod.entries()).map(([periodKey, bikes]) => {
+                                    // Récupérer les dates depuis le premier vélo du groupe
+                                    const dates = bikes[0]?.dates || [];
+                                    const startDate = dates[0] || '';
+                                    const endDate = dates[dates.length - 1] || '';
+                                    const days = dates.length;
+                                    const hasHS = bikes.some((b) => b.is_hs);
+
+                                    return (
+                                        <div
+                                            key={periodKey}
+                                            className={`reservation-form__selected-bike ${hasHS ? 'reservation-form__selected-bike--hs' : ''}`}
+                                        >
+                                            <div className="reservation-form__selected-bike-info">
+                                                <span className="reservation-form__selected-bike-dates">
+                                                    {startDate} → {endDate} ({days} j.)
+                                                </span>
+                                                <span className="reservation-form__selected-bike-labels">
+                                                    {bikes.map((b) => (
+                                                        <span key={b.bike_id} className="reservation-form__bike-label-chip">
+                                                            {b.label}
+                                                            {b.is_hs && <span className="reservation-form__badge reservation-form__badge--hs">HS</span>}
+                                                            <button
+                                                                type="button"
+                                                                className="reservation-form__bike-label-remove"
+                                                                onClick={() => actions.removeBike(b.bike_id)}
+                                                                title={`Retirer ${b.label}`}
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })()}
+
+                {/* Sélection manuelle par type (masquée si mode calendrier actif) */}
+                {!draft.isActive && Object.entries(bikeTypesByCategory).map(([category, types]) => (
                     <div key={category} className="reservation-form__bike-category">
                         <h4 className="reservation-form__bike-category-title">{category}</h4>
                         <div className="reservation-form__bike-grid">
@@ -715,21 +888,32 @@ export default function ReservationForm({ bikeTypes, onSuccess }: ReservationFor
             </section>
 
             {/* Actions */}
-            <div className="reservation-form__footer">
-                {isReadyToSubmit && (
-                    <div className="reservation-form__tag reservation-form__tag--success">
-                        Prêt à confirmer
-                    </div>
-                )}
-                <button
-                    type="button"
-                    className="reservation-form__btn reservation-form__btn--primary reservation-form__btn--large"
-                    onClick={handleSubmit}
-                    disabled={isSaving || !isReadyToSubmit}
-                >
-                    {isSaving ? 'Enregistrement...' : 'Enregistrer la réservation'}
-                </button>
-            </div>
+            {!viewingMode && (
+                <div className="reservation-form__footer">
+                    {isReadyToSubmit && !isSaving && (
+                        <div className="reservation-form__tag reservation-form__tag--success">
+                            Prêt à confirmer
+                        </div>
+                    )}
+                    <button
+                        type="button"
+                        className={`reservation-form__btn reservation-form__btn--primary reservation-form__btn--large ${isSaving ? 'reservation-form__btn--loading' : ''}`}
+                        onClick={handleSubmit}
+                        disabled={isSaving || !isReadyToSubmit}
+                    >
+                        {isSaving ? (
+                            <>
+                                <span className="reservation-form__spinner" />
+                                Enregistrement en cours...
+                            </>
+                        ) : draft.editingReservationId ? (
+                            'Mettre à jour la réservation'
+                        ) : (
+                            'Enregistrer la réservation'
+                        )}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

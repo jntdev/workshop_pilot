@@ -165,10 +165,41 @@ export interface DayInfo {
     isWeekend: boolean;
 }
 
+// Réservation chargée pour affichage dans la grille et édition
+export interface LoadedReservation {
+    id: number;
+    client_id: number | null;
+    client_name: string;
+    client: Client | null;
+    date_contact: string | null;
+    date_reservation: string;
+    date_retour: string;
+    livraison_necessaire: boolean;
+    adresse_livraison: string | null;
+    contact_livraison: string | null;
+    creneau_livraison: string | null;
+    recuperation_necessaire: boolean;
+    adresse_recuperation: string | null;
+    contact_recuperation: string | null;
+    creneau_recuperation: string | null;
+    prix_total_ttc: string;
+    acompte_demande: boolean;
+    acompte_montant: string | null;
+    acompte_paye_le: string | null;
+    paiement_final_le: string | null;
+    statut: ReservationStatut;
+    raison_annulation: string | null;
+    commentaires: string | null;
+    color: ReservationColorIndex;
+    selection: SelectionBike[];
+    items: ReservationItem[];
+}
+
 export interface LocationPageProps extends PageProps {
     bikes: BikeDefinition[];
     bikeTypes: BikeType[];
     year: number;
+    reservations: LoadedReservation[];
 }
 
 export interface LineCalculationResult {
@@ -250,6 +281,62 @@ export interface ReservationFormData {
     statut: ReservationStatut;
     raison_annulation: string;
     commentaires: string;
+    items: ReservationItem[];
+    selection: SelectionBike[];
+}
+
+// Selection calendrier pour réservation
+export interface SelectedCell {
+    bikeId: string;
+    date: string;
+    isHS: boolean;
+}
+
+export interface SelectionBike {
+    bike_id: string;
+    label: string;
+    start_date: string;
+    end_date: string;
+    dates: string[];
+    is_hs: boolean;
+}
+
+// Index de couleur pour les réservations (0-29)
+// 0-9: Saturées, 10-19: Claires, 20-29: Très claires
+export type ReservationColorIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29;
+
+export interface ReservationDraft {
+    id: string;
+    cells: Map<string, SelectedCell>;
+    isActive: boolean;
+    color: ReservationColorIndex;
+    editingReservationId: number | null; // ID de la réservation en cours d'édition (null = nouvelle)
+}
+
+export interface ReservationDraftActions {
+    startSelection: () => void;
+    cancelSelection: () => void;
+    toggleCell: (cell: SelectedCell) => void;
+    removeBike: (bikeId: string) => void;
+    clearSelection: () => void;
+    setColor: (color: ReservationColorIndex) => void;
+    loadReservation: (reservation: LoadedReservation) => void;
+}
+
+export interface BikesByPeriod {
+    periodKey: string;
+    startDate: string;
+    endDate: string;
+    bikes: SelectionBike[];
+}
+
+export interface ReservationDraftSelectors {
+    selectedBikes: SelectionBike[];
+    bikesByPeriod: BikesByPeriod[];
+    globalMinDate: string | null;
+    globalMaxDate: string | null;
+    hasHSBikes: boolean;
+    selectedBikeIds: Set<string>;
     items: ReservationItem[];
 }
 

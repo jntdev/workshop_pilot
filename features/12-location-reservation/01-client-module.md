@@ -1,19 +1,26 @@
-# 1 — Bloc client
+# 1 — Module client connecté
 
-## Recherche client existant
-- Bandeau supérieur identique au moteur de recherche utilisé dans les devis (`ClientSearch`) avec auto-complétion sur `prenom`, `nom`, `email`, `telephone`.
-- Résultat sélectionné affiche les métadonnées clés (nom complet, téléphone, mail) et verrouille le mini-formulaire pour éviter les divergences.
-- Possibilité de désélectionner pour repartir à zéro si l'appel concerne un autre client.
+## Objectifs
+- Identifier rapidement un client existant via `ClientSearch`.
+- Créer ou mettre à jour un client sans quitter l’écran.
+- Propager automatiquement l’`client_id` (ou les données du nouveau client) vers le payload de réservation.
 
-## Création rapide d'un nouveau client (cas le plus fréquent)
-- Formulaire minimal toujours visible avec les champs requis pour la base `clients` : `prenom`, `nom`, `telephone`, `email`.
-- Validation immédiate (format mail/téléphone) et mise en évidence des champs obligatoires ; enregistrement déclenche la création dans la DB avant la sauvegarde de la réservation pour garantir un `client_id` valide.
+## Flux cible
+1. **Recherche**  
+   - `ClientSearch` (déjà utilisé côté Atelier) reste le point d’entrée.  
+   - Lorsqu’un client est sélectionné, un encart affiche ses coordonnées et verrouille les champs minimaux pour éviter les incohérences.  
+   - Un bouton « Changer de client » réinitialise la sélection et remet les champs au mode “nouveau client”.
+2. **Création / mise à jour**  
+   - Les champs requis (`prenom`, `nom`, `telephone`) restent visibles en permanence.  
+   - Les autres attributs (`email`, `adresse`, `origine_contact`, `commentaires`, `avantage_*`) sont regroupés dans un accordéon “Plus de détails”.  
+   - Si aucun client n’est sélectionné mais que les champs requis sont remplis, le POST `/api/reservations` envoie `new_client`.  
+   - Si un client est sélectionné et que les champs changent, l’appel inclut `update_client`.
+3. **Retour utilisateur**  
+   - Messages inline pour signaler la création ou les erreurs de validation.  
+   - Tag vert “Client existant sélectionné” ou “Nouveau client – sera créé”.
 
-## Détails facultatifs
-- Accordéon "Plus de détails" replié par défaut donnant accès aux autres attributs du typage `Client` : `adresse`, `origine_contact`, `commentaires`, `avantage_type`, `avantage_valeur`, `avantage_expiration`.
-- Les valeurs saisies sont stockées sur le client (pas uniquement sur la réservation) afin d'éviter les doublons d'informations.
-- Un badge rappelle si un avantage est actif (type/valeur/expiration) pour guider la négociation commerciale.
-
-## UX complémentaires
-- Bouton "Créer un client" principal + spinner d'état pour signaler l'insertion.
-- Messages flash intégrés au panneau pour confirmer la création ou signaler un doublon détecté.
+## Points d’attention
+- Les validations front doivent refléter `StoreReservationRequest` (formats téléphone/email, champs obligatoires).  
+   Toute erreur provenant de l’API est mappée vers les champs `client_*`.
+- Ne jamais bloquer la soumission si le client n’est pas encore créé : la création se fait au moment du POST principal.
+- Prévoir un futur flag “client pro” mais hors-champ pour 12.0.

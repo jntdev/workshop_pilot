@@ -75,6 +75,18 @@ class StoreReservationRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.bike_type_id' => ['required', 'exists:bike_types,id'],
             'items.*.quantite' => ['required', 'integer', 'min:1'],
+
+            // Sélection calendrier (vélos individuels)
+            'selection' => ['nullable', 'array'],
+            'selection.*.bike_id' => ['required_with:selection', 'string'],
+            'selection.*.start_date' => ['required_with:selection', 'date'],
+            'selection.*.end_date' => ['required_with:selection', 'date'],
+            'selection.*.dates' => ['required_with:selection', 'array'],
+            'selection.*.dates.*' => ['date'],
+            'selection.*.is_hs' => ['nullable', 'boolean'],
+
+            // Couleur de la réservation (0-29)
+            'color' => ['nullable', 'integer', 'min:0', 'max:29'],
         ];
     }
 

@@ -52,6 +52,16 @@ class UpdateReservationRequest extends FormRequest
             'items' => ['sometimes', 'array', 'min:1'],
             'items.*.bike_type_id' => ['required_with:items', 'exists:bike_types,id'],
             'items.*.quantite' => ['required_with:items', 'integer', 'min:1'],
+
+            // Sélection calendrier (vélos individuels avec dates)
+            'selection' => ['sometimes', 'array'],
+            'selection.*.bike_id' => ['required_with:selection', 'string'],
+            'selection.*.dates' => ['required_with:selection', 'array', 'min:1'],
+            'selection.*.dates.*' => ['date_format:Y-m-d'],
+            'selection.*.is_hs' => ['sometimes', 'boolean'],
+
+            // Couleur de la réservation (0-29)
+            'color' => ['sometimes', 'integer', 'min:0', 'max:29'],
         ];
     }
 

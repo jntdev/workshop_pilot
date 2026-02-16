@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AtelierController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ReservationController;
 use Illuminate\Support\Facades\Route;
@@ -33,8 +34,12 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Reservations API routes
     Route::get('/reservations', [ReservationController::class, 'index']);
+    Route::get('/reservations/window', [ReservationController::class, 'window']);
     Route::get('/reservations/{id}', [ReservationController::class, 'show']);
     Route::post('/reservations', [ReservationController::class, 'store']);
     Route::put('/reservations/{id}', [ReservationController::class, 'update']);
     Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
+
+    // Location API routes
+    Route::get('/location/planning', [LocationController::class, 'planning']);
 });
