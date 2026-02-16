@@ -1,38 +1,38 @@
 import { Head } from '@inertiajs/react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import MainLayout from '@/Layouts/MainLayout';
-
-interface BikeType {
-    id: string;
-    category: string;
-    size: string;
-    frame_type: string;
-    label: string;
-    stock: number;
-}
 
 interface Bike {
     id: number;
-    bike_type_id: string;
-    label: string;
+    category: 'VAE' | 'VTC';
+    size: 'S' | 'M' | 'L' | 'XL';
+    frame_type: 'b' | 'h';
+    name: string;
     status: 'OK' | 'HS';
     notes: string | null;
     sort_order: number;
-    bike_type?: BikeType;
 }
 
 interface PageProps {
     bikes: Bike[];
-    bikeTypes: BikeType[];
 }
 
-export default function BikesIndex({ bikes: initialBikes, bikeTypes }: PageProps) {
-    const [bikes, setBikes] = useState<Bike[]>(initialBikes);
+const CATEGORIES = ['VAE', 'VTC'] as const;
+const SIZES = ['S', 'M', 'L', 'XL'] as const;
+const FRAME_TYPES = [
+    { value: 'b', label: 'Cadre bas' },
+    { value: 'h', label: 'Cadre haut' },
+] as const;
+
+export default function BikesIndex({ bikes: initialBikes }: PageProps) {
+    const [bikes, setBikes] = useState<Bike[]>(initialBikes || []);
     const [editingBike, setEditingBike] = useState<Bike | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [formData, setFormData] = useState({
-        bike_type_id: '',
-        label: '',
+        category: 'VAE' as 'VAE' | 'VTC',
+        size: 'M' as 'S' | 'M' | 'L' | 'XL',
+        frame_type: 'b' as 'b' | 'h',
+        name: '',
         status: 'OK' as 'OK' | 'HS',
         notes: '',
     });
@@ -40,32 +40,38 @@ export default function BikesIndex({ bikes: initialBikes, bikeTypes }: PageProps
 
     const resetForm = useCallback(() => {
         setFormData({
-            bike_type_id: bikeTypes[0]?.id || '',
-            label: '',
+            category: 'VAE',
+            size: 'M',
+            frame_type: 'b',
+            name: '',
             status: 'OK',
             notes: '',
         });
         setEditingBike(null);
         setIsCreating(false);
-    }, [bikeTypes]);
+    }, []);
 
     const handleCreate = useCallback(() => {
         setIsCreating(true);
         setEditingBike(null);
         setFormData({
-            bike_type_id: bikeTypes[0]?.id || '',
-            label: '',
+            category: 'VAE',
+            size: 'M',
+            frame_type: 'b',
+            name: '',
             status: 'OK',
             notes: '',
         });
-    }, [bikeTypes]);
+    }, []);
 
     const handleEdit = useCallback((bike: Bike) => {
         setEditingBike(bike);
         setIsCreating(false);
         setFormData({
-            bike_type_id: bike.bike_type_id,
-            label: bike.label,
+            category: bike.category,
+            size: bike.size,
+            frame_type: bike.frame_type,
+            name: bike.name,
             status: bike.status,
             notes: bike.notes || '',
         });
@@ -159,20 +165,32 @@ export default function BikesIndex({ bikes: initialBikes, bikeTypes }: PageProps
         }
     }, []);
 
-    // Grouper les velos par type
-    const bikesByType = bikes.reduce((acc, bike) => {
-        const typeId = bike.bike_type_id;
-        if (!acc[typeId]) {
-            acc[typeId] = [];
+    // Grouper les velos par categorie puis par taille
+    const bikesByCategory = useMemo(() => {
+        const grouped: Record<string, Record<string, Bike[]>> = {};
+
+        for (const category of CATEGORIES) {
+            grouped[category] = {};
+            for (const size of SIZES) {
+                grouped[category][size] = [];
+            }
         }
-        acc[typeId].push(bike);
-        return acc;
-    }, {} as Record<string, Bike[]>);
+
+        for (const bike of bikes) {
+            if (grouped[bike.category] && grouped[bike.category][bike.size]) {
+                grouped[bike.category][bike.size].push(bike);
+            }
+        }
+
+        return grouped;
+    }, [bikes]);
 
     // Stats
     const totalBikes = bikes.length;
     const okBikes = bikes.filter(b => b.status === 'OK').length;
     const hsBikes = bikes.filter(b => b.status === 'HS').length;
+
+    const getFrameLabel = (frameType: string) => frameType === 'b' ? 'bas' : 'haut';
 
     return (
         <MainLayout>
@@ -197,105 +215,165 @@ export default function BikesIndex({ bikes: initialBikes, bikeTypes }: PageProps
 
                 <div className="bikes-page__content">
                     <div className="bikes-page__list">
-                        {bikeTypes.map(type => {
-                            const typeBikes = bikesByType[type.id] || [];
-                            if (typeBikes.length === 0) return null;
+                        {CATEGORIES.map(category => {
+                            const categoryBikes = bikes.filter(b => b.category === category);
+                            if (categoryBikes.length === 0) return null;
 
                             return (
-                                <div key={type.id} className="bikes-group">
-                                    <h2 className="bikes-group__title">
-                                        {type.label}
-                                        <span className="bikes-group__count">{typeBikes.length}</span>
+                                <div key={category} className="bikes-category">
+                                    <h2 className="bikes-category__title">
+                                        {category}
+                                        <span className="bikes-category__count">{categoryBikes.length}</span>
                                     </h2>
-                                    <div className="bikes-group__items">
-                                        {typeBikes.map(bike => (
-                                            <div
-                                                key={bike.id}
-                                                className={`bike-card ${bike.status === 'HS' ? 'bike-card--hs' : ''} ${editingBike?.id === bike.id ? 'bike-card--editing' : ''}`}
-                                            >
-                                                <div className="bike-card__main">
-                                                    <span className="bike-card__label">{bike.label}</span>
-                                                    <button
-                                                        type="button"
-                                                        className={`bike-card__status ${bike.status === 'OK' ? 'bike-card__status--ok' : 'bike-card__status--hs'}`}
-                                                        onClick={() => handleToggleStatus(bike)}
-                                                        title="Cliquer pour changer le statut"
-                                                    >
-                                                        {bike.status}
-                                                    </button>
-                                                </div>
-                                                {bike.notes && (
-                                                    <p className="bike-card__notes">{bike.notes}</p>
-                                                )}
-                                                <div className="bike-card__actions">
-                                                    <button
-                                                        type="button"
-                                                        className="bike-card__action"
-                                                        onClick={() => handleEdit(bike)}
-                                                    >
-                                                        Modifier
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="bike-card__action bike-card__action--danger"
-                                                        onClick={() => handleDelete(bike.id)}
-                                                    >
-                                                        Supprimer
-                                                    </button>
+
+                                    {SIZES.map(size => {
+                                        const sizeBikes = bikesByCategory[category][size];
+                                        if (sizeBikes.length === 0) return null;
+
+                                        return (
+                                            <div key={`${category}-${size}`} className="bikes-group">
+                                                <h3 className="bikes-group__title">
+                                                    Taille {size}
+                                                    <span className="bikes-group__count">{sizeBikes.length}</span>
+                                                </h3>
+                                                <div className="bikes-group__items">
+                                                    {sizeBikes.map(bike => (
+                                                        <div
+                                                            key={bike.id}
+                                                            className={`bike-card ${bike.status === 'HS' ? 'bike-card--hs' : ''} ${editingBike?.id === bike.id ? 'bike-card--editing' : ''}`}
+                                                        >
+                                                            <div className="bike-card__main">
+                                                                <span className="bike-card__label">{bike.name}</span>
+                                                                <span className="bike-card__type">
+                                                                    {getFrameLabel(bike.frame_type)}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    className={`bike-card__status ${bike.status === 'OK' ? 'bike-card__status--ok' : 'bike-card__status--hs'}`}
+                                                                    onClick={() => handleToggleStatus(bike)}
+                                                                    title="Cliquer pour changer le statut"
+                                                                >
+                                                                    {bike.status}
+                                                                </button>
+                                                            </div>
+                                                            {bike.notes && (
+                                                                <p className="bike-card__notes">{bike.notes}</p>
+                                                            )}
+                                                            <div className="bike-card__actions">
+                                                                <button
+                                                                    type="button"
+                                                                    className="bike-card__action"
+                                                                    onClick={() => handleEdit(bike)}
+                                                                >
+                                                                    Modifier
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="bike-card__action bike-card__action--danger"
+                                                                    onClick={() => handleDelete(bike.id)}
+                                                                >
+                                                                    Supprimer
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        );
+                                    })}
                                 </div>
                             );
                         })}
+
+                        {bikes.length === 0 && (
+                            <div className="bikes-page__empty">
+                                <p>Aucun velo enregistre.</p>
+                                <button
+                                    type="button"
+                                    className="bikes-page__btn bikes-page__btn--primary"
+                                    onClick={handleCreate}
+                                >
+                                    Ajouter le premier velo
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {(isCreating || editingBike) && (
                         <div className="bikes-page__form-panel">
                             <form onSubmit={handleSubmit} className="bike-form">
                                 <h3 className="bike-form__title">
-                                    {editingBike ? `Modifier ${editingBike.label}` : 'Nouveau velo'}
+                                    {editingBike ? `Modifier ${editingBike.name}` : 'Nouveau velo'}
                                 </h3>
 
                                 <div className="bike-form__field">
-                                    <label htmlFor="bike_type_id">Type de velo</label>
-                                    <select
-                                        id="bike_type_id"
-                                        value={formData.bike_type_id}
-                                        onChange={e => setFormData(prev => ({ ...prev, bike_type_id: e.target.value }))}
-                                        required
-                                    >
-                                        {bikeTypes.map(type => (
-                                            <option key={type.id} value={type.id}>
-                                                {type.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="bike-form__field">
-                                    <label htmlFor="label">Nom du velo</label>
+                                    <label htmlFor="name">Nom du velo *</label>
                                     <input
                                         type="text"
-                                        id="label"
-                                        value={formData.label}
-                                        onChange={e => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                                        placeholder="Ex: VAE M-7"
+                                        id="name"
+                                        value={formData.name}
+                                        onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                        placeholder="Ex: VAE-M-1, VTC Bleu..."
                                         required
                                     />
                                 </div>
 
-                                <div className="bike-form__field">
-                                    <label htmlFor="status">Statut</label>
-                                    <select
-                                        id="status"
-                                        value={formData.status}
-                                        onChange={e => setFormData(prev => ({ ...prev, status: e.target.value as 'OK' | 'HS' }))}
-                                    >
-                                        <option value="OK">OK - Operationnel</option>
-                                        <option value="HS">HS - Hors service</option>
-                                    </select>
+                                <div className="bike-form__row">
+                                    <div className="bike-form__field">
+                                        <label htmlFor="category">Categorie</label>
+                                        <select
+                                            id="category"
+                                            value={formData.category}
+                                            onChange={e => setFormData(prev => ({ ...prev, category: e.target.value as 'VAE' | 'VTC' }))}
+                                            required
+                                        >
+                                            {CATEGORIES.map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="bike-form__field">
+                                        <label htmlFor="size">Taille</label>
+                                        <select
+                                            id="size"
+                                            value={formData.size}
+                                            onChange={e => setFormData(prev => ({ ...prev, size: e.target.value as 'S' | 'M' | 'L' | 'XL' }))}
+                                            required
+                                        >
+                                            {SIZES.map(s => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="bike-form__row">
+                                    <div className="bike-form__field">
+                                        <label htmlFor="frame_type">Type de cadre</label>
+                                        <select
+                                            id="frame_type"
+                                            value={formData.frame_type}
+                                            onChange={e => setFormData(prev => ({ ...prev, frame_type: e.target.value as 'b' | 'h' }))}
+                                            required
+                                        >
+                                            {FRAME_TYPES.map(ft => (
+                                                <option key={ft.value} value={ft.value}>{ft.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="bike-form__field">
+                                        <label htmlFor="status">Statut</label>
+                                        <select
+                                            id="status"
+                                            value={formData.status}
+                                            onChange={e => setFormData(prev => ({ ...prev, status: e.target.value as 'OK' | 'HS' }))}
+                                        >
+                                            <option value="OK">OK - Operationnel</option>
+                                            <option value="HS">HS - Hors service</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="bike-form__field">

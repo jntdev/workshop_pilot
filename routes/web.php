@@ -356,12 +356,19 @@ Route::middleware(['auth'])->group(function () {
                 ])->toArray(),
             ]);
 
+        // Charger les vélos depuis la base de données
+        $bikes = \App\Models\Bike::ordered()->get()->map(fn ($bike) => [
+            'id' => $bike->id,
+            'column_id' => 'bike_' . $bike->id,
+            'category' => $bike->category,
+            'size' => $bike->size,
+            'frame_type' => $bike->frame_type,
+            'name' => $bike->name,
+            'status' => $bike->status,
+        ]);
+
         return Inertia::render('Location/Index', [
-            'bikes' => config('bikes.fleet'),
-            'bikeTypes' => \App\Models\BikeType::orderBy('category')
-                ->orderByRaw("FIELD(size, 'S', 'M', 'L', 'XL')")
-                ->orderBy('frame_type')
-                ->get(),
+            'bikes' => $bikes,
             'year' => $year,
             'reservations' => $reservations,
         ]);

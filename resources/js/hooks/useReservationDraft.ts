@@ -21,22 +21,14 @@ function cellKey(bikeId: string, date: string): string {
 }
 
 function bikeToTypeId(bike: BikeDefinition): string {
-    return `${bike.category}_${bike.size}${bike.frame_type}`;
+    return `${bike.category}_${bike.size.toLowerCase()}${bike.frame_type}`;
 }
 
 /**
- * Génère l'étiquette courte d'un vélo
- * VAE = E (électrique), VTC = pas de préfixe
- * Exemples: vae-m-01 → EMb1, vtc-l-03 → Lb3
+ * Retourne le nom du vélo (affiché dans la sélection)
  */
 function bikeToLabel(bike: BikeDefinition): string {
-    const prefix = bike.category === 'VAE' ? 'E' : '';
-    const size = bike.size;
-    const frame = bike.frame_type;
-    // Extraire le numéro de l'id (vae-m-01 → 1)
-    const parts = bike.id.split('-');
-    const num = parts.length >= 3 ? parseInt(parts[2], 10) : 0;
-    return `${prefix}${size}${frame}${num}`;
+    return bike.name;
 }
 
 interface UseReservationDraftOptions {
@@ -60,7 +52,7 @@ export function useReservationDraft({ bikes }: UseReservationDraftOptions): UseR
 
     const bikesMap = useMemo(() => {
         const map = new Map<string, BikeDefinition>();
-        bikes.forEach((bike) => map.set(bike.id, bike));
+        bikes.forEach((bike) => map.set(bike.column_id, bike));
         return map;
     }, [bikes]);
 

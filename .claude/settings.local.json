@@ -46,7 +46,8 @@
       "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$HOME/.nvm/versions/node/v22.14.0/bin:$PATH\")",
       "Bash(./vendor/bin/sail artisan make:test:*)",
       "Bash(./vendor/bin/pint:*)",
-      "Bash(/opt/homebrew/bin/php ./vendor/bin/pint:*)"
+      "Bash(/opt/homebrew/bin/php ./vendor/bin/pint:*)",
+      "Bash(./node_modules/.bin/tsc:*)"
     ]
   }
 }

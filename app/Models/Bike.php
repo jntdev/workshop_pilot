@@ -4,15 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Bike extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'bike_type_id',
-        'label',
+        'category',
+        'size',
+        'frame_type',
+        'name',
         'status',
         'notes',
         'sort_order',
@@ -25,9 +26,21 @@ class Bike extends Model
         ];
     }
 
-    public function bikeType(): BelongsTo
+    /**
+     * Génère un identifiant unique pour ce vélo (utilisé comme clé de colonne).
+     */
+    public function getColumnIdAttribute(): string
     {
-        return $this->belongsTo(BikeType::class);
+        return 'bike_' . $this->id;
+    }
+
+    /**
+     * Retourne le label complet du type (ex: "VAE M cadre bas").
+     */
+    public function getTypeLabelAttribute(): string
+    {
+        $frameLabel = $this->frame_type === 'b' ? 'cadre bas' : 'cadre haut';
+        return "{$this->category} {$this->size} {$frameLabel}";
     }
 
     public function scopeOk($query)
@@ -42,6 +55,9 @@ class Bike extends Model
 
     public function scopeOrdered($query)
     {
-        return $query->orderBy('sort_order');
+        return $query->orderBy('category')
+            ->orderByRaw("FIELD(size, 'S', 'M', 'L', 'XL')")
+            ->orderBy('frame_type')
+            ->orderBy('sort_order');
     }
 }

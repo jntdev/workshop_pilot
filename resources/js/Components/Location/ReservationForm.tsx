@@ -4,7 +4,6 @@ import ClientSearch from '@/Components/Atelier/QuoteForm/ClientSearch';
 import ColorPicker from '@/Components/Location/ColorPicker';
 import type {
     Client,
-    BikeType,
     ReservationFormData,
     ReservationStatut,
     ReservationDraft,
@@ -14,7 +13,6 @@ import type {
 } from '@/types';
 
 interface ReservationFormProps {
-    bikeTypes: BikeType[];
     draft: ReservationDraft;
     selectors: ReservationDraftSelectors;
     actions: ReservationDraftActions;
@@ -56,7 +54,7 @@ const initialFormData: ReservationFormData = {
     selection: [],
 };
 
-export default function ReservationForm({ bikeTypes, draft, selectors, actions, editingReservation, viewingMode = false, onSuccess }: ReservationFormProps) {
+export default function ReservationForm({ draft, selectors, actions, editingReservation, viewingMode = false, onSuccess }: ReservationFormProps) {
     const [formData, setFormData] = useState<ReservationFormData>(initialFormData);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -138,28 +136,10 @@ export default function ReservationForm({ bikeTypes, draft, selectors, actions, 
         }));
     }, [draft.isActive, draft.editingReservationId, selectors.globalMinDate, selectors.globalMaxDate, selectors.items, selectors.selectedBikes]);
 
-    // Grouper les bikeTypes par catégorie
-    const bikeTypesByCategory = useMemo(() => {
-        const grouped: Record<string, BikeType[]> = {};
-        bikeTypes.forEach((bt) => {
-            if (!grouped[bt.category]) {
-                grouped[bt.category] = [];
-            }
-            grouped[bt.category].push(bt);
-        });
-        return grouped;
-    }, [bikeTypes]);
-
-    // Récap des vélos sélectionnés
+    // Récap des vélos sélectionnés (basé sur selectors)
     const selectedBikesRecap = useMemo(() => {
-        return formData.items
-            .filter((item) => item.quantite > 0)
-            .map((item) => {
-                const bikeType = bikeTypes.find((bt) => bt.id === item.bike_type_id);
-                return bikeType ? `${item.quantite}x ${bikeType.label}` : '';
-            })
-            .filter(Boolean);
-    }, [formData.items, bikeTypes]);
+        return selectors.selectedBikes.map((bike) => bike.label);
+    }, [selectors.selectedBikes]);
 
     // Calcul acompte suggéré (30%)
     const suggestedAcompte = useMemo(() => {
@@ -201,30 +181,6 @@ export default function ReservationForm({ bikeTypes, draft, selectors, actions, 
             newClientData.telephone.trim() !== ''
         );
     }, [newClientData.prenom, newClientData.nom, newClientData.telephone]);
-
-    const handleBikeQuantityChange = useCallback((bikeTypeId: string, quantite: number) => {
-        setFormData((prev) => {
-            const existingIndex = prev.items.findIndex((item) => item.bike_type_id === bikeTypeId);
-            const newItems = [...prev.items];
-
-            if (existingIndex >= 0) {
-                if (quantite <= 0) {
-                    newItems.splice(existingIndex, 1);
-                } else {
-                    newItems[existingIndex] = { ...newItems[existingIndex], quantite };
-                }
-            } else if (quantite > 0) {
-                newItems.push({ bike_type_id: bikeTypeId, quantite });
-            }
-
-            return { ...prev, items: newItems };
-        });
-    }, []);
-
-    const getBikeQuantity = useCallback((bikeTypeId: string): number => {
-        const item = formData.items.find((i) => i.bike_type_id === bikeTypeId);
-        return item?.quantite || 0;
-    }, [formData.items]);
 
     const handleSubmit = useCallback(async () => {
         setIsSaving(true);
@@ -705,43 +661,6 @@ export default function ReservationForm({ bikeTypes, draft, selectors, actions, 
                     );
                 })()}
 
-                {/* Sélection manuelle par type (masquée si mode calendrier actif) */}
-                {!draft.isActive && Object.entries(bikeTypesByCategory).map(([category, types]) => (
-                    <div key={category} className="reservation-form__bike-category">
-                        <h4 className="reservation-form__bike-category-title">{category}</h4>
-                        <div className="reservation-form__bike-grid">
-                            {types.map((bikeType) => {
-                                const quantity = getBikeQuantity(bikeType.id);
-                                return (
-                                    <div
-                                        key={bikeType.id}
-                                        className={`reservation-form__bike-card ${quantity > 0 ? 'reservation-form__bike-card--selected' : ''}`}
-                                    >
-                                        <div className="reservation-form__bike-label">
-                                            {bikeType.size} {bikeType.frame_type === 'b' ? 'bas' : 'haut'}
-                                        </div>
-                                        <div className="reservation-form__bike-quantity">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleBikeQuantityChange(bikeType.id, Math.max(0, quantity - 1))}
-                                                disabled={quantity <= 0}
-                                            >
-                                                -
-                                            </button>
-                                            <span>{quantity}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleBikeQuantityChange(bikeType.id, quantity + 1)}
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
             </section>
 
             {/* Section 4: Finances & Statut */}

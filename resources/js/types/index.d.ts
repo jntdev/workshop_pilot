@@ -145,13 +145,13 @@ export type BikeFrameType = 'b' | 'h'; // b = cadre bas, h = cadre haut
 export type BikeStatus = 'OK' | 'HS';
 
 export interface BikeDefinition {
-    id: string;
+    id: number;
+    column_id: string; // "bike_1", "bike_2", etc.
     category: BikeCategory;
     size: BikeSize;
     frame_type: BikeFrameType;
-    label: string;
+    name: string; // Nom affiché dans le header
     status: BikeStatus;
-    notes: string | null;
 }
 
 export type AvailabilityStatus = 'available' | 'reserved' | 'pre_reserved' | 'maintenance';
@@ -197,7 +197,6 @@ export interface LoadedReservation {
 
 export interface LocationPageProps extends PageProps {
     bikes: BikeDefinition[];
-    bikeTypes: BikeType[];
     year: number;
     reservations: LoadedReservation[];
 }
@@ -323,16 +322,8 @@ export interface ReservationDraftActions {
     loadReservation: (reservation: LoadedReservation) => void;
 }
 
-export interface BikesByPeriod {
-    periodKey: string;
-    startDate: string;
-    endDate: string;
-    bikes: SelectionBike[];
-}
-
 export interface ReservationDraftSelectors {
     selectedBikes: SelectionBike[];
-    bikesByPeriod: BikesByPeriod[];
     globalMinDate: string | null;
     globalMaxDate: string | null;
     hasHSBikes: boolean;

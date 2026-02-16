@@ -58,7 +58,7 @@ const mergeReservations = (existing: LoadedReservation[], incoming: LoadedReserv
     return Array.from(map.values()).sort((a, b) => a.date_reservation.localeCompare(b.date_reservation));
 };
 
-export default function LocationIndex({ bikes, bikeTypes, year, reservations: initialReservations }: LocationPageProps) {
+export default function LocationIndex({ bikes, year, reservations: initialReservations }: LocationPageProps) {
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     const { draft, actions, selectors } = useReservationDraft({ bikes });
@@ -189,7 +189,7 @@ export default function LocationIndex({ bikes, bikeTypes, year, reservations: in
         return days.map((day) => {
             const row: RowData = { ...day };
             bikes.forEach((bike) => {
-                row[bike.id] = 'available';
+                row[bike.column_id] = 'available';
             });
             return row;
         });
@@ -472,25 +472,24 @@ export default function LocationIndex({ bikes, bikeTypes, year, reservations: in
                 separatorClass = 'location-table__separator--bike';
             }
 
-            bikeColumns.push(columnHelper.accessor((row) => row[bike.id], {
-                id: bike.id,
+            bikeColumns.push(columnHelper.accessor((row) => row[bike.column_id], {
+                id: bike.column_id,
                 header: () => (
                     <div
                         className={`location-table__header-bike ${bike.status === 'HS' ? 'location-table__header-bike--hs' : 'location-table__header-bike--ok'} ${separatorClass}`}
-                        title={bike.notes || undefined}
-                        data-bike-id={bike.id}
+                        title={`${bike.category} ${bike.size} ${bike.frame_type === 'b' ? 'cadre bas' : 'cadre haut'}`}
+                        data-bike-id={bike.column_id}
                         data-status={bike.status}
-                        onMouseEnter={() => handleColumnHover(bike.id)}
+                        onMouseEnter={() => handleColumnHover(bike.column_id)}
                         onMouseLeave={() => handleColumnHover(null)}
                     >
-                        <span className="location-table__header-category">{bike.category}</span>
-                        <span className="location-table__header-size">{bike.size}{bike.frame_type}</span>
+                        <span className="location-table__header-name">{bike.name}</span>
                     </div>
                 ),
                 cell: (info) => {
                     const day = info.row.original;
                     const isHS = bike.status === 'HS';
-                    const cellKeyStr = `${bike.id}:${day.date}`;
+                    const cellKeyStr = `${bike.column_id}:${day.date}`;
                     const isSelected = draft.cells.has(cellKeyStr);
                     const isSelectionMode = draft.isActive;
                     const isViewing = viewingCellsIndex.has(cellKeyStr);
@@ -517,14 +516,14 @@ export default function LocationIndex({ bikes, bikeTypes, year, reservations: in
                     return (
                         <div
                             className={`location-table__cell ${separatorClass} ${day.isToday ? 'location-table__cell--today' : ''} ${isHS ? 'location-table__cell--hs' : ''} ${isSelected ? 'location-table__cell--selected' : ''} ${isReserved && !isSelected ? 'location-table__cell--reserved' : ''} ${isViewing ? 'location-table__cell--viewing' : ''} ${isDimmed ? 'location-table__cell--dimmed' : ''} ${isSelectionMode ? 'location-table__cell--selectable' : ''}`}
-                            data-bike-id={bike.id}
+                            data-bike-id={bike.column_id}
                             data-status={bike.status}
                             data-color={cellColor}
                             title={reservedInfo ? `${reservedInfo.clientName} (${reservedInfo.statut})` : undefined}
-                            onMouseDown={() => handleCellMouseDown(day.date, bike.id, isHS, reservedInfo?.reservationId)}
+                            onMouseDown={() => handleCellMouseDown(day.date, bike.column_id, isHS, reservedInfo?.reservationId)}
                             onMouseEnter={() => {
-                                handleColumnHover(bike.id);
-                                handleCellMouseEnter(day.date, bike.id, isHS);
+                                handleColumnHover(bike.column_id);
+                                handleCellMouseEnter(day.date, bike.column_id, isHS);
                             }}
                             onMouseLeave={() => handleColumnHover(null)}
                         >
@@ -851,7 +850,6 @@ export default function LocationIndex({ bikes, bikeTypes, year, reservations: in
                             </div>
                             <div className="location__form-content">
                                 <ReservationForm
-                                    bikeTypes={bikeTypes}
                                     draft={draft}
                                     selectors={selectors}
                                     actions={actions}
