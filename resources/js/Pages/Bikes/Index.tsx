@@ -1,12 +1,17 @@
 import { Head } from '@inertiajs/react';
 import { useState, useCallback, useMemo } from 'react';
 import MainLayout from '@/Layouts/MainLayout';
+import type { BikeCategoryRef, BikeSizeRef } from '@/types';
 
 interface Bike {
     id: number;
-    category: 'VAE' | 'VTC';
-    size: 'S' | 'M' | 'L' | 'XL';
+    bike_category_id: number;
+    bike_size_id: number;
+    category: BikeCategoryRef;
+    size: BikeSizeRef;
     frame_type: 'b' | 'h';
+    model: '500' | '625' | 'autre' | null;
+    battery_type: 'rack' | 'gourde' | 'rail' | null;
     name: string;
     status: 'OK' | 'HS';
     notes: string | null;
@@ -15,62 +20,91 @@ interface Bike {
 
 interface PageProps {
     bikes: Bike[];
+    categories: BikeCategoryRef[];
+    sizes: BikeSizeRef[];
 }
 
-const CATEGORIES = ['VAE', 'VTC'] as const;
-const SIZES = ['S', 'M', 'L', 'XL'] as const;
 const FRAME_TYPES = [
     { value: 'b', label: 'Cadre bas' },
     { value: 'h', label: 'Cadre haut' },
 ] as const;
 
-export default function BikesIndex({ bikes: initialBikes }: PageProps) {
+const MODELS = [
+    { value: '500', label: '500' },
+    { value: '625', label: '625' },
+    { value: 'autre', label: 'Autre' },
+] as const;
+
+const BATTERY_TYPES = [
+    { value: 'rack', label: 'Rack' },
+    { value: 'gourde', label: 'Gourde' },
+    { value: 'rail', label: 'Rail' },
+] as const;
+
+export default function BikesIndex({ bikes: initialBikes, categories, sizes }: PageProps) {
     const [bikes, setBikes] = useState<Bike[]>(initialBikes || []);
     const [editingBike, setEditingBike] = useState<Bike | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+
+    const defaultCategoryId = categories[0]?.id ?? 0;
+    const defaultSizeId = sizes[1]?.id ?? sizes[0]?.id ?? 0; // M par defaut, sinon premier
+
     const [formData, setFormData] = useState({
-        category: 'VAE' as 'VAE' | 'VTC',
-        size: 'M' as 'S' | 'M' | 'L' | 'XL',
+        bike_category_id: defaultCategoryId,
+        bike_size_id: defaultSizeId,
         frame_type: 'b' as 'b' | 'h',
+        model: '500' as '500' | '625' | 'autre' | null,
+        battery_type: 'rack' as 'rack' | 'gourde' | 'rail' | null,
         name: '',
         status: 'OK' as 'OK' | 'HS',
         notes: '',
     });
     const [isLoading, setIsLoading] = useState(false);
 
+    const selectedCategory = useMemo(
+        () => categories.find(c => c.id === formData.bike_category_id),
+        [categories, formData.bike_category_id]
+    );
+
     const resetForm = useCallback(() => {
         setFormData({
-            category: 'VAE',
-            size: 'M',
+            bike_category_id: defaultCategoryId,
+            bike_size_id: defaultSizeId,
             frame_type: 'b',
+            model: '500',
+            battery_type: 'rack',
             name: '',
             status: 'OK',
             notes: '',
         });
         setEditingBike(null);
         setIsCreating(false);
-    }, []);
+    }, [defaultCategoryId, defaultSizeId]);
 
     const handleCreate = useCallback(() => {
         setIsCreating(true);
         setEditingBike(null);
         setFormData({
-            category: 'VAE',
-            size: 'M',
+            bike_category_id: defaultCategoryId,
+            bike_size_id: defaultSizeId,
             frame_type: 'b',
+            model: '500',
+            battery_type: 'rack',
             name: '',
             status: 'OK',
             notes: '',
         });
-    }, []);
+    }, [defaultCategoryId, defaultSizeId]);
 
     const handleEdit = useCallback((bike: Bike) => {
         setEditingBike(bike);
         setIsCreating(false);
         setFormData({
-            category: bike.category,
-            size: bike.size,
+            bike_category_id: bike.bike_category_id,
+            bike_size_id: bike.bike_size_id,
             frame_type: bike.frame_type,
+            model: bike.model,
+            battery_type: bike.battery_type,
             name: bike.name,
             status: bike.status,
             notes: bike.notes || '',
@@ -167,23 +201,23 @@ export default function BikesIndex({ bikes: initialBikes }: PageProps) {
 
     // Grouper les velos par categorie puis par taille
     const bikesByCategory = useMemo(() => {
-        const grouped: Record<string, Record<string, Bike[]>> = {};
+        const grouped: Record<number, Record<number, Bike[]>> = {};
 
-        for (const category of CATEGORIES) {
-            grouped[category] = {};
-            for (const size of SIZES) {
-                grouped[category][size] = [];
+        for (const category of categories) {
+            grouped[category.id] = {};
+            for (const size of sizes) {
+                grouped[category.id][size.id] = [];
             }
         }
 
         for (const bike of bikes) {
-            if (grouped[bike.category] && grouped[bike.category][bike.size]) {
-                grouped[bike.category][bike.size].push(bike);
+            if (grouped[bike.bike_category_id] && grouped[bike.bike_category_id][bike.bike_size_id]) {
+                grouped[bike.bike_category_id][bike.bike_size_id].push(bike);
             }
         }
 
         return grouped;
-    }, [bikes]);
+    }, [bikes, categories, sizes]);
 
     // Stats
     const totalBikes = bikes.length;
@@ -215,25 +249,25 @@ export default function BikesIndex({ bikes: initialBikes }: PageProps) {
 
                 <div className="bikes-page__content">
                     <div className="bikes-page__list">
-                        {CATEGORIES.map(category => {
-                            const categoryBikes = bikes.filter(b => b.category === category);
+                        {categories.map(category => {
+                            const categoryBikes = bikes.filter(b => b.bike_category_id === category.id);
                             if (categoryBikes.length === 0) return null;
 
                             return (
-                                <div key={category} className="bikes-category">
-                                    <h2 className="bikes-category__title">
-                                        {category}
+                                <div key={category.id} className="bikes-category">
+                                    <h2 className="bikes-category__title" style={{ borderLeftColor: category.color }}>
+                                        {category.name}
                                         <span className="bikes-category__count">{categoryBikes.length}</span>
                                     </h2>
 
-                                    {SIZES.map(size => {
-                                        const sizeBikes = bikesByCategory[category][size];
+                                    {sizes.map(size => {
+                                        const sizeBikes = bikesByCategory[category.id]?.[size.id] || [];
                                         if (sizeBikes.length === 0) return null;
 
                                         return (
-                                            <div key={`${category}-${size}`} className="bikes-group">
-                                                <h3 className="bikes-group__title">
-                                                    Taille {size}
+                                            <div key={`${category.id}-${size.id}`} className="bikes-group">
+                                                <h3 className="bikes-group__title" style={{ borderLeftColor: size.color }}>
+                                                    Taille {size.name}
                                                     <span className="bikes-group__count">{sizeBikes.length}</span>
                                                 </h3>
                                                 <div className="bikes-group__items">
@@ -323,12 +357,20 @@ export default function BikesIndex({ bikes: initialBikes }: PageProps) {
                                         <label htmlFor="category">Categorie</label>
                                         <select
                                             id="category"
-                                            value={formData.category}
-                                            onChange={e => setFormData(prev => ({ ...prev, category: e.target.value as 'VAE' | 'VTC' }))}
+                                            value={formData.bike_category_id}
+                                            onChange={e => {
+                                                const newCategoryId = Number(e.target.value);
+                                                const newCategory = categories.find(c => c.id === newCategoryId);
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    bike_category_id: newCategoryId,
+                                                    battery_type: newCategory?.has_battery ? (prev.battery_type || 'rack') : null,
+                                                }));
+                                            }}
                                             required
                                         >
-                                            {CATEGORIES.map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -337,12 +379,12 @@ export default function BikesIndex({ bikes: initialBikes }: PageProps) {
                                         <label htmlFor="size">Taille</label>
                                         <select
                                             id="size"
-                                            value={formData.size}
-                                            onChange={e => setFormData(prev => ({ ...prev, size: e.target.value as 'S' | 'M' | 'L' | 'XL' }))}
+                                            value={formData.bike_size_id}
+                                            onChange={e => setFormData(prev => ({ ...prev, bike_size_id: Number(e.target.value) }))}
                                             required
                                         >
-                                            {SIZES.map(s => (
-                                                <option key={s} value={s}>{s}</option>
+                                            {sizes.map(s => (
+                                                <option key={s.id} value={s.id}>{s.name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -363,6 +405,38 @@ export default function BikesIndex({ bikes: initialBikes }: PageProps) {
                                         </select>
                                     </div>
 
+                                    <div className="bike-form__field">
+                                        <label htmlFor="model">Modele</label>
+                                        <select
+                                            id="model"
+                                            value={formData.model || '500'}
+                                            onChange={e => setFormData(prev => ({ ...prev, model: e.target.value as '500' | '625' | 'autre' }))}
+                                        >
+                                            {MODELS.map(m => (
+                                                <option key={m.value} value={m.value}>{m.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {selectedCategory?.has_battery && (
+                                    <div className="bike-form__row">
+                                        <div className="bike-form__field">
+                                            <label htmlFor="battery_type">Type de batterie</label>
+                                            <select
+                                                id="battery_type"
+                                                value={formData.battery_type || 'rack'}
+                                                onChange={e => setFormData(prev => ({ ...prev, battery_type: e.target.value as 'rack' | 'gourde' | 'rail' }))}
+                                            >
+                                                {BATTERY_TYPES.map(bt => (
+                                                    <option key={bt.value} value={bt.value}>{bt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="bike-form__row">
                                     <div className="bike-form__field">
                                         <label htmlFor="status">Statut</label>
                                         <select

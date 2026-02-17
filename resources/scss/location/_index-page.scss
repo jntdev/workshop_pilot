@@ -54,6 +54,10 @@ $category-gap: 120px;
 $color-category-vae: #FFD233; // Jaune VAE
 $color-category-vtc: #005D66; // Bleu-vert VTC
 
+// Couleurs types de cadre
+$color-frame-bas: #88c9bf; // Vert d'eau - cadre bas
+$color-frame-haut: #d97b5d; // Terracotta - cadre haut
+
 // Page Location - Disponibilités vélos
 
 // Bloquer le scroll global quand le calendrier location est présent
@@ -146,8 +150,8 @@ $side-panel-width-planning: 700px;
 
   &__header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 1rem;
     margin-bottom: 1rem;
   }
 
@@ -156,6 +160,11 @@ $side-panel-width-planning: 700px;
     font-weight: 600;
     color: $color-neutral-dark;
     margin: 0;
+  }
+
+  &__header-actions {
+    display: flex;
+    gap: 0.5rem;
   }
 
   &__loading-indicator {
@@ -217,6 +226,15 @@ $side-panel-width-planning: 700px;
   &__bike-type {
     font-size: 0.875rem;
     color: $color-neutral-medium;
+  }
+
+  &__bike-battery {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: $color-primary-blue;
+    background: rgba($color-primary-blue, 0.1);
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
   }
 
   &__bike-notes {
@@ -291,6 +309,28 @@ $side-panel-width-planning: 700px;
       &:hover {
         background: $color-neutral-light;
         color: $color-neutral-dark;
+      }
+    }
+
+    &--outline {
+      background: transparent;
+      border: 1px solid $color-border-medium;
+      color: $color-neutral-dark;
+
+      &:hover {
+        background: $color-neutral-light;
+        border-color: $color-neutral-dark;
+      }
+    }
+
+    &--active {
+      background: $color-primary-blue;
+      border: 1px solid $color-primary-blue;
+      color: $color-bg-white;
+
+      &:hover {
+        background: darken($color-primary-blue, 8%);
+        border-color: darken($color-primary-blue, 8%);
       }
     }
   }
@@ -474,10 +514,21 @@ $side-panel-width-planning: 700px;
     cursor: pointer;
     transition: filter 0.15s ease, box-shadow 0.15s ease;
 
-    &--ok {
+    // Couleurs par type de cadre (priorité sur OK)
+    &--frame-b {
+      background: $color-frame-bas; // Vert d'eau
+    }
+
+    &--frame-h {
+      background: $color-frame-haut; // Terracotta
+    }
+
+    // OK n'override plus le cadre, seulement si pas de frame défini
+    &--ok:not(&--frame-b):not(&--frame-h) {
       background: $color-status-ok;
     }
 
+    // HS override toujours
     &--hs {
       background: $color-status-hs;
     }

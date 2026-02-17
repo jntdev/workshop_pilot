@@ -11,12 +11,13 @@ import MainLayout from '@/Layouts/MainLayout';
 import ReservationForm from '@/Components/Location/ReservationForm';
 import ColorPicker from '@/Components/Location/ColorPicker';
 import PlanningPanel, { type PlanningReservation } from '@/Components/Location/PlanningPanel';
+import SettingsPanel from '@/Components/Location/SettingsPanel';
 import { useReservationDraft } from '@/hooks/useReservationDraft';
 import type { BikeDefinition, DayInfo, LocationPageProps, LoadedReservation, ReservationColorIndex } from '@/types';
 import { generateYearDays, formatDayHeader } from '@/utils/calendar';
 
 // Mode d'affichage du panneau latéral
-type SidePanelMode = 'closed' | 'reservation' | 'planning';
+type SidePanelMode = 'closed' | 'reservation' | 'planning' | 'settings';
 
 // Taille des blocs de chargement (en jours)
 const LOAD_BLOCK_SIZE = 20;
@@ -58,7 +59,7 @@ const mergeReservations = (existing: LoadedReservation[], incoming: LoadedReserv
     return Array.from(map.values()).sort((a, b) => a.date_reservation.localeCompare(b.date_reservation));
 };
 
-export default function LocationIndex({ bikes, year, reservations: initialReservations }: LocationPageProps) {
+export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, reservations: initialReservations }: LocationPageProps) {
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     const { draft, actions, selectors } = useReservationDraft({ bikes });
@@ -472,8 +473,8 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
 
         bikes.forEach((bike, index) => {
             const prevBike = index > 0 ? bikes[index - 1] : null;
-            const isNewCategory = prevBike && prevBike.category !== bike.category;
-            const isNewSize = prevBike && prevBike.size !== bike.size && !isNewCategory;
+            const isNewCategory = prevBike && prevBike.category?.name !== bike.category?.name;
+            const isNewSize = prevBike && prevBike.size?.name !== bike.size?.name && !isNewCategory;
 
             // Ajouter une colonne spacer entre les catégories
             if (isNewCategory) {
@@ -498,8 +499,8 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                 id: bike.column_id,
                 header: () => (
                     <div
-                        className={`location-table__header-bike ${bike.status === 'HS' ? 'location-table__header-bike--hs' : 'location-table__header-bike--ok'} ${separatorClass} ${selectedBike?.id === bike.id ? 'location-table__header-bike--selected' : ''}`}
-                        title={`${bike.category} ${bike.size} ${bike.frame_type === 'b' ? 'cadre bas' : 'cadre haut'}`}
+                        className={`location-table__header-bike location-table__header-bike--frame-${bike.frame_type} ${bike.status === 'HS' ? 'location-table__header-bike--hs' : 'location-table__header-bike--ok'} ${separatorClass} ${selectedBike?.id === bike.id ? 'location-table__header-bike--selected' : ''}`}
+                        title={`${bike.category?.name} ${bike.size?.name} ${bike.frame_type === 'b' ? 'cadre bas' : 'cadre haut'}`}
                         data-bike-id={bike.column_id}
                         data-status={bike.status}
                         onMouseEnter={() => handleColumnHover(bike.column_id)}
@@ -592,18 +593,23 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
 
     // Calcul des colspans pour la bande de catégorie (avec spacers)
     const categoryBands = useMemo(() => {
-        const bands: { category: string; colspan: number; isSpacer?: boolean }[] = [];
+        const bands: { category: string; color: string; colspan: number; isSpacer?: boolean }[] = [];
         let currentCategory = '';
+        let currentColor = '';
         let currentColspan = 0;
 
         bikes.forEach((bike) => {
-            if (bike.category !== currentCategory) {
+            const categoryName = bike.category?.name ?? '';
+            const categoryColor = bike.category?.color ?? '#888888';
+
+            if (categoryName !== currentCategory) {
                 if (currentCategory) {
-                    bands.push({ category: currentCategory, colspan: currentColspan });
+                    bands.push({ category: currentCategory, color: currentColor, colspan: currentColspan });
                     // Ajouter un spacer après chaque catégorie (sauf la dernière)
-                    bands.push({ category: 'spacer', colspan: 1, isSpacer: true });
+                    bands.push({ category: 'spacer', color: '', colspan: 1, isSpacer: true });
                 }
-                currentCategory = bike.category;
+                currentCategory = categoryName;
+                currentColor = categoryColor;
                 currentColspan = 1;
             } else {
                 currentColspan++;
@@ -611,7 +617,7 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
         });
 
         if (currentCategory) {
-            bands.push({ category: currentCategory, colspan: currentColspan });
+            bands.push({ category: currentCategory, color: currentColor, colspan: currentColspan });
         }
 
         return bands;
@@ -619,26 +625,33 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
 
     // Calcul des colspans pour la bande de taille (avec spacers entre catégories)
     const sizeBands = useMemo(() => {
-        const bands: { size: string; category: string; colspan: number; isSpacer?: boolean }[] = [];
+        const bands: { size: string; color: string; category: string; colspan: number; isSpacer?: boolean }[] = [];
         let currentCategory = '';
         let currentSize = '';
+        let currentColor = '';
         let currentColspan = 0;
 
         bikes.forEach((bike) => {
+            const categoryName = bike.category?.name ?? '';
+            const sizeName = bike.size?.name ?? '';
+            const sizeColor = bike.size?.color ?? '#888888';
+
             // Changement de catégorie = spacer + nouvelle taille
-            if (bike.category !== currentCategory) {
+            if (categoryName !== currentCategory) {
                 if (currentCategory) {
-                    bands.push({ size: currentSize, category: currentCategory, colspan: currentColspan });
+                    bands.push({ size: currentSize, color: currentColor, category: currentCategory, colspan: currentColspan });
                     // Ajouter un spacer après chaque catégorie
-                    bands.push({ size: 'spacer', category: '', colspan: 1, isSpacer: true });
+                    bands.push({ size: 'spacer', color: '', category: '', colspan: 1, isSpacer: true });
                 }
-                currentCategory = bike.category;
-                currentSize = bike.size;
+                currentCategory = categoryName;
+                currentSize = sizeName;
+                currentColor = sizeColor;
                 currentColspan = 1;
-            } else if (bike.size !== currentSize) {
+            } else if (sizeName !== currentSize) {
                 // Même catégorie mais taille différente
-                bands.push({ size: currentSize, category: currentCategory, colspan: currentColspan });
-                currentSize = bike.size;
+                bands.push({ size: currentSize, color: currentColor, category: currentCategory, colspan: currentColspan });
+                currentSize = sizeName;
+                currentColor = sizeColor;
                 currentColspan = 1;
             } else {
                 currentColspan++;
@@ -646,7 +659,7 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
         });
 
         if (currentSize) {
-            bands.push({ size: currentSize, category: currentCategory, colspan: currentColspan });
+            bands.push({ size: currentSize, color: currentColor, category: currentCategory, colspan: currentColspan });
         }
 
         return bands;
@@ -736,13 +749,49 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                             Disponibilités {year}
                             {isLoadingWindow && <span className="location__loading-indicator"> Chargement...</span>}
                         </h1>
-                        <button
-                            type="button"
-                            className="location__btn location__btn--secondary"
-                            onClick={handleTogglePlanning}
-                        >
-                            {sidePanelMode === 'planning' ? 'Fermer planning' : 'Voir aujourd\'hui'}
-                        </button>
+                        <div className="location__header-actions">
+                            <button
+                                type="button"
+                                className={`location__btn ${sidePanelMode === 'settings' ? 'location__btn--active' : 'location__btn--outline'}`}
+                                onClick={() => setSidePanelMode(sidePanelMode === 'settings' ? 'closed' : 'settings')}
+                            >
+                                Reglages agenda
+                            </button>
+                            <button
+                                type="button"
+                                className={`location__btn ${sidePanelMode === 'planning' ? 'location__btn--active' : 'location__btn--outline'}`}
+                                onClick={handleTogglePlanning}
+                            >
+                                {sidePanelMode === 'planning' ? 'Fermer planning' : 'Voir aujourd\'hui'}
+                            </button>
+                            {!draft.isActive ? (
+                                <button
+                                    type="button"
+                                    className="location__btn location__btn--primary"
+                                    onClick={() => {
+                                        setViewingReservationId(null);
+                                        setEditingReservation(null);
+                                        setSidePanelMode('reservation');
+                                        actions.startSelection();
+                                    }}
+                                >
+                                    Nouvelle reservation
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="location__btn location__btn--danger"
+                                    onClick={() => {
+                                        setViewingReservationId(null);
+                                        setEditingReservation(null);
+                                        setSidePanelMode('closed');
+                                        actions.cancelSelection();
+                                    }}
+                                >
+                                    Annuler la selection
+                                </button>
+                            )}
+                        </div>
                         {editingReservation && viewingReservationId && !draft.isActive && (
                             <div className="location__viewing-info">
                                 <ColorPicker
@@ -766,8 +815,14 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                                     {selectedBike.name}
                                 </span>
                                 <span className="location__bike-type">
-                                    {selectedBike.category} {selectedBike.size} {selectedBike.frame_type === 'b' ? 'cadre bas' : 'cadre haut'}
+                                    {selectedBike.category?.name} {selectedBike.size?.name} {selectedBike.frame_type === 'b' ? 'cadre bas' : 'cadre haut'}
+                                    {selectedBike.model && ` - ${selectedBike.model}`}
                                 </span>
+                                {selectedBike.battery_type && (
+                                    <span className="location__bike-battery">
+                                        Batterie {selectedBike.battery_type}
+                                    </span>
+                                )}
                                 {selectedBike.notes && (
                                     <span className="location__bike-notes">{selectedBike.notes}</span>
                                 )}
@@ -777,36 +832,9 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                                     onClick={() => setSelectedBike(null)}
                                     aria-label="Fermer"
                                 >
-                                    ×
+                                    x
                                 </button>
                             </div>
-                        )}
-                        {!draft.isActive ? (
-                            <button
-                                type="button"
-                                className="location__btn location__btn--primary"
-                                onClick={() => {
-                                    setViewingReservationId(null);
-                                    setEditingReservation(null);
-                                    setSidePanelMode('reservation');
-                                    actions.startSelection();
-                                }}
-                            >
-                                Nouvelle réservation
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                className="location__btn location__btn--danger"
-                                onClick={() => {
-                                    setViewingReservationId(null);
-                                    setEditingReservation(null);
-                                    setSidePanelMode('closed');
-                                    actions.cancelSelection();
-                                }}
-                            >
-                                Annuler la sélection
-                            </button>
                         )}
                     </div>
 
@@ -823,9 +851,10 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                                             key={band.isSpacer ? `spacer-${index}` : band.category}
                                             className={band.isSpacer
                                                 ? 'location-table__th location-table__th--category-spacer'
-                                                : `location-table__th location-table__th--category location-table__th--category-${band.category.toLowerCase()}`
+                                                : 'location-table__th location-table__th--category'
                                             }
                                             colSpan={band.colspan}
+                                            style={band.isSpacer ? undefined : { backgroundColor: band.color }}
                                         >
                                             {band.isSpacer ? '' : band.category}
                                         </th>
@@ -838,9 +867,10 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                                             key={band.isSpacer ? `spacer-size-${index}` : `${band.category}-${band.size}-${index}`}
                                             className={band.isSpacer
                                                 ? 'location-table__th location-table__th--size-spacer'
-                                                : `location-table__th location-table__th--size location-table__th--size-${band.size.toLowerCase()}`
+                                                : 'location-table__th location-table__th--size'
                                             }
                                             colSpan={band.colspan}
+                                            style={band.isSpacer ? undefined : { backgroundColor: band.color }}
                                         >
                                             {band.isSpacer ? '' : `Taille ${band.size}`}
                                         </th>
@@ -965,6 +995,15 @@ export default function LocationIndex({ bikes, year, reservations: initialReserv
                             onDateChange={handlePlanningDateChange}
                             onClose={handleClosePlanning}
                             onReservationClick={handlePlanningReservationClick}
+                        />
+                    )}
+
+                    {sidePanelMode === 'settings' && (
+                        <SettingsPanel
+                            categories={bikeCategories}
+                            sizes={bikeSizes}
+                            onClose={() => setSidePanelMode('closed')}
+                            onUpdate={() => router.reload()}
                         />
                     )}
                 </div>

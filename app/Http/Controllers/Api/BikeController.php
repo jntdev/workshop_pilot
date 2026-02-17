@@ -11,7 +11,7 @@ class BikeController extends Controller
 {
     public function index(): JsonResponse
     {
-        $bikes = Bike::ordered()->get();
+        $bikes = Bike::with(['category', 'size'])->ordered()->get();
 
         return response()->json([
             'bikes' => $bikes,
@@ -21,22 +21,25 @@ class BikeController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'category' => 'required|in:VAE,VTC',
-            'size' => 'required|in:S,M,L,XL',
+            'bike_category_id' => 'required|exists:bike_categories,id',
+            'bike_size_id' => 'required|exists:bike_sizes,id',
             'frame_type' => 'required|in:b,h',
+            'model' => 'nullable|string|max:50',
+            'battery_type' => 'nullable|in:rack,gourde,rail',
             'name' => 'required|string|max:100',
             'status' => 'required|in:OK,HS',
             'notes' => 'nullable|string',
         ]);
 
         // Déterminer le sort_order (à la fin du groupe)
-        $maxOrder = Bike::where('category', $validated['category'])
-            ->where('size', $validated['size'])
+        $maxOrder = Bike::where('bike_category_id', $validated['bike_category_id'])
+            ->where('bike_size_id', $validated['bike_size_id'])
             ->where('frame_type', $validated['frame_type'])
             ->max('sort_order') ?? -1;
         $validated['sort_order'] = $maxOrder + 1;
 
         $bike = Bike::create($validated);
+        $bike->load(['category', 'size']);
 
         return response()->json($bike, 201);
     }
@@ -46,15 +49,18 @@ class BikeController extends Controller
         $bike = Bike::findOrFail($id);
 
         $validated = $request->validate([
-            'category' => 'sometimes|in:VAE,VTC',
-            'size' => 'sometimes|in:S,M,L,XL',
+            'bike_category_id' => 'sometimes|exists:bike_categories,id',
+            'bike_size_id' => 'sometimes|exists:bike_sizes,id',
             'frame_type' => 'sometimes|in:b,h',
+            'model' => 'nullable|string|max:50',
+            'battery_type' => 'nullable|in:rack,gourde,rail',
             'name' => 'sometimes|string|max:100',
             'status' => 'sometimes|in:OK,HS',
             'notes' => 'nullable|string',
         ]);
 
         $bike->update($validated);
+        $bike->load(['category', 'size']);
 
         return response()->json($bike);
     }

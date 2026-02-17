@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from 'react';
 import type {
     SelectedCell,
     SelectionBike,
-    BikesByPeriod,
     ReservationDraft,
     ReservationDraftActions,
     ReservationDraftSelectors,
@@ -21,7 +20,9 @@ function cellKey(bikeId: string, date: string): string {
 }
 
 function bikeToTypeId(bike: BikeDefinition): string {
-    return `${bike.category}_${bike.size.toLowerCase()}${bike.frame_type}`;
+    const categoryName = bike.category?.name ?? 'UNKNOWN';
+    const sizeName = bike.size?.name ?? 'UNKNOWN';
+    return `${categoryName}_${sizeName.toLowerCase()}${bike.frame_type}`;
 }
 
 /**

@@ -51,7 +51,15 @@
       "Bash(./vendor/bin/sail artisan migrate:fresh:*)",
       "Bash(/opt/homebrew/bin/php artisan migrate:fresh:*)",
       "Bash(/usr/bin/php:*)",
-      "Bash(/opt/homebrew/opt/php@8.2/bin/php artisan migrate:fresh:*)"
+      "Bash(/opt/homebrew/opt/php@8.2/bin/php artisan migrate:fresh:*)",
+      "Bash(/opt/homebrew/opt/php@8.2/bin/php artisan make:migration:*)",
+      "Bash(/opt/homebrew/opt/php@8.2/bin/php artisan migrate:*)",
+      "Bash(/opt/homebrew/opt/php@8.2/bin/php artisan:*)",
+      "Bash(/opt/homebrew/opt/php@8.2/bin/php:*)",
+      "Bash(php:*)",
+      "Bash(./vendor/bin/sail artisan make:controller:*)",
+      "Bash(/usr/local/bin/php artisan db:seed:*)",
+      "Bash(/opt/homebrew/bin/php artisan db:seed:*)"
     ]
   }
 }

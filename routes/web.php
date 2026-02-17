@@ -356,20 +356,53 @@ Route::middleware(['auth'])->group(function () {
                 ])->toArray(),
             ]);
 
-        // Charger les vélos depuis la base de données
-        $bikes = \App\Models\Bike::ordered()->get()->map(fn ($bike) => [
+        // Charger les vélos depuis la base de données avec leurs relations
+        $bikes = \App\Models\Bike::with(['category', 'size'])->ordered()->get()->map(fn ($bike) => [
             'id' => $bike->id,
-            'column_id' => 'bike_' . $bike->id,
-            'category' => $bike->category,
-            'size' => $bike->size,
+            'column_id' => 'bike_'.$bike->id,
+            'bike_category_id' => $bike->bike_category_id,
+            'bike_size_id' => $bike->bike_size_id,
+            'category' => $bike->category ? [
+                'id' => $bike->category->id,
+                'name' => $bike->category->name,
+                'color' => $bike->category->color,
+                'has_battery' => $bike->category->has_battery,
+                'sort_order' => $bike->category->sort_order,
+            ] : null,
+            'size' => $bike->size ? [
+                'id' => $bike->size->id,
+                'name' => $bike->size->name,
+                'color' => $bike->size->color,
+                'sort_order' => $bike->size->sort_order,
+            ] : null,
             'frame_type' => $bike->frame_type,
+            'model' => $bike->model,
+            'battery_type' => $bike->battery_type,
             'name' => $bike->name,
             'status' => $bike->status,
             'notes' => $bike->notes,
         ]);
 
+        // Charger les référentiels catégories et tailles
+        $bikeCategories = \App\Models\BikeCategory::ordered()->get()->map(fn ($cat) => [
+            'id' => $cat->id,
+            'name' => $cat->name,
+            'color' => $cat->color,
+            'has_battery' => $cat->has_battery,
+            'sort_order' => $cat->sort_order,
+        ]);
+
+        $bikeSizes = \App\Models\BikeSize::ordered()->get()->map(fn ($size) => [
+            'id' => $size->id,
+            'name' => $size->name,
+            'color' => $size->color,
+            'sort_order' => $size->sort_order,
+        ]);
+
         return Inertia::render('Location/Index', [
             'bikes' => $bikes,
+            'bikeCategories' => $bikeCategories,
+            'bikeSizes' => $bikeSizes,
             'year' => $year,
             'reservations' => $reservations,
         ]);

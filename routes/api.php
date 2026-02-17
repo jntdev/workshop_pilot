@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\AtelierController;
+use App\Http\Controllers\Api\BikeCategoryController;
 use App\Http\Controllers\Api\BikeController;
+use App\Http\Controllers\Api\BikeSizeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\QuoteController;
@@ -53,4 +55,16 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/bikes/{id}', [BikeController::class, 'update']);
     Route::delete('/bikes/{id}', [BikeController::class, 'destroy']);
     Route::post('/bikes/reorder', [BikeController::class, 'reorder']);
+
+    // Bike Categories API routes
+    Route::get('/bike-categories', [BikeCategoryController::class, 'index']);
+    Route::post('/bike-categories', [BikeCategoryController::class, 'store']);
+    Route::put('/bike-categories/{id}', [BikeCategoryController::class, 'update']);
+    Route::delete('/bike-categories/{id}', [BikeCategoryController::class, 'destroy']);
+
+    // Bike Sizes API routes
+    Route::get('/bike-sizes', [BikeSizeController::class, 'index']);
+    Route::post('/bike-sizes', [BikeSizeController::class, 'store']);
+    Route::put('/bike-sizes/{id}', [BikeSizeController::class, 'update']);
+    Route::delete('/bike-sizes/{id}', [BikeSizeController::class, 'destroy']);
 });

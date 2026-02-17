@@ -139,17 +139,38 @@ export interface QuoteFormPageProps extends PageProps {
 }
 
 // Location vélos
-export type BikeCategory = 'VAE' | 'VTC';
-export type BikeSize = 'S' | 'M' | 'L' | 'XL';
 export type BikeFrameType = 'b' | 'h'; // b = cadre bas, h = cadre haut
+export type BikeModel = '500' | '625' | 'autre'; // Modèle du vélo
+export type BikeBatteryType = 'rack' | 'gourde' | 'rail'; // Type de batterie (VAE uniquement)
 export type BikeStatus = 'OK' | 'HS';
+
+// Catégorie de vélo (référentiel dynamique)
+export interface BikeCategoryRef {
+    id: number;
+    name: string;
+    color: string;
+    has_battery: boolean;
+    sort_order: number;
+}
+
+// Taille de vélo (référentiel dynamique)
+export interface BikeSizeRef {
+    id: number;
+    name: string;
+    color: string;
+    sort_order: number;
+}
 
 export interface BikeDefinition {
     id: number;
     column_id: string; // "bike_1", "bike_2", etc.
-    category: BikeCategory;
-    size: BikeSize;
+    bike_category_id: number;
+    bike_size_id: number;
+    category: BikeCategoryRef;
+    size: BikeSizeRef;
     frame_type: BikeFrameType;
+    model: BikeModel | null; // Modèle du vélo (500, 625, autre)
+    battery_type: BikeBatteryType | null; // Type de batterie (VAE uniquement)
     name: string; // Nom affiché dans le header
     status: BikeStatus;
     notes: string | null; // Commentaires (ex: pourquoi HS)
@@ -198,6 +219,8 @@ export interface LoadedReservation {
 
 export interface LocationPageProps extends PageProps {
     bikes: BikeDefinition[];
+    bikeCategories: BikeCategoryRef[];
+    bikeSizes: BikeSizeRef[];
     year: number;
     reservations: LoadedReservation[];
 }
@@ -218,8 +241,8 @@ export type ReservationStatut = 'reserve' | 'en_attente_acompte' | 'en_cours' | 
 
 export interface BikeType {
     id: string; // ex: VAE_sb
-    category: BikeCategory;
-    size: BikeSize;
+    category: BikeCategoryRef;
+    size: BikeSizeRef;
     frame_type: BikeFrameType;
     label: string;
     stock: number;

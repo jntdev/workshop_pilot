@@ -36,10 +36,14 @@ class DatabaseSeeder extends Seeder
             // 5. Calculate KPIs from actual invoice data
             MonthlyKpiSeeder::class,
 
-            // 6. Vélos de location
+            // 6. Catégories et tailles de vélos (référentiels)
+            BikeCategorySeeder::class,
+            BikeSizeSeeder::class,
+
+            // 7. Vélos de location
             BikeSeeder::class,
 
-            // 7. Reservations de location vélos
+            // 8. Reservations de location vélos
             ReservationSeeder::class,
         ]);
     }
