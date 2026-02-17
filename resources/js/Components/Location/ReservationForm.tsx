@@ -62,7 +62,18 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     // Données du nouveau client
-    const [newClientData, setNewClientData] = useState({
+    const [newClientData, setNewClientData] = useState<{
+        prenom: string;
+        nom: string;
+        telephone: string;
+        email: string;
+        adresse: string;
+        origine_contact: string;
+        commentaires: string;
+        avantage_type: 'aucun' | 'pourcentage' | 'montant';
+        avantage_valeur: number;
+        avantage_expiration: string;
+    }>({
         prenom: '',
         nom: '',
         telephone: '',
@@ -70,7 +81,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
         adresse: '',
         origine_contact: '',
         commentaires: '',
-        avantage_type: 'aucun' as const,
+        avantage_type: 'aucun',
         avantage_valeur: 0,
         avantage_expiration: '',
     });
