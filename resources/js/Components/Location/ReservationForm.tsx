@@ -123,9 +123,10 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
         }
     }, [editingReservation]);
 
-    // Synchroniser le formulaire avec la sélection du calendrier (seulement pour nouvelle réservation)
+    // Synchroniser le formulaire avec la sélection du calendrier
+    // En mode édition OU création, la sélection du calendrier doit être prise en compte
     useEffect(() => {
-        if (!draft.isActive || draft.editingReservationId) return;
+        if (!draft.isActive) return;
 
         setFormData((prev) => ({
             ...prev,
@@ -134,7 +135,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
             items: selectors.items.length > 0 ? selectors.items : prev.items,
             selection: selectors.selectedBikes,
         }));
-    }, [draft.isActive, draft.editingReservationId, selectors.globalMinDate, selectors.globalMaxDate, selectors.items, selectors.selectedBikes]);
+    }, [draft.isActive, selectors.globalMinDate, selectors.globalMaxDate, selectors.items, selectors.selectedBikes]);
 
     // Récap des vélos sélectionnés (basé sur selectors)
     const selectedBikesRecap = useMemo(() => {
