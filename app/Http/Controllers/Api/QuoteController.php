@@ -207,9 +207,9 @@ class QuoteController extends Controller
     {
         $validated = $request->validate([
             'lines' => 'required|array',
-            'lines.*.sale_price_ht' => 'required|numeric',
-            'lines.*.sale_price_ttc' => 'required|numeric',
-            'lines.*.margin_amount_ht' => 'required|numeric',
+            'lines.*.sale_price_ht' => 'nullable|numeric',
+            'lines.*.sale_price_ttc' => 'nullable|numeric',
+            'lines.*.margin_amount_ht' => 'nullable|numeric',
             'lines.*.line_total_ht' => 'nullable|numeric',
             'lines.*.line_total_ttc' => 'nullable|numeric',
             'lines.*.line_margin_ht' => 'nullable|numeric',

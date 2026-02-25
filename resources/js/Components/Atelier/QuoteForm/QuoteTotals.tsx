@@ -83,13 +83,13 @@ export default function QuoteTotals({
                     <span className="quote-totals__label">Total TTC</span>
                     <span className="quote-totals__value">{formatCurrency(totals.total_ttc)}</span>
                 </div>
-                <div className="quote-totals__row">
+                <div className="quote-totals__row sensitive-column">
                     <span className="quote-totals__label">Marge totale</span>
                     <span className="quote-totals__value">{formatCurrency(totals.margin_total_ht)}</span>
                 </div>
 
                 {/* Section temps - usage interne */}
-                <div className="quote-totals__time-section">
+                <div className="quote-totals__time-section sensitive-column">
                     <div className="quote-totals__row">
                         <span className="quote-totals__label" title="Usage interne - non visible sur PDF">
                             Temps estimé total

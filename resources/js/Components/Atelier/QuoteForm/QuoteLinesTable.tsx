@@ -1,63 +1,76 @@
-import { useRef, useCallback } from 'react';
+import React from 'react';
 import { QuoteLine } from '@/types';
 import Input from '@/Components/ui/Input';
 
 interface QuoteLinesTableProps {
     lines: QuoteLine[];
     onLineChange: (index: number, field: keyof QuoteLine, value: string) => void;
-    onLineCalculate: (
-        index: number,
-        calculationType: string,
-        value: string,
-        currentLineValues?: { purchase_price_ht?: string; tva_rate?: string; quantity?: string }
-    ) => void;
+    onLineUpdate: (index: number, updates: Partial<QuoteLine>) => void;
     onAddLine: () => void;
     onRemoveLine: (index: number) => void;
     disabled?: boolean;
 }
 
+// Calcul local des totaux de ligne
+function calculateLineLocally(
+    salePriceTtc: string,
+    quantity: string,
+    tvaRate: string,
+    purchasePriceHt: string
+): Partial<QuoteLine> {
+    const ttc = parseFloat(salePriceTtc) || 0;
+    const qty = parseFloat(quantity) || 1;
+    const tva = parseFloat(tvaRate) || 20;
+    const paHt = parseFloat(purchasePriceHt) || 0;
+
+    // Total TTC = PV TTC × Quantité
+    const lineTotalTtc = ttc * qty;
+    // Total HT = Total TTC / (1 + TVA/100)
+    const lineTotalHt = lineTotalTtc / (1 + tva / 100);
+    // PV HT unitaire
+    const saleHt = ttc / (1 + tva / 100);
+    // Total PA = PA HT × Quantité
+    const linePurchaseHt = paHt * qty;
+    // Marge € = Total HT - Total PA
+    const lineMarginHt = lineTotalHt - linePurchaseHt;
+    // Marge unitaire
+    const marginAmountHt = saleHt - paHt;
+    // Taux de marge = Marge / PV HT × 100
+    const marginRate = saleHt > 0 ? (marginAmountHt / saleHt) * 100 : 0;
+
+    return {
+        sale_price_ht: saleHt.toFixed(2),
+        margin_amount_ht: marginAmountHt.toFixed(2),
+        margin_rate: marginRate.toFixed(4),
+        line_purchase_ht: linePurchaseHt.toFixed(2),
+        line_margin_ht: lineMarginHt.toFixed(2),
+        line_total_ht: lineTotalHt.toFixed(2),
+        line_total_ttc: lineTotalTtc.toFixed(2),
+    };
+}
+
 export default function QuoteLinesTable({
     lines,
     onLineChange,
-    onLineCalculate,
+    onLineUpdate,
     onAddLine,
     onRemoveLine,
     disabled,
 }: QuoteLinesTableProps) {
-    // Refs to store references to input elements for each line
-    const rowRefs = useRef<Map<number, Map<string, HTMLInputElement>>>(new Map());
-
-    const setInputRef = useCallback((index: number, field: string, element: HTMLInputElement | null) => {
-        if (!rowRefs.current.has(index)) {
-            rowRefs.current.set(index, new Map());
-        }
-        if (element) {
-            rowRefs.current.get(index)!.set(field, element);
-        }
-    }, []);
-
-    const getInputValue = (index: number, field: string, fallback: string): string => {
-        const rowMap = rowRefs.current.get(index);
-        const input = rowMap?.get(field);
-        return input?.value ?? fallback;
-    };
-
     const handleFieldChange = (index: number, field: keyof QuoteLine, value: string) => {
         onLineChange(index, field, value);
     };
 
-    const handleCalculation = (index: number, calculationType: string, value: string) => {
+    // Recalcule la ligne quand PV TTC, Quantité ou PA HT change
+    const handleRecalculate = (index: number) => {
         const line = lines[index];
-        // Get current values directly from DOM inputs
-        const purchasePriceHt = getInputValue(index, 'purchase_price_ht', line.purchase_price_ht);
-        const tvaRate = line.tva_rate; // TVA is now readonly, use state value
-        const quantity = getInputValue(index, 'quantity', line.quantity);
-
-        onLineCalculate(index, calculationType, value, {
-            purchase_price_ht: purchasePriceHt,
-            tva_rate: tvaRate,
-            quantity: quantity,
-        });
+        const updates = calculateLineLocally(
+            line.sale_price_ttc,
+            line.quantity,
+            line.tva_rate,
+            line.purchase_price_ht
+        );
+        onLineUpdate(index, updates);
     };
 
     const isLineEmpty = (line: QuoteLine): boolean => {
@@ -80,16 +93,16 @@ export default function QuoteLinesTable({
             <div className="quote-lines-table__header">
                 <div className="quote-lines-table__cell">Intitulé</div>
                 <div className="quote-lines-table__cell">Réf.</div>
-                <div className="quote-lines-table__cell">PA HT</div>
+                <div className="quote-lines-table__cell sensitive-column">PA HT</div>
                 <div className="quote-lines-table__cell">TVA %</div>
                 <div className="quote-lines-table__cell">PV TTC</div>
                 <div className="quote-lines-table__cell">Qté</div>
-                <div className="quote-lines-table__cell">Total PA</div>
-                <div className="quote-lines-table__cell">Marge €</div>
-                <div className="quote-lines-table__cell">Marge %</div>
+                <div className="quote-lines-table__cell sensitive-column">Total PA</div>
+                <div className="quote-lines-table__cell sensitive-column">Marge €</div>
+                <div className="quote-lines-table__cell sensitive-column">Marge %</div>
                 <div className="quote-lines-table__cell">Total HT</div>
                 <div className="quote-lines-table__cell">Total TTC</div>
-                <div className="quote-lines-table__cell" title="Temps estimé (heures)">Temps</div>
+                <div className="quote-lines-table__cell sensitive-column" title="Temps estimé (heures)">Temps</div>
                 <div className="quote-lines-table__cell"></div>
             </div>
 
@@ -121,14 +134,13 @@ export default function QuoteLinesTable({
                         />
                     </div>
                     {/* PA HT */}
-                    <div className="quote-lines-table__cell">
+                    <div className="quote-lines-table__cell sensitive-column">
                         <Input
-                            ref={(el) => setInputRef(index, 'purchase_price_ht', el)}
                             type="number"
                             step="0.01"
                             value={line.purchase_price_ht}
                             onChange={(e) => handleFieldChange(index, 'purchase_price_ht', e.target.value)}
-                            onBlur={() => handleCalculation(index, 'sale_price_ttc', line.sale_price_ttc)}
+                            onBlur={() => handleRecalculate(index)}
                             onKeyDown={handleKeyDown}
                             className="quote-lines-table__input"
                             disabled={disabled}
@@ -145,7 +157,7 @@ export default function QuoteLinesTable({
                             step="0.01"
                             value={line.sale_price_ttc}
                             onChange={(e) => handleFieldChange(index, 'sale_price_ttc', e.target.value)}
-                            onBlur={(e) => handleCalculation(index, 'sale_price_ttc', e.target.value)}
+                            onBlur={() => handleRecalculate(index)}
                             onKeyDown={handleKeyDown}
                             className="quote-lines-table__input"
                             disabled={disabled}
@@ -154,12 +166,11 @@ export default function QuoteLinesTable({
                     {/* Qté */}
                     <div className="quote-lines-table__cell">
                         <Input
-                            ref={(el) => setInputRef(index, 'quantity', el)}
                             type="number"
                             step="1"
                             value={Math.round(parseFloat(line.quantity) || 0)}
                             onChange={(e) => handleFieldChange(index, 'quantity', e.target.value)}
-                            onBlur={() => handleCalculation(index, 'sale_price_ttc', line.sale_price_ttc)}
+                            onBlur={() => handleRecalculate(index)}
                             onKeyDown={handleKeyDown}
                             className="quote-lines-table__input"
                             required
@@ -167,15 +178,15 @@ export default function QuoteLinesTable({
                         />
                     </div>
                     {/* Total PA HT (readonly) */}
-                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly sensitive-column">
                         {line.line_purchase_ht ? parseFloat(line.line_purchase_ht).toFixed(2) : '-'} €
                     </div>
                     {/* Marge € (readonly) */}
-                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly sensitive-column">
                         {line.line_margin_ht ? parseFloat(line.line_margin_ht).toFixed(2) : '-'} €
                     </div>
                     {/* Marge % (readonly) */}
-                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly">
+                    <div className="quote-lines-table__cell quote-lines-table__cell--readonly sensitive-column">
                         {line.line_total_ht && line.line_margin_ht && parseFloat(line.line_total_ht) > 0
                             ? ((parseFloat(line.line_margin_ht) / parseFloat(line.line_total_ht)) * 100).toFixed(1)
                             : '-'} %
@@ -189,7 +200,7 @@ export default function QuoteLinesTable({
                         {line.line_total_ttc ? parseFloat(line.line_total_ttc).toFixed(2) : '-'} €
                     </div>
                     {/* Temps */}
-                    <div className="quote-lines-table__cell">
+                    <div className="quote-lines-table__cell sensitive-column">
                         <Input
                             type="number"
                             step="0.25"

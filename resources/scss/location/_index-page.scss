@@ -13,38 +13,68 @@ $highlight-brightness: 0.92;
 // 0-9: Couleurs saturées, 10-19: Claires (40% blanc), 20-29: Très claires (60% blanc)
 $reservation-colors: (
   // Couleurs saturées
-  0: #3b82f6,  // Bleu (défaut)
-  1: #ef4444,  // Rouge
-  2: #22c55e,  // Vert
-  3: #f59e0b,  // Orange
-  4: #8b5cf6,  // Violet
-  5: #ec4899,  // Rose
-  6: #14b8a6,  // Turquoise
-  7: #f97316,  // Orange foncé
-  8: #6366f1,  // Indigo
-  9: #84cc16,  // Lime
+  0: #3b82f6,
+  // Bleu (défaut)
+  1: #ef4444,
+  // Rouge
+  2: #22c55e,
+  // Vert
+  3: #f59e0b,
+  // Orange
+  4: #8b5cf6,
+  // Violet
+  5: #ec4899,
+  // Rose
+  6: #14b8a6,
+  // Turquoise
+  7: #f97316,
+  // Orange foncé
+  8: #6366f1,
+  // Indigo
+  9: #84cc16,
+  // Lime
   // Versions claires (40% blanc)
-  10: #8fb8f9, // Bleu clair
-  11: #f59090, // Rouge clair
-  12: #7dda9b, // Vert clair
-  13: #f9c56b, // Orange clair
-  14: #b99cf9, // Violet clair
-  15: #f3a0c4, // Rose clair
-  16: #6dd4c8, // Turquoise clair
-  17: #fba76f, // Orange foncé clair
-  18: #a1a3f7, // Indigo clair
-  19: #b5de6d, // Lime clair
+  10: #8fb8f9,
+  // Bleu clair
+  11: #f59090,
+  // Rouge clair
+  12: #7dda9b,
+  // Vert clair
+  13: #f9c56b,
+  // Orange clair
+  14: #b99cf9,
+  // Violet clair
+  15: #f3a0c4,
+  // Rose clair
+  16: #6dd4c8,
+  // Turquoise clair
+  17: #fba76f,
+  // Orange foncé clair
+  18: #a1a3f7,
+  // Indigo clair
+  19: #b5de6d,
+  // Lime clair
   // Versions très claires (60% blanc)
-  20: #b8d4fb, // Bleu très clair
-  21: #f9b8b8, // Rouge très clair
-  22: #a8e8be, // Vert très clair
-  23: #fbda9e, // Orange très clair
-  24: #d4c4fb, // Violet très clair
-  25: #f7c5da, // Rose très clair
-  26: #9de5dd, // Turquoise très clair
-  27: #fcc9a3, // Orange foncé très clair
-  28: #c5c6f9, // Indigo très clair
-  29: #d1e9a0, // Lime très clair
+  20: #b8d4fb,
+  // Bleu très clair
+  21: #f9b8b8,
+  // Rouge très clair
+  22: #a8e8be,
+  // Vert très clair
+  23: #fbda9e,
+  // Orange très clair
+  24: #d4c4fb,
+  // Violet très clair
+  25: #f7c5da,
+  // Rose très clair
+  26: #9de5dd,
+  // Turquoise très clair
+  27: #fcc9a3,
+  // Orange foncé très clair
+  28: #c5c6f9,
+  // Indigo très clair
+  29: #d1e9a0,
+  // Lime très clair
 );
 
 // Gap entre catégories (équivalent à 3 colonnes de 40px)
@@ -55,8 +85,8 @@ $color-category-vae: #FFD233; // Jaune VAE
 $color-category-vtc: #005D66; // Bleu-vert VTC
 
 // Couleurs types de cadre
-$color-frame-bas: #88c9bf; // Vert d'eau - cadre bas
-$color-frame-haut: #d97b5d; // Terracotta - cadre haut
+$color-frame-bas: #d97b5d; // Terracotta - cadre bas
+$color-frame-haut: #88c9bf; // Vert d'eau - cadre haut
 
 // Page Location - Disponibilités vélos
 
@@ -66,7 +96,7 @@ body:has(#location_calendar) {
 }
 
 // Largeurs des panneaux
-$side-panel-width-reservation: 450px;
+$side-panel-width-reservation: max(33vw, 550px);
 $side-panel-width-planning: 700px;
 
 .location {
@@ -176,8 +206,15 @@ $side-panel-width-planning: 700px;
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
   }
 
   &__viewing-info {

@@ -59,7 +59,7 @@ const mergeReservations = (existing: LoadedReservation[], incoming: LoadedReserv
     return Array.from(map.values()).sort((a, b) => a.date_reservation.localeCompare(b.date_reservation));
 };
 
-export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, reservations: initialReservations }: LocationPageProps) {
+export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, reservations: initialReservations, openAgenda }: LocationPageProps) {
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     const { draft, actions, selectors } = useReservationDraft({ bikes });
@@ -397,6 +397,17 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
             setSidePanelMode('reservation');
         }
     }, [reservationsById]);
+
+    // Ouvrir automatiquement l'agenda si demandé via props (au montage uniquement)
+    useEffect(() => {
+        if (openAgenda) {
+            const today = new Date().toISOString().split('T')[0];
+            setPlanningDate(today);
+            setSidePanelMode('planning');
+            loadPlanningData(today);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Mettre à jour le sidePanelMode quand on entre en mode édition/visualisation
     useEffect(() => {

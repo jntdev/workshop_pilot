@@ -150,7 +150,7 @@ export default function DashboardMetrics({
                 )}
             </div>
 
-            <div className="atelier-dashboard__metrics">
+            <div className="atelier-dashboard__metrics sensitive-column">
                 <MetricCard
                     title="Chiffre d'affaires HT"
                     value={formatCurrency(stats.revenue)}

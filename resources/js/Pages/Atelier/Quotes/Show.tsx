@@ -140,13 +140,13 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                                 <tr>
                                     <th>Intitulé</th>
                                     <th>Réf.</th>
-                                    <th>PA HT</th>
+                                    <th className="sensitive-column">PA HT</th>
                                     <th>TVA %</th>
                                     <th>PV TTC</th>
                                     <th>Qté</th>
-                                    <th>Total PA</th>
-                                    <th>Marge €</th>
-                                    <th>Marge %</th>
+                                    <th className="sensitive-column">Total PA</th>
+                                    <th className="sensitive-column">Marge €</th>
+                                    <th className="sensitive-column">Marge %</th>
                                     <th>Total HT</th>
                                     <th>Total TTC</th>
                                 </tr>
@@ -156,13 +156,13 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                                     <tr key={line.id}>
                                         <td>{line.title}</td>
                                         <td>{line.reference || '-'}</td>
-                                        <td>{formatCurrency(line.purchase_price_ht)}</td>
+                                        <td className="sensitive-column">{formatCurrency(line.purchase_price_ht)}</td>
                                         <td>{parseFloat(line.tva_rate).toFixed(0)} %</td>
                                         <td>{formatCurrency(line.sale_price_ttc)}</td>
                                         <td>{Math.round(parseFloat(line.quantity))}</td>
-                                        <td>{line.line_purchase_ht ? formatCurrency(line.line_purchase_ht) : '-'}</td>
-                                        <td>{line.line_margin_ht ? formatCurrency(line.line_margin_ht) : '-'}</td>
-                                        <td>
+                                        <td className="sensitive-column">{line.line_purchase_ht ? formatCurrency(line.line_purchase_ht) : '-'}</td>
+                                        <td className="sensitive-column">{line.line_margin_ht ? formatCurrency(line.line_margin_ht) : '-'}</td>
+                                        <td className="sensitive-column">
                                             {line.line_total_ht && line.line_margin_ht && parseFloat(line.line_total_ht) > 0
                                                 ? ((parseFloat(line.line_margin_ht) / parseFloat(line.line_total_ht)) * 100).toFixed(1)
                                                 : '-'} %
@@ -205,13 +205,13 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                                     <span className="quote-show__label">Total TTC</span>
                                     <span className="quote-show__value">{formatCurrency(quote.total_ttc)}</span>
                                 </div>
-                                <div className="quote-show__totals-row">
+                                <div className="quote-show__totals-row sensitive-column">
                                     <span className="quote-show__label">Marge totale</span>
                                     <span className="quote-show__value">{formatCurrency(quote.margin_total_ht)}</span>
                                 </div>
                             </div>
 
-                            <div className="quote-show__time-section">
+                            <div className="quote-show__time-section sensitive-column">
                                 <h3 className="quote-show__subsection-title">Temps (interne)</h3>
                                 <div className="quote-show__info-row">
                                     <span className="quote-show__label">Temps estimé total</span>

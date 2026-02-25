@@ -223,6 +223,7 @@ export interface LocationPageProps extends PageProps {
     bikeSizes: BikeSizeRef[];
     year: number;
     reservations: LoadedReservation[];
+    openAgenda?: boolean;
 }
 
 export interface LineCalculationResult {

@@ -14,13 +14,6 @@ Route::middleware('guest')->group(function () {
 
 // Protected routes - require authentication
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', function () {
-        return Inertia::render('Dashboard');
-    })->name('home');
-
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
 
     Route::get('/clients', function () {
         $clients = \App\Models\Client::query()
@@ -289,124 +282,132 @@ Route::middleware(['auth'])->group(function () {
             ->with('message', 'Devis supprimé avec succès.');
     })->name('atelier.quotes.destroy');
 
-    Route::get('/location', function () {
-        $year = now()->year;
+    // Page d'accueil = Location avec agenda ouvert par défaut
+    $locationHandler = function (bool $openAgendaDefault = false) {
+        return function (\Illuminate\Http\Request $request) use ($openAgendaDefault) {
+            $year = now()->year;
+            $openAgenda = $request->has('openAgenda') ? $request->boolean('openAgenda') : $openAgendaDefault;
 
-        // Fenêtre glissante : J-15 à J+30
-        $startWindow = now()->subDays(15)->startOfDay();
-        $endWindow = now()->addDays(30)->endOfDay();
+            // Fenêtre glissante : J-15 à J+30
+            $startWindow = now()->subDays(15)->startOfDay();
+            $endWindow = now()->addDays(30)->endOfDay();
 
-        // Charger les réservations dans la fenêtre glissante
-        // Règles :
-        // 1. date_reservation entre J-15 et J+30
-        // 2. OU réservation démarrée avant J-15 mais date_retour >= aujourd'hui (toujours active)
-        // On exclut les réservations annulées
-        $reservations = \App\Models\Reservation::with(['client', 'items'])
-            ->where('statut', '!=', 'annule')
-            ->where(function ($query) use ($startWindow, $endWindow) {
-                $query->whereBetween('date_reservation', [$startWindow, $endWindow])
-                    ->orWhere(function ($q) use ($startWindow) {
-                        $q->where('date_reservation', '<', $startWindow)
-                            ->where('date_retour', '>=', now()->startOfDay());
-                    });
-            })
-            ->orderBy('date_reservation')
-            ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'client_id' => $r->client_id,
-                'client_name' => $r->client ? "{$r->client->prenom} {$r->client->nom}" : 'Client inconnu',
-                'client' => $r->client ? [
-                    'id' => $r->client->id,
-                    'prenom' => $r->client->prenom,
-                    'nom' => $r->client->nom,
-                    'email' => $r->client->email,
-                    'telephone' => $r->client->telephone,
-                    'adresse' => $r->client->adresse,
-                    'origine_contact' => $r->client->origine_contact,
-                    'commentaires' => $r->client->commentaires,
-                    'avantage_type' => $r->client->avantage_type,
-                    'avantage_valeur' => $r->client->avantage_valeur,
-                    'avantage_expiration' => $r->client->avantage_expiration,
+            // Charger les réservations dans la fenêtre glissante
+            $reservations = \App\Models\Reservation::with(['client', 'items'])
+                ->where('statut', '!=', 'annule')
+                ->where(function ($query) use ($startWindow, $endWindow) {
+                    $query->whereBetween('date_reservation', [$startWindow, $endWindow])
+                        ->orWhere(function ($q) use ($startWindow) {
+                            $q->where('date_reservation', '<', $startWindow)
+                                ->where('date_retour', '>=', now()->startOfDay());
+                        });
+                })
+                ->orderBy('date_reservation')
+                ->get()
+                ->map(fn ($r) => [
+                    'id' => $r->id,
+                    'client_id' => $r->client_id,
+                    'client_name' => $r->client ? "{$r->client->prenom} {$r->client->nom}" : 'Client inconnu',
+                    'client' => $r->client ? [
+                        'id' => $r->client->id,
+                        'prenom' => $r->client->prenom,
+                        'nom' => $r->client->nom,
+                        'email' => $r->client->email,
+                        'telephone' => $r->client->telephone,
+                        'adresse' => $r->client->adresse,
+                        'origine_contact' => $r->client->origine_contact,
+                        'commentaires' => $r->client->commentaires,
+                        'avantage_type' => $r->client->avantage_type,
+                        'avantage_valeur' => $r->client->avantage_valeur,
+                        'avantage_expiration' => $r->client->avantage_expiration,
+                    ] : null,
+                    'date_contact' => $r->date_contact?->format('Y-m-d\TH:i'),
+                    'date_reservation' => $r->date_reservation->format('Y-m-d'),
+                    'date_retour' => $r->date_retour->format('Y-m-d'),
+                    'livraison_necessaire' => $r->livraison_necessaire,
+                    'adresse_livraison' => $r->adresse_livraison,
+                    'contact_livraison' => $r->contact_livraison,
+                    'creneau_livraison' => $r->creneau_livraison,
+                    'recuperation_necessaire' => $r->recuperation_necessaire,
+                    'adresse_recuperation' => $r->adresse_recuperation,
+                    'contact_recuperation' => $r->contact_recuperation,
+                    'creneau_recuperation' => $r->creneau_recuperation,
+                    'prix_total_ttc' => $r->prix_total_ttc,
+                    'acompte_demande' => $r->acompte_demande,
+                    'acompte_montant' => $r->acompte_montant,
+                    'acompte_paye_le' => $r->acompte_paye_le?->format('Y-m-d'),
+                    'paiement_final_le' => $r->paiement_final_le?->format('Y-m-d'),
+                    'statut' => $r->statut,
+                    'raison_annulation' => $r->raison_annulation,
+                    'commentaires' => $r->commentaires,
+                    'color' => $r->color ?? 0,
+                    'selection' => $r->selection ?? [],
+                    'items' => $r->items->map(fn ($item) => [
+                        'bike_type_id' => $item->bike_type_id,
+                        'quantite' => $item->quantite,
+                    ])->toArray(),
+                ]);
+
+            // Charger les vélos depuis la base de données avec leurs relations
+            $bikes = \App\Models\Bike::with(['category', 'size'])->ordered()->get()->map(fn ($bike) => [
+                'id' => $bike->id,
+                'column_id' => 'bike_'.$bike->id,
+                'bike_category_id' => $bike->bike_category_id,
+                'bike_size_id' => $bike->bike_size_id,
+                'category' => $bike->category ? [
+                    'id' => $bike->category->id,
+                    'name' => $bike->category->name,
+                    'color' => $bike->category->color,
+                    'has_battery' => $bike->category->has_battery,
+                    'sort_order' => $bike->category->sort_order,
                 ] : null,
-                'date_contact' => $r->date_contact?->format('Y-m-d\TH:i'),
-                'date_reservation' => $r->date_reservation->format('Y-m-d'),
-                'date_retour' => $r->date_retour->format('Y-m-d'),
-                'livraison_necessaire' => $r->livraison_necessaire,
-                'adresse_livraison' => $r->adresse_livraison,
-                'contact_livraison' => $r->contact_livraison,
-                'creneau_livraison' => $r->creneau_livraison,
-                'recuperation_necessaire' => $r->recuperation_necessaire,
-                'adresse_recuperation' => $r->adresse_recuperation,
-                'contact_recuperation' => $r->contact_recuperation,
-                'creneau_recuperation' => $r->creneau_recuperation,
-                'prix_total_ttc' => $r->prix_total_ttc,
-                'acompte_demande' => $r->acompte_demande,
-                'acompte_montant' => $r->acompte_montant,
-                'acompte_paye_le' => $r->acompte_paye_le?->format('Y-m-d'),
-                'paiement_final_le' => $r->paiement_final_le?->format('Y-m-d'),
-                'statut' => $r->statut,
-                'raison_annulation' => $r->raison_annulation,
-                'commentaires' => $r->commentaires,
-                'color' => $r->color ?? 0,
-                'selection' => $r->selection ?? [],
-                'items' => $r->items->map(fn ($item) => [
-                    'bike_type_id' => $item->bike_type_id,
-                    'quantite' => $item->quantite,
-                ])->toArray(),
+                'size' => $bike->size ? [
+                    'id' => $bike->size->id,
+                    'name' => $bike->size->name,
+                    'color' => $bike->size->color,
+                    'sort_order' => $bike->size->sort_order,
+                ] : null,
+                'frame_type' => $bike->frame_type,
+                'model' => $bike->model,
+                'battery_type' => $bike->battery_type,
+                'name' => $bike->name,
+                'status' => $bike->status,
+                'notes' => $bike->notes,
             ]);
 
-        // Charger les vélos depuis la base de données avec leurs relations
-        $bikes = \App\Models\Bike::with(['category', 'size'])->ordered()->get()->map(fn ($bike) => [
-            'id' => $bike->id,
-            'column_id' => 'bike_'.$bike->id,
-            'bike_category_id' => $bike->bike_category_id,
-            'bike_size_id' => $bike->bike_size_id,
-            'category' => $bike->category ? [
-                'id' => $bike->category->id,
-                'name' => $bike->category->name,
-                'color' => $bike->category->color,
-                'has_battery' => $bike->category->has_battery,
-                'sort_order' => $bike->category->sort_order,
-            ] : null,
-            'size' => $bike->size ? [
-                'id' => $bike->size->id,
-                'name' => $bike->size->name,
-                'color' => $bike->size->color,
-                'sort_order' => $bike->size->sort_order,
-            ] : null,
-            'frame_type' => $bike->frame_type,
-            'model' => $bike->model,
-            'battery_type' => $bike->battery_type,
-            'name' => $bike->name,
-            'status' => $bike->status,
-            'notes' => $bike->notes,
-        ]);
+            // Charger les référentiels catégories et tailles
+            $bikeCategories = \App\Models\BikeCategory::ordered()->get()->map(fn ($cat) => [
+                'id' => $cat->id,
+                'name' => $cat->name,
+                'color' => $cat->color,
+                'has_battery' => $cat->has_battery,
+                'sort_order' => $cat->sort_order,
+            ]);
 
-        // Charger les référentiels catégories et tailles
-        $bikeCategories = \App\Models\BikeCategory::ordered()->get()->map(fn ($cat) => [
-            'id' => $cat->id,
-            'name' => $cat->name,
-            'color' => $cat->color,
-            'has_battery' => $cat->has_battery,
-            'sort_order' => $cat->sort_order,
-        ]);
+            $bikeSizes = \App\Models\BikeSize::ordered()->get()->map(fn ($size) => [
+                'id' => $size->id,
+                'name' => $size->name,
+                'color' => $size->color,
+                'sort_order' => $size->sort_order,
+            ]);
 
-        $bikeSizes = \App\Models\BikeSize::ordered()->get()->map(fn ($size) => [
-            'id' => $size->id,
-            'name' => $size->name,
-            'color' => $size->color,
-            'sort_order' => $size->sort_order,
-        ]);
+            return Inertia::render('Location/Index', [
+                'bikes' => $bikes,
+                'bikeCategories' => $bikeCategories,
+                'bikeSizes' => $bikeSizes,
+                'year' => $year,
+                'reservations' => $reservations,
+                'openAgenda' => $openAgenda,
+            ]);
+        };
+    };
 
-        return Inertia::render('Location/Index', [
-            'bikes' => $bikes,
-            'bikeCategories' => $bikeCategories,
-            'bikeSizes' => $bikeSizes,
-            'year' => $year,
-            'reservations' => $reservations,
-        ]);
-    })->name('location.index');
+    Route::get('/', $locationHandler(true))->name('home');
+    Route::get('/location', $locationHandler(false))->name('location.index');
+
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
 
     Route::get('/bikes', [\App\Http\Controllers\BikeController::class, 'index'])->name('bikes.index');
 

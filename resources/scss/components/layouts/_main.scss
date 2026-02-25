@@ -103,3 +103,139 @@
     margin: 0;
   }
 }
+
+// Privacy Toggle (Mode Atelier / Comptoir)
+.privacy-toggle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-left: $spacing-lg;
+  padding-left: $spacing-lg;
+  border-left: 1px solid $color-border-light;
+
+  &__label {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+    transition: color $transition-base, font-weight $transition-base;
+    user-select: none;
+
+    &--active {
+      color: $color-neutral-dark;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &__switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: $color-neutral-light;
+    border: 1px solid $color-border-medium;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background $transition-base, border-color $transition-base;
+    padding: 0;
+
+    &:hover {
+      border-color: $color-primary-blue;
+    }
+
+    &--comptoir {
+      background: $color-primary-blue;
+      border-color: $color-primary-blue;
+
+      .privacy-toggle__slider {
+        transform: translateX(20px);
+        background: $color-bg-white;
+      }
+    }
+  }
+
+  &__slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: $color-bg-white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform $transition-base;
+  }
+}
+
+// Privacy Banner (Mode Comptoir actif) - barre bleue simple sans texte
+.privacy-banner {
+  background: linear-gradient(90deg, $color-primary-blue, lighten($color-primary-blue, 10%));
+  height: 4px;
+}
+
+// Mode Comptoir - masquer les éléments sensibles
+[data-privacy-mode="comptoir"] {
+  // Colonnes sensibles dans les tableaux (hors quote-lines-table qui utilise CSS Grid)
+  .col-achat-ht,
+  .col-marge,
+  .col-taux-marge,
+  .col-purchase,
+  .col-margin {
+    display: none !important;
+  }
+
+  // KPI financiers dans les dashboards
+  .kpi-sensitive,
+  .kpi-margin,
+  .kpi-revenue,
+  .kpi-ca {
+    display: none !important;
+  }
+
+  // Conteneurs sensibles génériques (pas les cellules de grille)
+  .sensitive-column:not(.quote-lines-table__cell) {
+    display: none !important;
+  }
+
+  // Quote Lines Table - utiliser visibility et width pour garder la grille cohérente
+  // puis redéfinir la grille complète
+  .quote-lines-table__header,
+  .quote-lines-table__row {
+    // Original: Intitulé, Réf, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, ×
+    // Comptoir (8 colonnes visibles): Intitulé, Réf, TVA%, PV TTC, Qté, Total HT, Total TTC, ×
+    // On garde 13 colonnes mais on met à 0 les colonnes sensibles (3, 7, 8, 9, 12)
+    grid-template-columns: 1.8fr 0.5fr 0 0.5fr 0.7fr 0.6fr 0 0 0 0.7fr 0.7fr 0 45px !important;
+
+    // Masquer le contenu des cellules sensibles
+    .quote-lines-table__cell.sensitive-column {
+      visibility: hidden;
+      width: 0;
+      min-width: 0;
+      padding: 0 !important;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1.4fr 0.5fr 0 0.5fr 0.5fr 0.5fr 0 0 0 0.6fr 0.6fr 0 35px !important;
+    }
+  }
+
+  // Quote Show Table - redéfinir pour le tableau de visualisation
+  .quote-show__table {
+    th.sensitive-column,
+    td.sensitive-column {
+      display: none !important;
+    }
+  }
+
+  // Placeholder pour les valeurs masquées
+  .sensitive-value {
+    &::before {
+      content: "•••";
+      color: $color-neutral-medium;
+      font-style: italic;
+    }
+
+    > * {
+      display: none;
+    }
+  }
+}

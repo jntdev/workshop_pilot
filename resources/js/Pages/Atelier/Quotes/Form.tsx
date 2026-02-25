@@ -155,102 +155,64 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         });
     };
 
-    const handleLineCalculate = useCallback(async (
-        index: number,
-        calculationType: string,
-        value: string,
-        currentLineValues?: { purchase_price_ht?: string; tva_rate?: string; quantity?: string }
-    ) => {
-        // Use provided values or fall back to state (for backward compatibility)
-        const line = lines[index];
-        const purchasePriceHt = currentLineValues?.purchase_price_ht ?? line.purchase_price_ht;
-        const tvaRate = currentLineValues?.tva_rate ?? line.tva_rate;
-        const quantity = currentLineValues?.quantity ?? line.quantity ?? '1';
+    // Mise à jour d'une ligne avec recalcul des totaux (appelé par QuoteLinesTable)
+    const handleLineUpdate = useCallback((index: number, updates: Partial<QuoteLine>) => {
+        setLines(prev => {
+            const newLines = [...prev];
+            newLines[index] = { ...newLines[index], ...updates };
+            return newLines;
+        });
+    }, []);
 
-        try {
-            const response = await fetch('/api/quotes/calculate-line', {
-                method: 'POST',
-                headers: apiHeaders(),
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    purchase_price_ht: purchasePriceHt,
-                    tva_rate: tvaRate,
-                    calculation_type: calculationType,
-                    value: value,
-                    quantity: quantity,
-                }),
-            });
+    // Calcul local des totaux du devis (somme des lignes)
+    const calculateTotalsLocally = useCallback(() => {
+        let totalHt = 0;
+        let totalTtc = 0;
+        let marginTotalHt = 0;
 
-            if (response.ok) {
-                const result = await response.json();
-                setLines(prev => {
-                    const newLines = [...prev];
-                    newLines[index] = {
-                        ...newLines[index],
-                        // Also update the input values if they were provided
-                        ...(currentLineValues?.purchase_price_ht !== undefined && { purchase_price_ht: currentLineValues.purchase_price_ht }),
-                        ...(currentLineValues?.tva_rate !== undefined && { tva_rate: currentLineValues.tva_rate }),
-                        ...(currentLineValues?.quantity !== undefined && { quantity: currentLineValues.quantity }),
-                        sale_price_ht: result.sale_price_ht,
-                        sale_price_ttc: result.sale_price_ttc,
-                        margin_amount_ht: result.margin_amount_ht,
-                        margin_rate: result.margin_rate,
-                        line_purchase_ht: result.line_purchase_ht,
-                        line_margin_ht: result.line_margin_ht,
-                        line_total_ht: result.line_total_ht,
-                        line_total_ttc: result.line_total_ttc,
-                    };
-                    return newLines;
-                });
-
-                // Totals will be recalculated automatically via useEffect
-            }
-        } catch (error) {
-            console.error('Calculation error:', error);
+        for (const line of lines) {
+            totalHt += parseFloat(line.line_total_ht) || 0;
+            totalTtc += parseFloat(line.line_total_ttc) || 0;
+            marginTotalHt += parseFloat(line.line_margin_ht) || 0;
         }
-    }, [lines]);
 
-    // Auto-recalculate totals when lines or discount changes
+        // Appliquer la remise
+        const discount = parseFloat(discountValue) || 0;
+        if (discount > 0) {
+            if (discountType === 'percent') {
+                const discountAmount = totalHt * (discount / 100);
+                totalHt -= discountAmount;
+                // Recalculer TTC après remise
+                const avgTvaRate = totalTtc > 0 && totalHt > 0 ? (totalTtc / totalHt - 1) : 0.2;
+                totalTtc = totalHt * (1 + avgTvaRate);
+            } else {
+                totalHt -= discount;
+                const avgTvaRate = totalTtc > 0 && totalHt > 0 ? (totalTtc / totalHt - 1) : 0.2;
+                totalTtc = totalHt * (1 + avgTvaRate);
+            }
+        }
+
+        const totalTva = totalTtc - totalHt;
+
+        return {
+            total_ht: Math.max(0, totalHt).toFixed(2),
+            total_tva: totalTva.toFixed(2),
+            total_ttc: Math.max(0, totalTtc).toFixed(2),
+            margin_total_ht: marginTotalHt.toFixed(2),
+        };
+    }, [lines, discountType, discountValue]);
+
+    // Recalculer les totaux quand les lignes ou la remise changent
     useEffect(() => {
-        // Skip initial mount to avoid unnecessary API call
+        // Skip initial mount
         if (isInitialMount.current) {
             isInitialMount.current = false;
             return;
         }
 
-        const recalculate = async () => {
-            try {
-                const response = await fetch('/api/quotes/calculate-totals', {
-                    method: 'POST',
-                    headers: apiHeaders(),
-                    credentials: 'same-origin',
-                    body: JSON.stringify({
-                        lines: lines.map(l => ({
-                            sale_price_ht: l.sale_price_ht,
-                            sale_price_ttc: l.sale_price_ttc,
-                            margin_amount_ht: l.margin_amount_ht,
-                            line_total_ht: l.line_total_ht,
-                            line_total_ttc: l.line_total_ttc,
-                            line_margin_ht: l.line_margin_ht,
-                        })),
-                        discount_type: discountType,
-                        discount_value: discountValue,
-                    }),
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    setTotals(result);
-                }
-            } catch (error) {
-                console.error('Totals calculation error:', error);
-            }
-        };
-
-        // Debounce the calculation
-        const timeoutId = setTimeout(recalculate, 100);
-        return () => clearTimeout(timeoutId);
-    }, [lines, discountType, discountValue]);
+        const newTotals = calculateTotalsLocally();
+        setTotals(newTotals);
+    }, [lines, discountType, discountValue, calculateTotalsLocally]);
 
     const handleAddLine = () => {
         setLines(prev => [...prev, { ...emptyLine(), position: prev.length }]);
@@ -686,7 +648,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                         <QuoteLinesTable
                             lines={lines}
                             onLineChange={handleLineChange}
-                            onLineCalculate={handleLineCalculate}
+                            onLineUpdate={handleLineUpdate}
                             onAddLine={handleAddLine}
                             onRemoveLine={handleRemoveLine}
                             disabled={isReadOnly}
