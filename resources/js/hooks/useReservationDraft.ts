@@ -21,8 +21,9 @@ function cellKey(bikeId: string, date: string): string {
 
 function bikeToTypeId(bike: BikeDefinition): string {
     const categoryName = bike.category?.name ?? 'UNKNOWN';
-    const sizeName = bike.size?.name ?? 'UNKNOWN';
-    return `${categoryName}_${sizeName.toLowerCase()}${bike.frame_type}`;
+    const sizePart = bike.size?.name ? bike.size.name.toLowerCase() : '';
+    const framePart = bike.frame_type ?? '';
+    return `${categoryName}_${sizePart}${framePart}`;
 }
 
 /**

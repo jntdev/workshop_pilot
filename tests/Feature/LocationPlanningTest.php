@@ -19,15 +19,17 @@ class LocationPlanningTest extends TestCase
     {
         parent::setUp();
 
-        // Créer un type de vélo pour les tests
-        BikeType::create([
-            'id' => 'VAE_mb',
-            'category' => 'VAE',
-            'size' => 'M',
-            'frame_type' => 'b',
-            'label' => 'VAE M cadre bas',
-            'stock' => 3,
-        ]);
+        // S'assurer qu'un type de vélo existe pour les tests
+        BikeType::firstOrCreate(
+            ['id' => 'VAE_mb'],
+            [
+                'category' => 'VAE',
+                'size' => 'M',
+                'frame_type' => 'b',
+                'label' => 'VAE M cadre bas',
+                'stock' => 3,
+            ]
+        );
     }
 
     protected function getTestUser(): User

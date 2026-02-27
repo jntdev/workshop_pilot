@@ -6,10 +6,10 @@ import type { BikeCategoryRef, BikeSizeRef } from '@/types';
 interface Bike {
     id: number;
     bike_category_id: number;
-    bike_size_id: number;
+    bike_size_id: number | null;
     category: BikeCategoryRef;
-    size: BikeSizeRef;
-    frame_type: 'b' | 'h';
+    size: BikeSizeRef | null;
+    frame_type: 'b' | 'h' | null;
     model: '500' | '625' | 'autre' | null;
     battery_type: 'rack' | 'gourde' | 'rail' | null;
     name: string;
@@ -51,8 +51,8 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
 
     const [formData, setFormData] = useState({
         bike_category_id: defaultCategoryId,
-        bike_size_id: defaultSizeId,
-        frame_type: 'b' as 'b' | 'h',
+        bike_size_id: defaultSizeId as number | null,
+        frame_type: 'b' as 'b' | 'h' | null,
         model: '500' as '500' | '625' | 'autre' | null,
         battery_type: 'rack' as 'rack' | 'gourde' | 'rail' | null,
         name: '',
@@ -67,34 +67,36 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
     );
 
     const resetForm = useCallback(() => {
+        const defaultCategory = categories[0];
         setFormData({
             bike_category_id: defaultCategoryId,
-            bike_size_id: defaultSizeId,
-            frame_type: 'b',
+            bike_size_id: defaultCategory?.has_size !== false ? defaultSizeId : null,
+            frame_type: defaultCategory?.has_frame_type !== false ? 'b' : null,
             model: '500',
-            battery_type: 'rack',
+            battery_type: defaultCategory?.has_battery ? 'rack' : null,
             name: '',
             status: 'OK',
             notes: '',
         });
         setEditingBike(null);
         setIsCreating(false);
-    }, [defaultCategoryId, defaultSizeId]);
+    }, [defaultCategoryId, defaultSizeId, categories]);
 
     const handleCreate = useCallback(() => {
+        const defaultCategory = categories[0];
         setIsCreating(true);
         setEditingBike(null);
         setFormData({
             bike_category_id: defaultCategoryId,
-            bike_size_id: defaultSizeId,
-            frame_type: 'b',
+            bike_size_id: defaultCategory?.has_size !== false ? defaultSizeId : null,
+            frame_type: defaultCategory?.has_frame_type !== false ? 'b' : null,
             model: '500',
-            battery_type: 'rack',
+            battery_type: defaultCategory?.has_battery ? 'rack' : null,
             name: '',
             status: 'OK',
             notes: '',
         });
-    }, [defaultCategoryId, defaultSizeId]);
+    }, [defaultCategoryId, defaultSizeId, categories]);
 
     const handleEdit = useCallback((bike: Bike) => {
         setEditingBike(bike);
@@ -119,6 +121,13 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
             const url = editingBike ? `/api/bikes/${editingBike.id}` : '/api/bikes';
             const method = editingBike ? 'PUT' : 'POST';
 
+            const payload = {
+                ...formData,
+                bike_size_id: selectedCategory?.has_size !== false ? formData.bike_size_id : null,
+                frame_type: selectedCategory?.has_frame_type !== false ? formData.frame_type : null,
+                battery_type: selectedCategory?.has_battery ? formData.battery_type : null,
+            };
+
             const response = await fetch(url, {
                 method,
                 headers: {
@@ -126,7 +135,7 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
 
             if (response.ok) {
@@ -145,7 +154,7 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
         } finally {
             setIsLoading(false);
         }
-    }, [editingBike, formData, resetForm]);
+    }, [editingBike, formData, resetForm, selectedCategory]);
 
     const handleDelete = useCallback(async (bikeId: number) => {
         if (!confirm('Supprimer ce velo ?')) {
@@ -201,19 +210,27 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
 
     // Grouper les velos par categorie puis par taille
     const bikesByCategory = useMemo(() => {
-        const grouped: Record<number, Record<number, Bike[]>> = {};
+        const grouped: Record<number, Record<number | 0, Bike[]>> = {};
 
         for (const category of categories) {
             grouped[category.id] = {};
-            for (const size of sizes) {
-                grouped[category.id][size.id] = [];
+            if (category.has_size !== false) {
+                for (const size of sizes) {
+                    grouped[category.id][size.id] = [];
+                }
+            } else {
+                grouped[category.id][0] = [];
             }
         }
 
         for (const bike of bikes) {
-            if (grouped[bike.bike_category_id] && grouped[bike.bike_category_id][bike.bike_size_id]) {
-                grouped[bike.bike_category_id][bike.bike_size_id].push(bike);
+            const catGroup = grouped[bike.bike_category_id];
+            if (!catGroup) continue;
+            const sizeKey = bike.bike_size_id ?? 0;
+            if (!catGroup[sizeKey]) {
+                catGroup[sizeKey] = [];
             }
+            catGroup[sizeKey].push(bike);
         }
 
         return grouped;
@@ -224,7 +241,53 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
     const okBikes = bikes.filter(b => b.status === 'OK').length;
     const hsBikes = bikes.filter(b => b.status === 'HS').length;
 
-    const getFrameLabel = (frameType: string) => frameType === 'b' ? 'bas' : 'haut';
+    const getFrameLabel = (frameType: string | null) => {
+        if (!frameType) return '';
+        return frameType === 'b' ? 'bas' : 'haut';
+    };
+
+    const renderBikeCard = (bike: Bike) => (
+        <div
+            key={bike.id}
+            className={`bike-card ${bike.status === 'HS' ? 'bike-card--hs' : ''} ${editingBike?.id === bike.id ? 'bike-card--editing' : ''}`}
+        >
+            <div className="bike-card__main">
+                <span className="bike-card__label">{bike.name}</span>
+                {bike.frame_type && (
+                    <span className="bike-card__type">
+                        {getFrameLabel(bike.frame_type)}
+                    </span>
+                )}
+                <button
+                    type="button"
+                    className={`bike-card__status ${bike.status === 'OK' ? 'bike-card__status--ok' : 'bike-card__status--hs'}`}
+                    onClick={() => handleToggleStatus(bike)}
+                    title="Cliquer pour changer le statut"
+                >
+                    {bike.status}
+                </button>
+            </div>
+            {bike.notes && (
+                <p className="bike-card__notes">{bike.notes}</p>
+            )}
+            <div className="bike-card__actions">
+                <button
+                    type="button"
+                    className="bike-card__action"
+                    onClick={() => handleEdit(bike)}
+                >
+                    Modifier
+                </button>
+                <button
+                    type="button"
+                    className="bike-card__action bike-card__action--danger"
+                    onClick={() => handleDelete(bike.id)}
+                >
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <MainLayout>
@@ -260,61 +323,30 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                                         <span className="bikes-category__count">{categoryBikes.length}</span>
                                     </h2>
 
-                                    {sizes.map(size => {
-                                        const sizeBikes = bikesByCategory[category.id]?.[size.id] || [];
-                                        if (sizeBikes.length === 0) return null;
+                                    {category.has_size !== false ? (
+                                        sizes.map(size => {
+                                            const sizeBikes = bikesByCategory[category.id]?.[size.id] || [];
+                                            if (sizeBikes.length === 0) return null;
 
-                                        return (
-                                            <div key={`${category.id}-${size.id}`} className="bikes-group">
-                                                <h3 className="bikes-group__title" style={{ borderLeftColor: size.color }}>
-                                                    Taille {size.name}
-                                                    <span className="bikes-group__count">{sizeBikes.length}</span>
-                                                </h3>
-                                                <div className="bikes-group__items">
-                                                    {sizeBikes.map(bike => (
-                                                        <div
-                                                            key={bike.id}
-                                                            className={`bike-card ${bike.status === 'HS' ? 'bike-card--hs' : ''} ${editingBike?.id === bike.id ? 'bike-card--editing' : ''}`}
-                                                        >
-                                                            <div className="bike-card__main">
-                                                                <span className="bike-card__label">{bike.name}</span>
-                                                                <span className="bike-card__type">
-                                                                    {getFrameLabel(bike.frame_type)}
-                                                                </span>
-                                                                <button
-                                                                    type="button"
-                                                                    className={`bike-card__status ${bike.status === 'OK' ? 'bike-card__status--ok' : 'bike-card__status--hs'}`}
-                                                                    onClick={() => handleToggleStatus(bike)}
-                                                                    title="Cliquer pour changer le statut"
-                                                                >
-                                                                    {bike.status}
-                                                                </button>
-                                                            </div>
-                                                            {bike.notes && (
-                                                                <p className="bike-card__notes">{bike.notes}</p>
-                                                            )}
-                                                            <div className="bike-card__actions">
-                                                                <button
-                                                                    type="button"
-                                                                    className="bike-card__action"
-                                                                    onClick={() => handleEdit(bike)}
-                                                                >
-                                                                    Modifier
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="bike-card__action bike-card__action--danger"
-                                                                    onClick={() => handleDelete(bike.id)}
-                                                                >
-                                                                    Supprimer
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                            return (
+                                                <div key={`${category.id}-${size.id}`} className="bikes-group">
+                                                    <h3 className="bikes-group__title" style={{ borderLeftColor: size.color }}>
+                                                        Taille {size.name}
+                                                        <span className="bikes-group__count">{sizeBikes.length}</span>
+                                                    </h3>
+                                                    <div className="bikes-group__items">
+                                                        {sizeBikes.map(renderBikeCard)}
+                                                    </div>
                                                 </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="bikes-group">
+                                            <div className="bikes-group__items">
+                                                {(bikesByCategory[category.id]?.[0] || []).map(renderBikeCard)}
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -364,6 +396,8 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                                                 setFormData(prev => ({
                                                     ...prev,
                                                     bike_category_id: newCategoryId,
+                                                    bike_size_id: newCategory?.has_size !== false ? (prev.bike_size_id || defaultSizeId) : null,
+                                                    frame_type: newCategory?.has_frame_type !== false ? (prev.frame_type || 'b') : null,
                                                     battery_type: newCategory?.has_battery ? (prev.battery_type || 'rack') : null,
                                                 }));
                                             }}
@@ -375,35 +409,39 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                                         </select>
                                     </div>
 
-                                    <div className="bike-form__field">
-                                        <label htmlFor="size">Taille</label>
-                                        <select
-                                            id="size"
-                                            value={formData.bike_size_id}
-                                            onChange={e => setFormData(prev => ({ ...prev, bike_size_id: Number(e.target.value) }))}
-                                            required
-                                        >
-                                            {sizes.map(s => (
-                                                <option key={s.id} value={s.id}>{s.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    {selectedCategory?.has_size !== false && (
+                                        <div className="bike-form__field">
+                                            <label htmlFor="size">Taille</label>
+                                            <select
+                                                id="size"
+                                                value={formData.bike_size_id ?? ''}
+                                                onChange={e => setFormData(prev => ({ ...prev, bike_size_id: Number(e.target.value) }))}
+                                                required
+                                            >
+                                                {sizes.map(s => (
+                                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="bike-form__row">
-                                    <div className="bike-form__field">
-                                        <label htmlFor="frame_type">Type de cadre</label>
-                                        <select
-                                            id="frame_type"
-                                            value={formData.frame_type}
-                                            onChange={e => setFormData(prev => ({ ...prev, frame_type: e.target.value as 'b' | 'h' }))}
-                                            required
-                                        >
-                                            {FRAME_TYPES.map(ft => (
-                                                <option key={ft.value} value={ft.value}>{ft.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    {selectedCategory?.has_frame_type !== false && (
+                                        <div className="bike-form__field">
+                                            <label htmlFor="frame_type">Type de cadre</label>
+                                            <select
+                                                id="frame_type"
+                                                value={formData.frame_type ?? ''}
+                                                onChange={e => setFormData(prev => ({ ...prev, frame_type: e.target.value as 'b' | 'h' }))}
+                                                required
+                                            >
+                                                {FRAME_TYPES.map(ft => (
+                                                    <option key={ft.value} value={ft.value}>{ft.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
 
                                     <div className="bike-form__field">
                                         <label htmlFor="model">Modele</label>

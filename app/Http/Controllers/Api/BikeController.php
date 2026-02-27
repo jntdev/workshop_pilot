@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bike;
+use App\Models\BikeCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -20,10 +21,15 @@ class BikeController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $category = BikeCategory::findOrFail($request->input('bike_category_id'));
+
+        $sizeRule = $category->has_size ? 'required|exists:bike_sizes,id' : 'nullable';
+        $frameRule = $category->has_frame_type ? 'required|in:b,h' : 'nullable';
+
         $validated = $request->validate([
             'bike_category_id' => 'required|exists:bike_categories,id',
-            'bike_size_id' => 'required|exists:bike_sizes,id',
-            'frame_type' => 'required|in:b,h',
+            'bike_size_id' => $sizeRule,
+            'frame_type' => $frameRule,
             'model' => 'nullable|string|max:50',
             'battery_type' => 'nullable|in:rack,gourde,rail',
             'name' => 'required|string|max:100',
@@ -31,27 +37,48 @@ class BikeController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Déterminer le sort_order (à la fin du groupe)
-        $maxOrder = Bike::where('bike_category_id', $validated['bike_category_id'])
-            ->where('bike_size_id', $validated['bike_size_id'])
-            ->where('frame_type', $validated['frame_type'])
-            ->max('sort_order') ?? -1;
-        $validated['sort_order'] = $maxOrder + 1;
+        if (! $category->has_size) {
+            $validated['bike_size_id'] = null;
+        }
+        if (! $category->has_frame_type) {
+            $validated['frame_type'] = null;
+        }
+
+        $query = Bike::where('bike_category_id', $validated['bike_category_id']);
+        if ($validated['bike_size_id']) {
+            $query->where('bike_size_id', $validated['bike_size_id']);
+        } else {
+            $query->whereNull('bike_size_id');
+        }
+        if ($validated['frame_type']) {
+            $query->where('frame_type', $validated['frame_type']);
+        } else {
+            $query->whereNull('frame_type');
+        }
+        $validated['sort_order'] = ($query->max('sort_order') ?? -1) + 1;
 
         $bike = Bike::create($validated);
         $bike->load(['category', 'size']);
+        $bike->syncBikeType();
 
         return response()->json($bike, 201);
     }
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $bike = Bike::findOrFail($id);
+        $bike = Bike::with(['category', 'size'])->findOrFail($id);
+
+        $oldContext = [
+            'type_id' => $bike->bike_type_id,
+            'category_id' => $bike->bike_category_id,
+            'size_id' => $bike->bike_size_id,
+            'frame_type' => $bike->frame_type,
+        ];
 
         $validated = $request->validate([
             'bike_category_id' => 'sometimes|exists:bike_categories,id',
-            'bike_size_id' => 'sometimes|exists:bike_sizes,id',
-            'frame_type' => 'sometimes|in:b,h',
+            'bike_size_id' => 'nullable|exists:bike_sizes,id',
+            'frame_type' => 'nullable|in:b,h',
             'model' => 'nullable|string|max:50',
             'battery_type' => 'nullable|in:rack,gourde,rail',
             'name' => 'sometimes|string|max:100',
@@ -62,13 +89,27 @@ class BikeController extends Controller
         $bike->update($validated);
         $bike->load(['category', 'size']);
 
+        // Sync l'ancien type (décrémente ou supprime) puis le nouveau (crée ou incrémente)
+        Bike::syncBikeTypeAfterDelete($oldContext);
+        $bike->syncBikeType();
+
         return response()->json($bike);
     }
 
     public function destroy(int $id): JsonResponse
     {
-        $bike = Bike::findOrFail($id);
+        $bike = Bike::with(['category', 'size'])->findOrFail($id);
+
+        $context = [
+            'type_id' => $bike->bike_type_id,
+            'category_id' => $bike->bike_category_id,
+            'size_id' => $bike->bike_size_id,
+            'frame_type' => $bike->frame_type,
+        ];
+
         $bike->delete();
+
+        Bike::syncBikeTypeAfterDelete($context);
 
         return response()->json(['message' => 'Vélo supprimé']);
     }

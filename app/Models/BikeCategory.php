@@ -11,6 +11,8 @@ class BikeCategory extends Model
         'name',
         'color',
         'has_battery',
+        'has_size',
+        'has_frame_type',
         'sort_order',
     ];
 
@@ -18,6 +20,8 @@ class BikeCategory extends Model
     {
         return [
             'has_battery' => 'boolean',
+            'has_size' => 'boolean',
+            'has_frame_type' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

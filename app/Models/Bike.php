@@ -54,11 +54,100 @@ class Bike extends Model
      */
     public function getTypeLabelAttribute(): string
     {
-        $frameLabel = $this->frame_type === 'b' ? 'cadre bas' : 'cadre haut';
         $categoryName = $this->category?->name ?? 'N/A';
-        $sizeName = $this->size?->name ?? 'N/A';
+        $parts = [$categoryName];
 
-        return "{$categoryName} {$sizeName} {$frameLabel}";
+        if ($this->size) {
+            $parts[] = $this->size->name;
+        }
+
+        if ($this->frame_type) {
+            $parts[] = $this->frame_type === 'b' ? 'cadre bas' : 'cadre haut';
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * Génère l'identifiant du bike_type correspondant à ce vélo.
+     */
+    public function getBikeTypeIdAttribute(): string
+    {
+        $categoryName = $this->category?->name ?? 'UNKNOWN';
+        $sizePart = $this->size ? strtolower($this->size->name) : '';
+        $framePart = $this->frame_type ?? '';
+
+        return $categoryName.'_'.$sizePart.$framePart;
+    }
+
+    /**
+     * Synchronise l'entrée bike_types pour ce type de vélo (crée ou met à jour le stock).
+     */
+    public function syncBikeType(): void
+    {
+        $this->loadMissing(['category', 'size']);
+
+        $typeId = $this->bike_type_id;
+
+        $stock = Bike::where('bike_category_id', $this->bike_category_id)
+            ->where(function ($q) {
+                if ($this->bike_size_id) {
+                    $q->where('bike_size_id', $this->bike_size_id);
+                } else {
+                    $q->whereNull('bike_size_id');
+                }
+            })
+            ->where(function ($q) {
+                if ($this->frame_type) {
+                    $q->where('frame_type', $this->frame_type);
+                } else {
+                    $q->whereNull('frame_type');
+                }
+            })
+            ->count();
+
+        BikeType::updateOrCreate(
+            ['id' => $typeId],
+            [
+                'category' => $this->category?->name ?? 'UNKNOWN',
+                'size' => $this->size?->name ?? null,
+                'frame_type' => $this->frame_type,
+                'label' => $this->type_label,
+                'stock' => $stock,
+            ]
+        );
+    }
+
+    /**
+     * Synchronise le stock du bike_type après suppression d'un vélo.
+     * Si le stock tombe à 0, supprime le bike_type.
+     *
+     * @param  array{type_id: string, category_id: int, size_id: int|null, frame_type: string|null}  $context
+     */
+    public static function syncBikeTypeAfterDelete(array $context): void
+    {
+        $stock = Bike::where('bike_category_id', $context['category_id'])
+            ->where(function ($q) use ($context) {
+                if ($context['size_id']) {
+                    $q->where('bike_size_id', $context['size_id']);
+                } else {
+                    $q->whereNull('bike_size_id');
+                }
+            })
+            ->where(function ($q) use ($context) {
+                if ($context['frame_type']) {
+                    $q->where('frame_type', $context['frame_type']);
+                } else {
+                    $q->whereNull('frame_type');
+                }
+            })
+            ->count();
+
+        if ($stock === 0) {
+            BikeType::where('id', $context['type_id'])->delete();
+        } else {
+            BikeType::where('id', $context['type_id'])->update(['stock' => $stock]);
+        }
     }
 
     public function scopeOk($query)
@@ -74,10 +163,10 @@ class Bike extends Model
     public function scopeOrdered($query)
     {
         return $query->join('bike_categories', 'bikes.bike_category_id', '=', 'bike_categories.id')
-            ->join('bike_sizes', 'bikes.bike_size_id', '=', 'bike_sizes.id')
+            ->leftJoin('bike_sizes', 'bikes.bike_size_id', '=', 'bike_sizes.id')
             ->orderBy('bike_categories.sort_order')
-            ->orderBy('bike_sizes.sort_order')
-            ->orderBy('bikes.frame_type')
+            ->orderByRaw('bike_sizes.sort_order IS NULL, bike_sizes.sort_order')
+            ->orderByRaw('bikes.frame_type IS NULL, bikes.frame_type')
             ->orderBy('bikes.sort_order')
             ->select('bikes.*');
     }

@@ -150,6 +150,8 @@ export interface BikeCategoryRef {
     name: string;
     color: string;
     has_battery: boolean;
+    has_size: boolean;
+    has_frame_type: boolean;
     sort_order: number;
 }
 
@@ -165,10 +167,10 @@ export interface BikeDefinition {
     id: number;
     column_id: string; // "bike_1", "bike_2", etc.
     bike_category_id: number;
-    bike_size_id: number;
+    bike_size_id: number | null;
     category: BikeCategoryRef;
-    size: BikeSizeRef;
-    frame_type: BikeFrameType;
+    size: BikeSizeRef | null;
+    frame_type: BikeFrameType | null;
     model: BikeModel | null; // Modèle du vélo (500, 625, autre)
     battery_type: BikeBatteryType | null; // Type de batterie (VAE uniquement)
     name: string; // Nom affiché dans le header

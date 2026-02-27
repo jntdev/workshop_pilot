@@ -24,8 +24,13 @@ class BikeCategoryController extends Controller
             'name' => 'required|string|max:50|unique:bike_categories,name',
             'color' => 'required|string|max:7|regex:/^#[0-9A-Fa-f]{6}$/',
             'has_battery' => 'required|boolean',
+            'has_size' => 'sometimes|boolean',
+            'has_frame_type' => 'sometimes|boolean',
             'sort_order' => 'nullable|integer|min:0',
         ]);
+
+        $validated['has_size'] = $validated['has_size'] ?? true;
+        $validated['has_frame_type'] = $validated['has_frame_type'] ?? true;
 
         if (! isset($validated['sort_order'])) {
             $validated['sort_order'] = (BikeCategory::max('sort_order') ?? -1) + 1;
@@ -44,6 +49,8 @@ class BikeCategoryController extends Controller
             'name' => 'sometimes|string|max:50|unique:bike_categories,name,'.$id,
             'color' => 'sometimes|string|max:7|regex:/^#[0-9A-Fa-f]{6}$/',
             'has_battery' => 'sometimes|boolean',
+            'has_size' => 'sometimes|boolean',
+            'has_frame_type' => 'sometimes|boolean',
             'sort_order' => 'sometimes|integer|min:0',
         ]);
 
