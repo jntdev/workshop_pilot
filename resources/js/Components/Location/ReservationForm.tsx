@@ -190,12 +190,12 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
         return total - totalEncaisse;
     }, [formData.prix_total_ttc, totalEncaisse]);
 
-    // Badge de paiement (vert/orange/rouge)
+    // Badge de paiement (vert si complet, rouge si trop perçu, orange si partiel)
     const paymentBadgeType = useMemo(() => {
         if (totalEncaisse === 0) return null;
         const total = parseFloat(formData.prix_total_ttc) || 0;
-        if (totalEncaisse >= total) return 'success';
         if (totalEncaisse > total) return 'error';
+        if (totalEncaisse === total) return 'success';
         return 'warning';
     }, [totalEncaisse, formData.prix_total_ttc]);
 

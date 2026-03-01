@@ -159,6 +159,22 @@ class StoreReservationRequest extends FormRequest
                 $validator->errors()->add('acompte_demande', 'L\'acompte doit être demandé si le statut est "en attente d\'acompte".');
             }
 
+            // Statut paye requiert que total encaissé >= prix_total_ttc
+            if ($this->input('statut') === 'paye') {
+                $prixTotal = (float) ($this->input('prix_total_ttc') ?? 0);
+                $payments = $this->input('payments', []);
+                $totalPaiements = array_sum(array_column($payments, 'amount'));
+
+                // Ajouter l'acompte si payé
+                $acomptePaye = $this->input('acompte_paye_le') ? (float) ($this->input('acompte_montant') ?? 0) : 0;
+                $totalEncaisse = $totalPaiements + $acomptePaye;
+
+                if ($totalEncaisse < $prixTotal) {
+                    $manque = number_format($prixTotal - $totalEncaisse, 2, ',', ' ');
+                    $validator->errors()->add('statut', "Le statut \"Payé\" requiert un encaissement complet. Il manque {$manque} €.");
+                }
+            }
+
             // Avertissement si durée > 30 jours
             $dateReservation = $this->input('date_reservation');
             $dateRetour = $this->input('date_retour');

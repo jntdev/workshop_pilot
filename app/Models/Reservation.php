@@ -69,11 +69,20 @@ class Reservation extends Model
         return $this->hasMany(ReservationPayment::class);
     }
 
+    /**
+     * Total encaissé = somme des paiements + acompte (si payé).
+     */
     public function totalPaid(): float
     {
-        return (float) $this->payments()->sum('amount');
+        $payments = (float) $this->payments()->sum('amount');
+        $acompte = $this->acompte_paye_le ? (float) ($this->acompte_montant ?? 0) : 0;
+
+        return $payments + $acompte;
     }
 
+    /**
+     * Reste à encaisser.
+     */
     public function remaining(): float
     {
         return (float) $this->prix_total_ttc - $this->totalPaid();

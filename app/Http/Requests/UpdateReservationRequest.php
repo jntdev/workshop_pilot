@@ -104,30 +104,57 @@ class UpdateReservationRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            $reservation = $this->route('reservation');
+
             // Statut en_attente_acompte requiert acompte_demande
-            $statut = $this->input('statut', $this->route('reservation')?->statut);
-            $acompteDemande = $this->input('acompte_demande', $this->route('reservation')?->acompte_demande);
+            $statut = $this->input('statut', $reservation?->statut);
+            $acompteDemande = $this->input('acompte_demande', $reservation?->acompte_demande);
 
             if ($statut === 'en_attente_acompte' && ! $acompteDemande) {
                 $validator->errors()->add('acompte_demande', 'L\'acompte doit être demandé si le statut est "en attente d\'acompte".');
             }
 
+            // Statut paye requiert que total encaissé >= prix_total_ttc
+            if ($statut === 'paye') {
+                $prixTotal = (float) ($this->input('prix_total_ttc') ?? $reservation?->prix_total_ttc ?? 0);
+
+                // Paiements : soit ceux fournis, soit ceux existants
+                if ($this->has('payments')) {
+                    $payments = $this->input('payments', []);
+                    $totalPaiements = array_sum(array_column($payments, 'amount'));
+                } else {
+                    $totalPaiements = $reservation ? (float) $reservation->payments()->sum('amount') : 0;
+                }
+
+                // Acompte : prendre les valeurs fournies ou existantes
+                $acomptePaye = $this->input('acompte_paye_le', $reservation?->acompte_paye_le);
+                $acompteMontant = (float) ($this->input('acompte_montant') ?? $reservation?->acompte_montant ?? 0);
+                $acompteEncaisse = $acomptePaye ? $acompteMontant : 0;
+
+                $totalEncaisse = $totalPaiements + $acompteEncaisse;
+
+                if ($totalEncaisse < $prixTotal) {
+                    $manque = number_format($prixTotal - $totalEncaisse, 2, ',', ' ');
+                    $validator->errors()->add('statut', "Le statut \"Payé\" requiert un encaissement complet. Il manque {$manque} €.");
+                }
+            }
+
             // Statut annulé requiert raison_annulation
-            $raisonAnnulation = $this->input('raison_annulation', $this->route('reservation')?->raison_annulation);
+            $raisonAnnulation = $this->input('raison_annulation', $reservation?->raison_annulation);
             if ($statut === 'annule' && ! $raisonAnnulation) {
                 $validator->errors()->add('raison_annulation', 'La raison d\'annulation est obligatoire si le statut est "annulé".');
             }
 
             // Adresse livraison requise si livraison_necessaire
-            $livraisonNecessaire = $this->input('livraison_necessaire', $this->route('reservation')?->livraison_necessaire);
-            $adresseLivraison = $this->input('adresse_livraison', $this->route('reservation')?->adresse_livraison);
+            $livraisonNecessaire = $this->input('livraison_necessaire', $reservation?->livraison_necessaire);
+            $adresseLivraison = $this->input('adresse_livraison', $reservation?->adresse_livraison);
             if ($livraisonNecessaire && ! $adresseLivraison) {
                 $validator->errors()->add('adresse_livraison', 'L\'adresse de livraison est obligatoire si la livraison est nécessaire.');
             }
 
             // Adresse récupération requise si recuperation_necessaire
-            $recuperationNecessaire = $this->input('recuperation_necessaire', $this->route('reservation')?->recuperation_necessaire);
-            $adresseRecuperation = $this->input('adresse_recuperation', $this->route('reservation')?->adresse_recuperation);
+            $recuperationNecessaire = $this->input('recuperation_necessaire', $reservation?->recuperation_necessaire);
+            $adresseRecuperation = $this->input('adresse_recuperation', $reservation?->adresse_recuperation);
             if ($recuperationNecessaire && ! $adresseRecuperation) {
                 $validator->errors()->add('adresse_recuperation', 'L\'adresse de récupération est obligatoire si la récupération est nécessaire.');
             }
