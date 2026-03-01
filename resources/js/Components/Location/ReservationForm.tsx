@@ -762,6 +762,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                             min="0"
                             value={formData.prix_total_ttc}
                             onChange={(e) => setFormData((prev) => ({ ...prev, prix_total_ttc: e.target.value }))}
+                            onWheel={(e) => e.currentTarget.blur()}
                             className={errors.prix_total_ttc ? 'reservation-form__input--error' : ''}
                         />
                         <span className="reservation-form__suffix">€</span>
@@ -792,6 +793,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                                     min="0"
                                     value={formData.acompte_montant}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, acompte_montant: e.target.value }))}
+                                    onWheel={(e) => e.currentTarget.blur()}
                                     placeholder={`Suggéré: ${suggestedAcompte}€`}
                                 />
                                 <span className="reservation-form__suffix">€</span>
@@ -901,6 +903,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                                                         min="0"
                                                         value={payment.amount || ''}
                                                         onChange={(e) => updatePayment(index, 'amount', parseFloat(e.target.value) || 0)}
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                         placeholder="0.00"
                                                     />
                                                     <span className="reservation-form__suffix">€</span>
