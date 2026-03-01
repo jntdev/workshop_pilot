@@ -264,23 +264,6 @@ class ReservationApiTest extends TestCase
     }
 
     #[Test]
-    public function it_requires_paiement_final_when_statut_is_paye(): void
-    {
-        $user = $this->getTestUser();
-        $client = Client::factory()->create();
-
-        $payload = $this->makeValidReservationPayload($client, [
-            'statut' => 'paye',
-            'paiement_final_le' => null,
-        ]);
-
-        $response = $this->actingAs($user)->postJson('/api/reservations', $payload);
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['paiement_final_le']);
-    }
-
-    #[Test]
     public function it_requires_acompte_demande_when_statut_is_en_attente_acompte(): void
     {
         $user = $this->getTestUser();
@@ -513,5 +496,233 @@ class ReservationApiTest extends TestCase
             'email' => 'nouveau@example.com',
             'adresse' => 'Nouvelle adresse',
         ]);
+    }
+
+    // ==================== TESTS PAIEMENTS ====================
+
+    #[Test]
+    public function it_can_create_reservation_with_payments(): void
+    {
+        $user = $this->getTestUser();
+        $client = Client::factory()->create();
+
+        $payload = $this->makeValidReservationPayload($client, [
+            'payments' => [
+                [
+                    'amount' => 100.00,
+                    'method' => 'cb',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                    'note' => 'Premier paiement',
+                ],
+                [
+                    'amount' => 50.00,
+                    'method' => 'liquide',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                    'note' => null,
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/api/reservations', $payload);
+
+        $response->assertStatus(201);
+        $this->assertCount(2, $response->json('data.payments'));
+        $response->assertJsonPath('data.total_paid', 150.0);
+        $response->assertJsonPath('data.remaining', 100.0); // 250 - 150
+    }
+
+    #[Test]
+    public function it_can_update_reservation_to_add_payments(): void
+    {
+        $user = $this->getTestUser();
+        $client = Client::factory()->create();
+
+        // Créer une réservation sans paiements
+        $payload = $this->makeValidReservationPayload($client);
+        $createResponse = $this->actingAs($user)->postJson('/api/reservations', $payload);
+        $reservationId = $createResponse->json('data.id');
+
+        // Vérifier qu'il n'y a pas de paiements
+        $this->assertCount(0, $createResponse->json('data.payments'));
+
+        // Ajouter des paiements au retour des vélos
+        $updatePayload = [
+            'payments' => [
+                [
+                    'amount' => 250.00,
+                    'method' => 'cb',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                    'note' => 'Paiement complet au retour',
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($user)->putJson("/api/reservations/{$reservationId}", $updatePayload);
+
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json('data.payments'));
+        $response->assertJsonPath('data.total_paid', 250.0);
+        $response->assertJsonPath('data.remaining', 0.0);
+    }
+
+    #[Test]
+    public function it_validates_payment_amount_must_be_positive(): void
+    {
+        $user = $this->getTestUser();
+        $client = Client::factory()->create();
+
+        $payload = $this->makeValidReservationPayload($client, [
+            'payments' => [
+                [
+                    'amount' => 0,
+                    'method' => 'cb',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/api/reservations', $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['payments.0.amount']);
+    }
+
+    #[Test]
+    public function it_validates_payment_method_is_valid(): void
+    {
+        $user = $this->getTestUser();
+        $client = Client::factory()->create();
+
+        $payload = $this->makeValidReservationPayload($client, [
+            'payments' => [
+                [
+                    'amount' => 100.00,
+                    'method' => 'bitcoin',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->postJson('/api/reservations', $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['payments.0.method']);
+    }
+
+    #[Test]
+    public function it_syncs_payments_on_update(): void
+    {
+        $user = $this->getTestUser();
+        $client = Client::factory()->create();
+
+        // Créer avec 2 paiements
+        $payload = $this->makeValidReservationPayload($client, [
+            'payments' => [
+                [
+                    'amount' => 50.00,
+                    'method' => 'cb',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                ],
+                [
+                    'amount' => 50.00,
+                    'method' => 'liquide',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                ],
+            ],
+        ]);
+
+        $createResponse = $this->actingAs($user)->postJson('/api/reservations', $payload);
+        $reservationId = $createResponse->json('data.id');
+        $this->assertCount(2, $createResponse->json('data.payments'));
+
+        // Mettre à jour avec 1 seul nouveau paiement
+        $updatePayload = [
+            'payments' => [
+                [
+                    'amount' => 250.00,
+                    'method' => 'virement',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                    'note' => 'Virement unique',
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($user)->putJson("/api/reservations/{$reservationId}", $updatePayload);
+
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json('data.payments'));
+        $response->assertJsonPath('data.payments.0.method', 'virement');
+        $response->assertJsonPath('data.total_paid', 250.0);
+    }
+
+    #[Test]
+    public function it_deletes_payments_when_reservation_is_deleted(): void
+    {
+        $user = $this->getTestUser();
+        $client = Client::factory()->create();
+
+        // Créer avec paiements
+        $payload = $this->makeValidReservationPayload($client, [
+            'payments' => [
+                [
+                    'amount' => 100.00,
+                    'method' => 'cb',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                ],
+            ],
+        ]);
+
+        $createResponse = $this->actingAs($user)->postJson('/api/reservations', $payload);
+        $reservationId = $createResponse->json('data.id');
+
+        // Vérifier que le paiement existe
+        $this->assertDatabaseHas('reservation_payments', [
+            'reservation_id' => $reservationId,
+        ]);
+
+        // Supprimer la réservation
+        $response = $this->actingAs($user)->deleteJson("/api/reservations/{$reservationId}");
+        $response->assertStatus(204);
+
+        // Vérifier que les paiements ont été supprimés (cascade)
+        $this->assertDatabaseMissing('reservation_payments', [
+            'reservation_id' => $reservationId,
+        ]);
+    }
+
+    #[Test]
+    public function it_returns_payments_in_show_response(): void
+    {
+        $user = $this->getTestUser();
+        $client = Client::factory()->create();
+
+        $payload = $this->makeValidReservationPayload($client, [
+            'payments' => [
+                [
+                    'amount' => 75.00,
+                    'method' => 'cheque',
+                    'paid_at' => now()->format('Y-m-d\TH:i'),
+                    'note' => 'Chèque de Marie Martin',
+                ],
+            ],
+        ]);
+
+        $createResponse = $this->actingAs($user)->postJson('/api/reservations', $payload);
+        $reservationId = $createResponse->json('data.id');
+
+        $response = $this->actingAs($user)->getJson("/api/reservations/{$reservationId}");
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'data' => [
+                'payments' => [
+                    '*' => ['id', 'amount', 'method', 'paid_at', 'note'],
+                ],
+                'total_paid',
+                'remaining',
+            ],
+        ]);
+        $response->assertJsonPath('data.payments.0.method', 'cheque');
+        $response->assertJsonPath('data.payments.0.note', 'Chèque de Marie Martin');
     }
 }

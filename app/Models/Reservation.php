@@ -63,4 +63,19 @@ class Reservation extends Model
     {
         return $this->hasMany(ReservationItem::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ReservationPayment::class);
+    }
+
+    public function totalPaid(): float
+    {
+        return (float) $this->payments()->sum('amount');
+    }
+
+    public function remaining(): float
+    {
+        return (float) $this->prix_total_ttc - $this->totalPaid();
+    }
 }

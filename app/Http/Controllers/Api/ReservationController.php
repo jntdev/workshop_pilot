@@ -16,7 +16,7 @@ class ReservationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Reservation::with(['client', 'items.bikeType'])
+        $query = Reservation::with(['client', 'items.bikeType', 'payments'])
             ->orderBy('date_reservation', 'desc');
 
         // Filtre par statut
@@ -56,7 +56,7 @@ class ReservationController extends Controller
         $start = Carbon::parse($request->start)->startOfDay();
         $end = Carbon::parse($request->end)->endOfDay();
 
-        $reservations = Reservation::with(['client', 'items.bikeType'])
+        $reservations = Reservation::with(['client', 'items.bikeType', 'payments'])
             ->where('statut', '!=', 'annule')
             ->where(function ($query) use ($start, $end) {
                 // Réservations dans la fenêtre demandée
@@ -121,12 +121,21 @@ class ReservationController extends Controller
                 'bike_type_id' => $item->bike_type_id,
                 'quantite' => $item->quantite,
             ])->toArray(),
+            'payments' => $r->payments->map(fn ($p) => [
+                'id' => $p->id,
+                'amount' => $p->amount,
+                'method' => $p->method,
+                'paid_at' => $p->paid_at->format('Y-m-d\TH:i'),
+                'note' => $p->note,
+            ])->toArray(),
+            'total_paid' => $r->totalPaid(),
+            'remaining' => $r->remaining(),
         ];
     }
 
     public function show(string $id): JsonResponse
     {
-        $reservation = Reservation::with(['client', 'items.bikeType'])->find($id);
+        $reservation = Reservation::with(['client', 'items.bikeType', 'payments'])->find($id);
 
         if (! $reservation) {
             return response()->json([
@@ -143,11 +152,12 @@ class ReservationController extends Controller
     {
         $validated = $request->validated();
         $items = $validated['items'];
+        $payments = $validated['payments'] ?? [];
         $newClientData = $validated['new_client'] ?? null;
         $updateClientData = $validated['update_client'] ?? null;
-        unset($validated['items'], $validated['new_client'], $validated['update_client']);
+        unset($validated['items'], $validated['payments'], $validated['new_client'], $validated['update_client']);
 
-        $reservation = DB::transaction(function () use ($validated, $items, $newClientData, $updateClientData) {
+        $reservation = DB::transaction(function () use ($validated, $items, $payments, $newClientData, $updateClientData) {
             // Créer le client si nouveau
             if ($newClientData) {
                 $client = Client::create([
@@ -190,10 +200,14 @@ class ReservationController extends Controller
                 ]);
             }
 
+            foreach ($payments as $payment) {
+                $reservation->payments()->create($payment);
+            }
+
             return $reservation;
         });
 
-        $reservation->load(['client', 'items.bikeType']);
+        $reservation->load(['client', 'items.bikeType', 'payments']);
 
         return response()->json([
             'data' => $this->formatReservation($reservation),
@@ -212,9 +226,10 @@ class ReservationController extends Controller
 
         $validated = $request->validated();
         $items = $validated['items'] ?? null;
-        unset($validated['items']);
+        $payments = $validated['payments'] ?? null;
+        unset($validated['items'], $validated['payments']);
 
-        DB::transaction(function () use ($reservation, $validated, $items) {
+        DB::transaction(function () use ($reservation, $validated, $items, $payments) {
             $reservation->update($validated);
 
             if ($items !== null) {
@@ -227,9 +242,17 @@ class ReservationController extends Controller
                     ]);
                 }
             }
+
+            if ($payments !== null) {
+                // Supprimer les anciens paiements et recréer
+                $reservation->payments()->delete();
+                foreach ($payments as $payment) {
+                    $reservation->payments()->create($payment);
+                }
+            }
         });
 
-        $reservation->load(['client', 'items.bikeType']);
+        $reservation->load(['client', 'items.bikeType', 'payments']);
 
         return response()->json([
             'data' => $this->formatReservation($reservation),
@@ -297,6 +320,15 @@ class ReservationController extends Controller
             ])->toArray(),
             'selection' => $reservation->selection,
             'color' => $reservation->color ?? 0,
+            'payments' => $reservation->payments->map(fn ($p) => [
+                'id' => $p->id,
+                'amount' => $p->amount,
+                'method' => $p->method,
+                'paid_at' => $p->paid_at->format('Y-m-d\TH:i'),
+                'note' => $p->note,
+            ])->toArray(),
+            'total_paid' => $reservation->totalPaid(),
+            'remaining' => $reservation->remaining(),
             'created_at' => $reservation->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $reservation->updated_at?->format('Y-m-d H:i:s'),
         ];

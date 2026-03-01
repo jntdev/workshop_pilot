@@ -10,6 +10,8 @@ import type {
     ReservationDraftActions,
     ReservationDraftSelectors,
     LoadedReservation,
+    PaymentLine,
+    PaymentMethod,
 } from '@/types';
 
 interface ReservationFormProps {
@@ -52,6 +54,7 @@ const initialFormData: ReservationFormData = {
     commentaires: '',
     items: [],
     selection: [],
+    payments: [],
 };
 
 export default function ReservationForm({ draft, selectors, actions, editingReservation, viewingMode = false, onSuccess }: ReservationFormProps) {
@@ -114,6 +117,11 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
             commentaires: editingReservation.commentaires || '',
             items: editingReservation.items || [],
             selection: editingReservation.selection || [],
+            payments: (editingReservation.payments || []).map((p) => ({
+                ...p,
+                amount: typeof p.amount === 'number' ? p.amount : parseFloat(p.amount) || 0,
+                note: p.note || '',
+            })),
         });
 
         // Remplir les données du client
@@ -159,12 +167,67 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
         return (total * 0.3).toFixed(2);
     }, [formData.prix_total_ttc]);
 
-    // Reste dû
+    // Acompte payé (seulement si date de paiement renseignée)
+    const acomptePaye = useMemo(() => {
+        if (!formData.acompte_paye_le) return 0;
+        return parseFloat(formData.acompte_montant) || 0;
+    }, [formData.acompte_montant, formData.acompte_paye_le]);
+
+    // Reste dû (ancien calcul avec acompte)
     const resteDu = useMemo(() => {
         const total = parseFloat(formData.prix_total_ttc) || 0;
-        const acompte = parseFloat(formData.acompte_montant) || 0;
-        return (total - acompte).toFixed(2);
-    }, [formData.prix_total_ttc, formData.acompte_montant]);
+        return (total - acomptePaye).toFixed(2);
+    }, [formData.prix_total_ttc, acomptePaye]);
+
+    // Calculs paiements
+    const totalEncaisse = useMemo(() => {
+        const paiements = formData.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        return paiements + acomptePaye;
+    }, [formData.payments, acomptePaye]);
+
+    const resteDuAvecPaiements = useMemo(() => {
+        const total = parseFloat(formData.prix_total_ttc) || 0;
+        return total - totalEncaisse;
+    }, [formData.prix_total_ttc, totalEncaisse]);
+
+    // Badge de paiement (vert/orange/rouge)
+    const paymentBadgeType = useMemo(() => {
+        if (totalEncaisse === 0) return null;
+        const total = parseFloat(formData.prix_total_ttc) || 0;
+        if (totalEncaisse >= total) return 'success';
+        if (totalEncaisse > total) return 'error';
+        return 'warning';
+    }, [totalEncaisse, formData.prix_total_ttc]);
+
+    // Fonctions de gestion des paiements
+    const addPayment = useCallback(() => {
+        const newPayment: PaymentLine = {
+            amount: 0,
+            method: 'cb',
+            paid_at: new Date().toISOString().slice(0, 16),
+            note: '',
+        };
+        setFormData((prev) => ({
+            ...prev,
+            payments: [...prev.payments, newPayment],
+        }));
+    }, []);
+
+    const updatePayment = useCallback((index: number, field: keyof PaymentLine, value: string | number) => {
+        setFormData((prev) => ({
+            ...prev,
+            payments: prev.payments.map((p, i) =>
+                i === index ? { ...p, [field]: value } : p
+            ),
+        }));
+    }, []);
+
+    const removePayment = useCallback((index: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            payments: prev.payments.filter((_, i) => i !== index),
+        }));
+    }, []);
 
     const handleClientSelect = useCallback((client: Client) => {
         setSelectedClient(client);
@@ -206,6 +269,16 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                 ?.split('=')[1];
 
             // Construire le payload
+            // Filtrer les paiements valides (montant > 0)
+            const validPayments = formData.payments
+                .filter((p) => p.amount > 0)
+                .map((p) => ({
+                    amount: p.amount,
+                    method: p.method,
+                    paid_at: p.paid_at,
+                    note: p.note || null,
+                }));
+
             const payload: Record<string, unknown> = {
                 ...formData,
                 prix_total_ttc: parseFloat(formData.prix_total_ttc) || 0,
@@ -220,6 +293,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                 paiement_final_le: formData.paiement_final_le || null,
                 raison_annulation: formData.statut === 'annule' ? formData.raison_annulation : null,
                 color: draft.color,
+                payments: validPayments,
             };
 
             // Si nouveau client (pas de client existant sélectionné mais formulaire valide), envoyer new_client
@@ -746,7 +820,25 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                     <label>Statut *</label>
                     <select
                         value={formData.statut}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, statut: e.target.value as ReservationStatut }))}
+                        onChange={(e) => {
+                            const newStatut = e.target.value as ReservationStatut;
+                            setFormData((prev) => {
+                                // Si on passe à 'paye' et qu'il n'y a pas encore de paiements, ajouter une première ligne
+                                if (newStatut === 'paye' && prev.payments.length === 0) {
+                                    return {
+                                        ...prev,
+                                        statut: newStatut,
+                                        payments: [{
+                                            amount: 0,
+                                            method: 'cb',
+                                            paid_at: new Date().toISOString().slice(0, 16),
+                                            note: '',
+                                        }],
+                                    };
+                                }
+                                return { ...prev, statut: newStatut };
+                            });
+                        }}
                     >
                         {STATUT_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -756,16 +848,113 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                     </select>
                 </div>
 
+                {/* Section Paiements - visible uniquement si statut payé */}
                 {formData.statut === 'paye' && (
-                    <div className="reservation-form__field">
-                        <label>Paiement final reçu le *</label>
-                        <input
-                            type="date"
-                            value={formData.paiement_final_le}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, paiement_final_le: e.target.value }))}
-                            className={errors.paiement_final_le ? 'reservation-form__input--error' : ''}
-                        />
-                        {errors.paiement_final_le && <span className="reservation-form__error">{errors.paiement_final_le}</span>}
+                    <div className="reservation-form__payments">
+                        <div className="reservation-form__payments-header">
+                            <h4 className="reservation-form__payments-title">Suivi des paiements</h4>
+                            <button
+                                type="button"
+                                className="reservation-form__btn reservation-form__btn--secondary reservation-form__btn--small"
+                                onClick={addPayment}
+                            >
+                                + Ajouter un paiement
+                            </button>
+                        </div>
+
+                        {/* Résumé encaissements */}
+                        {formData.prix_total_ttc && (
+                            <div className="reservation-form__payments-summary">
+                                <span className={`reservation-form__payments-badge reservation-form__payments-badge--${paymentBadgeType || 'neutral'}`}>
+                                    Total encaissé : {totalEncaisse.toFixed(2)} € / {parseFloat(formData.prix_total_ttc).toFixed(2)} €
+                                </span>
+                                {acomptePaye > 0 && (
+                                    <span className="reservation-form__payments-badge reservation-form__payments-badge--neutral">
+                                        dont acompte : {acomptePaye.toFixed(2)} €
+                                    </span>
+                                )}
+                                {resteDuAvecPaiements > 0 && (
+                                    <span className="reservation-form__payments-remaining">
+                                        Reste à encaisser : {resteDuAvecPaiements.toFixed(2)} €
+                                    </span>
+                                )}
+                                {resteDuAvecPaiements < 0 && (
+                                    <span className="reservation-form__payments-overpaid">
+                                        Trop perçu : {Math.abs(resteDuAvecPaiements).toFixed(2)} €
+                                    </span>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Liste des paiements */}
+                        {formData.payments.length > 0 && (
+                            <div className="reservation-form__payments-list">
+                                {formData.payments.map((payment, index) => (
+                                    <div key={index} className="reservation-form__payment-row">
+                                        <div className="reservation-form__payment-fields">
+                                            <div className="reservation-form__field reservation-form__field--small">
+                                                <label>Montant *</label>
+                                                <div className="reservation-form__input-with-suffix">
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={payment.amount || ''}
+                                                        onChange={(e) => updatePayment(index, 'amount', parseFloat(e.target.value) || 0)}
+                                                        placeholder="0.00"
+                                                    />
+                                                    <span className="reservation-form__suffix">€</span>
+                                                </div>
+                                            </div>
+                                            <div className="reservation-form__field reservation-form__field--small">
+                                                <label>Mode *</label>
+                                                <select
+                                                    value={payment.method}
+                                                    onChange={(e) => updatePayment(index, 'method', e.target.value as PaymentMethod)}
+                                                >
+                                                    <option value="cb">CB</option>
+                                                    <option value="liquide">Espèces</option>
+                                                    <option value="cheque">Chèque</option>
+                                                    <option value="virement">Virement</option>
+                                                    <option value="autre">Autre</option>
+                                                </select>
+                                            </div>
+                                            <div className="reservation-form__field reservation-form__field--small">
+                                                <label>Date *</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    value={payment.paid_at}
+                                                    onChange={(e) => updatePayment(index, 'paid_at', e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="reservation-form__field reservation-form__field--small">
+                                                <label>Note</label>
+                                                <input
+                                                    type="text"
+                                                    value={payment.note}
+                                                    onChange={(e) => updatePayment(index, 'note', e.target.value)}
+                                                    placeholder="Commentaire"
+                                                />
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="reservation-form__payment-remove"
+                                            onClick={() => removePayment(index)}
+                                            title="Supprimer ce paiement"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {formData.payments.length === 0 && (
+                            <div className="reservation-form__payments-empty">
+                                Aucun paiement enregistré
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -789,7 +978,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                             <span>Total TTC</span>
                             <strong>{parseFloat(formData.prix_total_ttc).toFixed(2)} €</strong>
                         </div>
-                        {formData.acompte_demande && formData.acompte_montant && (
+                        {formData.acompte_demande && formData.acompte_montant && formData.acompte_paye_le && (
                             <>
                                 <div className="reservation-form__summary-row">
                                     <span>Acompte</span>

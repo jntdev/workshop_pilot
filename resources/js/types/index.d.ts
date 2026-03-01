@@ -217,6 +217,9 @@ export interface LoadedReservation {
     color: ReservationColorIndex;
     selection: SelectionBike[];
     items: ReservationItem[];
+    payments: PaymentLine[];
+    total_paid?: string;
+    remaining?: string;
 }
 
 export interface LocationPageProps extends PageProps {
@@ -241,6 +244,17 @@ export interface LineCalculationResult {
 
 // Réservations location
 export type ReservationStatut = 'reserve' | 'en_attente_acompte' | 'en_cours' | 'paye' | 'annule';
+
+// Paiements
+export type PaymentMethod = 'cb' | 'liquide' | 'cheque' | 'virement' | 'autre';
+
+export interface PaymentLine {
+    id?: number;
+    amount: number;
+    method: PaymentMethod;
+    paid_at: string;
+    note: string;
+}
 
 export interface BikeType {
     id: string; // ex: VAE_sb
@@ -309,6 +323,7 @@ export interface ReservationFormData {
     commentaires: string;
     items: ReservationItem[];
     selection: SelectionBike[];
+    payments: PaymentLine[];
 }
 
 // Selection calendrier pour réservation

@@ -217,7 +217,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         actions.toggleCell({ bikeId, date, isHS });
     }, [draft.isActive, actions]);
 
-    // Gestionnaire pour visualiser une réservation existante (highlight sans édition)
+    // Gestionnaire pour visualiser et éditer une réservation existante
     const handleReservationView = useCallback((reservationId: number) => {
         const reservation = reservationsById.get(reservationId);
         if (reservation) {
@@ -225,20 +225,17 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
             if (viewingReservationId === reservationId) {
                 setViewingReservationId(null);
                 setEditingReservation(null);
+                if (draft.isActive) {
+                    actions.cancelSelection();
+                }
             } else {
-                setViewingReservationId(reservationId);
+                // Passer directement en mode édition
+                setViewingReservationId(null);
                 setEditingReservation(reservation);
+                actions.loadReservation(reservation);
             }
         }
-    }, [reservationsById, viewingReservationId]);
-
-    // Gestionnaire pour passer en mode édition d'une réservation
-    const handleReservationEdit = useCallback(() => {
-        if (editingReservation) {
-            setViewingReservationId(null);
-            actions.loadReservation(editingReservation);
-        }
-    }, [editingReservation, actions]);
+    }, [reservationsById, viewingReservationId, draft.isActive, actions]);
 
     // Gestionnaire pour changer la couleur d'une réservation directement
     const handleQuickColorChange = useCallback((newColor: ReservationColorIndex) => {
@@ -952,23 +949,10 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                             <div className="location__form-header">
                                 <h2 className="location__form-title">
                                     {draft.isActive && draft.editingReservationId
-                                        ? `Modification réservation #${draft.editingReservationId}`
-                                        : viewingReservationId
-                                            ? `Réservation #${viewingReservationId}`
-                                            : draft.isActive
-                                                ? 'Nouvelle réservation'
-                                                : 'Réservation'}
+                                        ? `Réservation #${draft.editingReservationId}`
+                                        : 'Nouvelle réservation'}
                                 </h2>
                                 <div className="location__form-actions">
-                                    {viewingReservationId && !draft.isActive && (
-                                        <button
-                                            type="button"
-                                            className="location__btn location__btn--primary"
-                                            onClick={handleReservationEdit}
-                                        >
-                                            Modifier
-                                        </button>
-                                    )}
                                     <button
                                         type="button"
                                         className="location__btn location__btn--icon"
@@ -992,7 +976,6 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                                     selectors={selectors}
                                     actions={actions}
                                     editingReservation={editingReservation}
-                                    viewingMode={!!viewingReservationId && !draft.isActive}
                                 />
                             </div>
                         </div>

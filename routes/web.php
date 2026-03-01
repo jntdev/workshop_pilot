@@ -293,7 +293,7 @@ Route::middleware(['auth'])->group(function () {
             $endWindow = now()->addDays(30)->endOfDay();
 
             // Charger les réservations dans la fenêtre glissante
-            $reservations = \App\Models\Reservation::with(['client', 'items'])
+            $reservations = \App\Models\Reservation::with(['client', 'items', 'payments'])
                 ->where('statut', '!=', 'annule')
                 ->where(function ($query) use ($startWindow, $endWindow) {
                     $query->whereBetween('date_reservation', [$startWindow, $endWindow])
@@ -346,6 +346,15 @@ Route::middleware(['auth'])->group(function () {
                         'bike_type_id' => $item->bike_type_id,
                         'quantite' => $item->quantite,
                     ])->toArray(),
+                    'payments' => $r->payments->map(fn ($p) => [
+                        'id' => $p->id,
+                        'amount' => $p->amount,
+                        'method' => $p->method,
+                        'paid_at' => $p->paid_at->format('Y-m-d\TH:i'),
+                        'note' => $p->note,
+                    ])->toArray(),
+                    'total_paid' => $r->totalPaid(),
+                    'remaining' => $r->remaining(),
                 ]);
 
             // Charger les vélos depuis la base de données avec leurs relations

@@ -87,6 +87,13 @@ class StoreReservationRequest extends FormRequest
 
             // Couleur de la réservation (0-29)
             'color' => ['nullable', 'integer', 'min:0', 'max:29'],
+
+            // Paiements
+            'payments' => ['nullable', 'array'],
+            'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'payments.*.method' => ['required', 'in:cb,liquide,cheque,virement,autre'],
+            'payments.*.paid_at' => ['required', 'date'],
+            'payments.*.note' => ['nullable', 'string'],
         ];
     }
 
@@ -133,6 +140,14 @@ class StoreReservationRequest extends FormRequest
             'items.*.bike_type_id.exists' => 'Le type de vélo sélectionné n\'existe pas.',
             'items.*.quantite.required' => 'La quantité est obligatoire.',
             'items.*.quantite.min' => 'La quantité doit être d\'au moins 1.',
+
+            'payments.*.amount.required' => 'Le montant du paiement est obligatoire.',
+            'payments.*.amount.numeric' => 'Le montant du paiement doit être un nombre.',
+            'payments.*.amount.min' => 'Le montant du paiement doit être supérieur à 0.',
+            'payments.*.method.required' => 'Le mode de paiement est obligatoire.',
+            'payments.*.method.in' => 'Le mode de paiement doit être : CB, Espèces, Chèque, Virement ou Autre.',
+            'payments.*.paid_at.required' => 'La date du paiement est obligatoire.',
+            'payments.*.paid_at.date' => 'La date du paiement doit être une date valide.',
         ];
     }
 
@@ -142,11 +157,6 @@ class StoreReservationRequest extends FormRequest
             // Statut en_attente_acompte requiert acompte_demande
             if ($this->input('statut') === 'en_attente_acompte' && ! $this->input('acompte_demande')) {
                 $validator->errors()->add('acompte_demande', 'L\'acompte doit être demandé si le statut est "en attente d\'acompte".');
-            }
-
-            // Statut payé requiert paiement_final_le
-            if ($this->input('statut') === 'paye' && ! $this->input('paiement_final_le')) {
-                $validator->errors()->add('paiement_final_le', 'La date de paiement final est obligatoire si le statut est "payé".');
             }
 
             // Avertissement si durée > 30 jours

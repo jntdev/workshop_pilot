@@ -764,3 +764,162 @@
     }
   }
 }
+
+// Section Paiements
+.reservation-form {
+  &__payments {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid $color-border-light;
+  }
+
+  &__payments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  &__payments-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $color-neutral-dark;
+    margin: 0;
+  }
+
+  &__payments-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__payments-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+
+    &--neutral {
+      background: $color-bg-light;
+      color: $color-neutral-medium;
+    }
+
+    &--success {
+      background: rgba($color-status-ok, 0.15);
+      color: darken($color-status-ok, 15%);
+    }
+
+    &--warning {
+      background: rgba(#f59e0b, 0.15);
+      color: #b45309;
+    }
+
+    &--error {
+      background: rgba($color-status-error, 0.15);
+      color: darken($color-status-error, 10%);
+    }
+  }
+
+  &__payments-remaining {
+    font-size: 0.75rem;
+    color: #b45309;
+    font-weight: 500;
+  }
+
+  &__payments-overpaid {
+    font-size: 0.75rem;
+    color: $color-status-error;
+    font-weight: 500;
+  }
+
+  &__payments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__payment-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: $color-bg-light;
+    border-radius: 6px;
+    border: 1px solid $color-border-light;
+  }
+
+  &__payment-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex: 1;
+  }
+
+  &__field--small {
+    flex: 1;
+    min-width: 100px;
+
+    label {
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: $color-neutral-medium;
+    }
+
+    input,
+    select {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    // Masquer les flèches des inputs number
+    input[type="number"] {
+      -moz-appearance: textfield;
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+  }
+
+  &__payment-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-top: 1.25rem;
+    border: none;
+    background: transparent;
+    color: $color-neutral-medium;
+    font-size: 1.25rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: rgba($color-status-error, 0.1);
+      color: $color-status-error;
+    }
+  }
+
+  &__payments-empty {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: $color-neutral-medium;
+    background: $color-bg-light;
+    border-radius: 6px;
+    border: 1px dashed $color-border-light;
+  }
+
+  &__btn--small {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+}
