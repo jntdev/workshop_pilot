@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\WorkMode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMessageRequest;
 use App\Http\Requests\StoreReplyRequest;
@@ -18,7 +17,7 @@ class MessageController extends Controller
         $mode = $request->input('mode', 'comptoir');
 
         $messages = Message::forMode($mode)
-            ->with('replies')
+            ->with(['replies', 'media', 'replies.media'])
             ->get()
             ->map(fn (Message $message) => $this->formatMessage($message));
 
@@ -52,7 +51,7 @@ class MessageController extends Controller
             'status' => 'ouvert',
         ]);
 
-        $message->load('replies');
+        $message->load(['replies', 'media', 'replies.media']);
 
         // TODO: Broadcast MessageCreated event
 
@@ -61,7 +60,7 @@ class MessageController extends Controller
 
     public function show(Message $message): JsonResponse
     {
-        $message->load('replies');
+        $message->load(['replies', 'media', 'replies.media']);
 
         return response()->json($this->formatMessage($message));
     }
@@ -151,6 +150,7 @@ class MessageController extends Controller
             'resolved_at' => $message->resolved_at?->toISOString(),
             'created_at' => $message->created_at->toISOString(),
             'replies' => $message->replies->map(fn ($reply) => $this->formatReply($reply))->toArray(),
+            'photos' => $this->formatPhotos($message),
         ];
     }
 
@@ -166,6 +166,21 @@ class MessageController extends Controller
             'content' => $reply->content,
             'read_at' => $reply->read_at?->toISOString(),
             'created_at' => $reply->created_at->toISOString(),
+            'photos' => $this->formatPhotos($reply),
         ];
+    }
+
+    /**
+     * @param  Message|MessageReply  $model
+     */
+    protected function formatPhotos($model): array
+    {
+        return $model->getMedia('photos')->map(fn ($media) => [
+            'id' => $media->id,
+            'url' => $media->getUrl(),
+            'thumb_url' => $media->getUrl('thumb'),
+            'name' => $media->file_name,
+            'size' => $media->size,
+        ])->toArray();
     }
 }

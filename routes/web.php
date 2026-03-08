@@ -1,8 +1,13 @@
 <?php
 
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\MobileUploadController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+// Routes publiques pour l'upload mobile (sans auth)
+Route::get('/upload/{token}', [MobileUploadController::class, 'show'])->name('upload.show');
+Route::post('/api/upload/{token}', [MobileUploadController::class, 'upload'])->name('upload.upload');
 
 Route::middleware('guest')->group(function () {
     Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])

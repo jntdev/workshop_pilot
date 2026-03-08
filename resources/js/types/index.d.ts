@@ -377,6 +377,14 @@ export interface ReservationDraftSelectors {
 export type WorkMode = 'comptoir' | 'atelier';
 export type MessageCategory = 'accueil' | 'atelier' | 'location' | 'autre';
 
+export interface Photo {
+    id: number;
+    url: string;
+    thumb_url: string;
+    name: string;
+    size?: number;
+}
+
 export interface MessageReply {
     id: number;
     message_id: number;
@@ -387,6 +395,7 @@ export interface MessageReply {
     content: string;
     read_at: string | null;
     created_at: string;
+    photos: Photo[];
 }
 
 export interface Message {
@@ -405,6 +414,7 @@ export interface Message {
     resolved_at: string | null;
     created_at: string;
     replies: MessageReply[];
+    photos: Photo[];
 }
 
 export interface UnreadByCategory {

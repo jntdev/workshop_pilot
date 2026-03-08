@@ -63,7 +63,13 @@
       "Bash(./vendor/bin/sail pint:*)",
       "Bash(./vendor/bin/sail artisan make:migration:*)",
       "Bash(/usr/local/bin/php artisan make:migration add_category_to_messages_table --no-interaction)",
-      "Bash(/Applications/MAMP/bin/php/php8.2.0/bin/php artisan make:migration add_category_to_messages_table --no-interaction)"
+      "Bash(/Applications/MAMP/bin/php/php8.2.0/bin/php artisan make:migration add_category_to_messages_table --no-interaction)",
+      "Bash(/usr/local/bin/composer require spatie/laravel-medialibrary)",
+      "Bash(/opt/homebrew/bin/npm install qrcode @types/qrcode --save)",
+      "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")",
+      "Bash(ipconfig getifaddr en0)",
+      "Bash(ipconfig getifaddr en1)",
+      "WebFetch(domain:dottie-overinstructive-amya.ngrok-free.app)"
     ]
   }
 }

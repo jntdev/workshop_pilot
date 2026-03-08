@@ -33,3 +33,7 @@
 @use 'messaging/detail';
 @use 'messaging/message-card';
 @use 'messaging/forms' as messaging-forms;
+
+// Photos
+@use 'photos/modal' as photos-modal;
+@use 'photos/gallery' as photos-gallery;

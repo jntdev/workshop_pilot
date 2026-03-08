@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useMessaging, getModeLabel } from '@/Contexts/MessagingContext';
-import { Message, WorkMode } from '@/types';
+import { Message, WorkMode, Photo } from '@/types';
 import ReplyForm from './ReplyForm';
+import PhotoGallery from '../Photos/PhotoGallery';
+import PhotoUploadModal from '../Photos/PhotoUploadModal';
 
 interface MessageDetailProps {
     message: Message;
@@ -49,6 +51,7 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
 
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showPhotoModal, setShowPhotoModal] = useState(false);
 
     const isPersonalNote = message.recipient_mode === null;
     const isUnread = !message.read_at && !isPersonalNote;
@@ -138,6 +141,10 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
 
             <div className="message-detail__content">{message.content}</div>
 
+            {message.photos && message.photos.length > 0 && (
+                <PhotoGallery photos={message.photos} />
+            )}
+
             <div className="message-detail__actions">
                 {isUnread && canMarkAsRead && (
                     <button
@@ -222,6 +229,9 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
                                         )}
                                     </div>
                                     <div className="message-detail__reply-content">{reply.content}</div>
+                                    {reply.photos && reply.photos.length > 0 && (
+                                        <PhotoGallery photos={reply.photos} />
+                                    )}
                                     {isReplyReceivedUnread && (
                                         <button
                                             type="button"
@@ -244,16 +254,36 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
                             onClose={() => setShowReplyForm(false)}
                         />
                     ) : (
-                        <button
-                            type="button"
-                            className="message-detail__reply-btn"
-                            onClick={() => setShowReplyForm(true)}
-                        >
-                            + Repondre
-                        </button>
+                        <div className="message-detail__reply-actions">
+                            <button
+                                type="button"
+                                className="message-detail__reply-btn"
+                                onClick={() => setShowReplyForm(true)}
+                            >
+                                + Repondre
+                            </button>
+                            <button
+                                type="button"
+                                className="message-detail__photo-btn"
+                                onClick={() => setShowPhotoModal(true)}
+                            >
+                                + Photo mobile
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
+
+            <PhotoUploadModal
+                contextType="message"
+                contextId={message.id}
+                isOpen={showPhotoModal}
+                onClose={() => setShowPhotoModal(false)}
+                onPhotosReceived={(photos) => {
+                    // Les photos sont automatiquement attachées au message côté serveur
+                    // On pourrait refresh les messages ici si nécessaire
+                }}
+            />
         </div>
     );
 }

@@ -308,4 +308,23 @@
         background: $color-bg-light;
         border-radius: 0 0 8px 8px;
     }
+
+    &__reply-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    &__photo-btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8125rem;
+        background: $color-bg-white;
+        border: 1px solid $color-primary-blue;
+        border-radius: 4px;
+        color: $color-primary-blue;
+        cursor: pointer;
+
+        &:hover {
+            background: lighten($color-primary-blue, 48%);
+        }
+    }
 }

@@ -7,8 +7,10 @@ use App\Http\Controllers\Api\BikeSizeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\PhotoController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\Api\UploadTokenController;
 use Illuminate\Support\Facades\Route;
 
 // Health check endpoint (sans auth) pour warmup serveur mutualisé
@@ -83,4 +85,11 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
     Route::post('/messages/{message}/replies', [MessageController::class, 'storeReply']);
     Route::patch('/replies/{reply}/read', [MessageController::class, 'markReplyAsRead']);
+
+    // Upload tokens API routes
+    Route::post('/upload-tokens', [UploadTokenController::class, 'store']);
+    Route::get('/upload-tokens/{token}/photos', [UploadTokenController::class, 'photos']);
+
+    // Photos API routes
+    Route::delete('/photos/{id}', [PhotoController::class, 'destroy']);
 });
