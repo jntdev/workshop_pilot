@@ -12,6 +12,12 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+
+  // Exception pour la page messages - pas de scroll sur le layout
+  &:has(.messages-page) {
+    height: 100vh;
+    overflow: hidden;
+  }
 }
 
 // Header
@@ -74,6 +80,26 @@
         color: darken($color-danger-red, 10%);
       }
     }
+
+    &--with-badge {
+      position: relative;
+    }
+  }
+
+  &__badge {
+    position: absolute;
+    top: -8px;
+    right: -12px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    text-align: center;
+    color: white;
+    background: $color-danger-red;
+    border-radius: 9999px;
   }
 }
 
@@ -101,6 +127,15 @@
     max-width: none;
     padding: 0;
     margin: 0;
+  }
+
+  // Exception pour la page messages
+  &:has(.messages-page) {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+    min-height: 0;
+    overflow: hidden;
   }
 }
 

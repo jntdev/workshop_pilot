@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { PageProps } from '@/types';
 import { useServerWarmup } from '@/hooks/useServerWarmup';
 import { usePrivacyMode } from '@/hooks/usePrivacyMode';
+import { MessagingButton } from '@/Components/Messaging';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -46,6 +47,8 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
                             <Link href="/bikes" className="layout-nav__link">
                                 Velos
                             </Link>
+
+                            <MessagingButton />
 
                             <div className="privacy-toggle" title="Ctrl+Shift+P pour basculer">
                                 <span className={`privacy-toggle__label ${!isComptoir ? 'privacy-toggle__label--active' : ''}`}>

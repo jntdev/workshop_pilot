@@ -61,7 +61,9 @@
       "Bash(/usr/local/bin/php artisan db:seed:*)",
       "Bash(/opt/homebrew/bin/php artisan db:seed:*)",
       "Bash(./vendor/bin/sail pint:*)",
-      "Bash(./vendor/bin/sail artisan make:migration:*)"
+      "Bash(./vendor/bin/sail artisan make:migration:*)",
+      "Bash(/usr/local/bin/php artisan make:migration add_category_to_messages_table --no-interaction)",
+      "Bash(/Applications/MAMP/bin/php/php8.2.0/bin/php artisan make:migration add_category_to_messages_table --no-interaction)"
     ]
   }
 }

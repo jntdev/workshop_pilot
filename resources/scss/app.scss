@@ -25,3 +25,11 @@
 @use 'location/planning';
 @use 'location/settings-panel';
 @use 'bikes/index-page' as bikes-page;
+
+// Messagerie
+@use 'messaging/button';
+@use 'messaging/page';
+@use 'messaging/list-item';
+@use 'messaging/detail';
+@use 'messaging/message-card';
+@use 'messaging/forms' as messaging-forms;

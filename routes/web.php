@@ -415,10 +415,68 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/location', $locationHandler(false))->name('location.index');
 
     Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
+        $year = now()->year;
+        $month = now()->month;
+
+        // Charger les KPIs du mois courant pour les 3 métiers
+        $kpis = \App\Models\MonthlyKpi::whereIn('metier', ['vente', 'atelier', 'location'])
+            ->where('year', $year)
+            ->where('month', $month)
+            ->get()
+            ->keyBy('metier');
+
+        // Charger les KPIs N-1 pour comparaison
+        $kpisLastYear = \App\Models\MonthlyKpi::whereIn('metier', ['vente', 'atelier', 'location'])
+            ->where('year', $year - 1)
+            ->where('month', $month)
+            ->get()
+            ->keyBy('metier');
+
+        $formatKpi = function (string $metier) use ($kpis, $kpisLastYear) {
+            $current = $kpis->get($metier);
+            $lastYear = $kpisLastYear->get($metier);
+
+            $revenue = $current ? (float) $current->revenue_ht : 0;
+            $margin = $current ? (float) $current->margin_ht : null;
+            $count = $current ? $current->invoice_count : 0;
+            $averageBasket = $count > 0 ? $revenue / $count : null;
+
+            $revenueLastYear = $lastYear ? (float) $lastYear->revenue_ht : null;
+            $trend = null;
+            if ($revenueLastYear && $revenueLastYear > 0) {
+                $trend = (($revenue - $revenueLastYear) / $revenueLastYear) * 100;
+            }
+
+            return [
+                'metier' => $metier,
+                'revenue' => $revenue,
+                'margin' => $margin,
+                'average_basket' => $averageBasket,
+                'invoice_count' => $count,
+                'trend' => $trend,
+                'has_data' => $current !== null,
+            ];
+        };
+
+        return Inertia::render('Dashboard', [
+            'kpis' => [
+                'vente' => $formatKpi('vente'),
+                'atelier' => $formatKpi('atelier'),
+                'location' => $formatKpi('location'),
+            ],
+            'period' => [
+                'year' => $year,
+                'month' => $month,
+                'label' => now()->translatedFormat('F Y'),
+            ],
+        ]);
     })->name('dashboard');
 
     Route::get('/bikes', [\App\Http\Controllers\BikeController::class, 'index'])->name('bikes.index');
+
+    Route::get('/messages', function () {
+        return Inertia::render('Messages');
+    })->name('messages.index');
 
     Route::get('/counter', function () {
         return view('counter-demo');

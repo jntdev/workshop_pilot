@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BikeController;
 use App\Http\Controllers\Api\BikeSizeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ReservationController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
 
 Route::middleware(['web', 'auth'])->group(function () {
+    // Dashboard API routes
+    Route::post('/dashboard/kpis/rebuild', [AtelierController::class, 'rebuildAllKpis']);
+
     // Atelier API routes
     Route::get('/atelier/stats', [AtelierController::class, 'stats']);
     Route::post('/atelier/stats/rebuild', [AtelierController::class, 'rebuildStats']);
@@ -67,4 +71,16 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/bike-sizes', [BikeSizeController::class, 'store']);
     Route::put('/bike-sizes/{id}', [BikeSizeController::class, 'update']);
     Route::delete('/bike-sizes/{id}', [BikeSizeController::class, 'destroy']);
+
+    // Messages API routes
+    Route::get('/messages', [MessageController::class, 'index']);
+    Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
+    Route::post('/messages', [MessageController::class, 'store']);
+    Route::get('/messages/{message}', [MessageController::class, 'show']);
+    Route::patch('/messages/{message}/read', [MessageController::class, 'markAsRead']);
+    Route::patch('/messages/{message}/resolve', [MessageController::class, 'markAsResolved']);
+    Route::patch('/messages/{message}/reopen', [MessageController::class, 'reopen']);
+    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+    Route::post('/messages/{message}/replies', [MessageController::class, 'storeReply']);
+    Route::patch('/replies/{reply}/read', [MessageController::class, 'markReplyAsRead']);
 });

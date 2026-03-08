@@ -373,6 +373,56 @@ export interface ReservationDraftSelectors {
     items: ReservationItem[];
 }
 
+// Messagerie interne
+export type WorkMode = 'comptoir' | 'atelier';
+export type MessageCategory = 'accueil' | 'atelier' | 'location' | 'autre';
+
+export interface MessageReply {
+    id: number;
+    message_id: number;
+    author_mode: WorkMode;
+    author_label: string; // Nicolas ou Jonathan
+    recipient_mode: WorkMode | null;
+    recipient_label: string | null;
+    content: string;
+    read_at: string | null;
+    created_at: string;
+}
+
+export interface Message {
+    id: number;
+    author_mode: WorkMode;
+    author_label: string; // Nicolas ou Jonathan
+    recipient_mode: WorkMode | null;
+    recipient_label: string | null;
+    category: MessageCategory;
+    contact_name: string | null;
+    contact_phone: string | null;
+    contact_email: string | null;
+    content: string;
+    status: 'ouvert' | 'resolu';
+    read_at: string | null;
+    resolved_at: string | null;
+    created_at: string;
+    replies: MessageReply[];
+}
+
+export interface UnreadByCategory {
+    accueil: number;
+    atelier: number;
+    location: number;
+    autre: number;
+}
+
+export interface MessagingState {
+    mode: WorkMode;
+    messages: Message[];
+    unreadCount: number;
+    unreadByCategory: UnreadByCategory;
+    isLoading: boolean;
+    isPanelOpen: boolean;
+}
+
 declare module '@inertiajs/react' {
     export function usePage<T extends PageProps>(): {
         props: T;

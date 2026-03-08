@@ -1,0 +1,311 @@
+// Detail du message (colonne droite)
+@use '../base/colors' as *;
+
+.message-detail {
+    background: $color-bg-white;
+    border: 1px solid $color-border-light;
+    border-radius: 8px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid $color-border-light;
+        background: $color-bg-light;
+        border-radius: 8px 8px 0 0;
+    }
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 1rem;
+    }
+
+    &__author {
+        font-weight: 600;
+        color: $color-primary-blue;
+    }
+
+    &__arrow {
+        color: $color-neutral-medium;
+    }
+
+    &__recipient {
+        font-weight: 500;
+        color: $color-neutral-dark;
+    }
+
+    &__self {
+        font-style: italic;
+        color: $color-neutral-medium;
+        font-size: 0.875rem;
+    }
+
+    &__close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: $color-neutral-medium;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+
+        &:hover {
+            color: $color-neutral-dark;
+        }
+    }
+
+    &__meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid $color-border-light;
+    }
+
+    &__date {
+        font-size: 0.8125rem;
+        color: $color-neutral-medium;
+    }
+
+    &__status {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        background: lighten($color-success-green, 45%);
+        color: $color-success-green;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+
+    &__contact {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: $color-bg-light;
+        border-bottom: 1px solid $color-border-light;
+        font-size: 0.875rem;
+    }
+
+    &__contact-name {
+        font-weight: 500;
+        color: $color-neutral-dark;
+    }
+
+    &__contact-phone,
+    &__contact-email {
+        color: $color-primary-blue;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    &__content {
+        padding: 1rem;
+        color: $color-neutral-dark;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        border-bottom: 1px solid $color-border-light;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid $color-border-light;
+    }
+
+    &__action {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8125rem;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        background: $color-bg-white;
+        cursor: pointer;
+        color: $color-neutral-medium;
+
+        &:hover {
+            background: $color-bg-light;
+        }
+
+        &--read {
+            color: $color-primary-blue;
+            border-color: $color-primary-blue;
+
+            &:hover {
+                background: lighten($color-primary-blue, 45%);
+            }
+        }
+
+        &--resolve {
+            color: $color-success-green;
+            border-color: $color-success-green;
+
+            &:hover {
+                background: lighten($color-success-green, 45%);
+            }
+        }
+
+        &--reopen {
+            color: $color-toggle-mango;
+            border-color: $color-toggle-mango;
+
+            &:hover {
+                background: lighten($color-toggle-mango, 30%);
+            }
+        }
+
+        &--delete {
+            color: $color-danger-red;
+            border-color: $color-danger-red;
+
+            &:hover {
+                background: lighten($color-danger-red, 40%);
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+    }
+
+    &__read-status {
+        font-size: 0.8125rem;
+        color: $color-success-green;
+        font-style: italic;
+        padding: 0.375rem 0.75rem;
+    }
+
+    &__replies-section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__replies-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid $color-border-light;
+
+        h3 {
+            margin: 0;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: $color-neutral-dark;
+        }
+    }
+
+    &__reply-btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8125rem;
+        background: $color-primary-blue;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+
+        &:hover {
+            background: darken($color-primary-blue, 5%);
+        }
+    }
+
+    &__replies {
+        padding: 0.75rem 1rem;
+    }
+
+    &__no-replies {
+        padding: 2rem;
+        text-align: center;
+        color: $color-neutral-medium;
+        font-size: 0.875rem;
+    }
+
+    &__reply {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: $color-bg-light;
+        border-radius: 6px;
+        border-left: 3px solid $color-border-medium;
+
+        &--unread {
+            border-left-color: $color-primary-blue;
+            background: lighten($color-primary-blue, 48%);
+        }
+
+        // Réponse envoyée par moi, en attente de lecture par l'autre
+        &--pending-read {
+            border-left-color: $color-toggle-mango;
+        }
+
+        // Réponse envoyée par moi, lue par l'autre
+        &--read-by-other {
+            border-left-color: $color-status-ok;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__reply-read-status {
+        font-size: 0.75rem;
+        color: $color-status-ok;
+        font-weight: 500;
+        margin-left: 0.5rem;
+    }
+
+    &__reply-header {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.8125rem;
+        margin-bottom: 0.375rem;
+    }
+
+    &__reply-author {
+        font-weight: 600;
+        color: $color-primary-blue;
+    }
+
+    &__reply-recipient {
+        color: $color-neutral-dark;
+    }
+
+    &__reply-date {
+        margin-left: auto;
+        font-size: 0.75rem;
+        color: $color-neutral-medium;
+    }
+
+    &__reply-content {
+        font-size: 0.875rem;
+        color: $color-neutral-dark;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    &__reply-footer {
+        position: sticky;
+        bottom: 0;
+        padding: 0.75rem 1rem;
+        border-top: 1px solid $color-border-light;
+        background: $color-bg-light;
+        border-radius: 0 0 8px 8px;
+    }
+}
