@@ -178,7 +178,7 @@ class MessageController extends Controller
         return $model->getMedia('photos')->map(fn ($media) => [
             'id' => $media->id,
             'url' => $media->getUrl(),
-            'thumb_url' => $media->getUrl('thumb'),
+            'thumb_url' => $media->hasGeneratedConversion('thumb') ? $media->getUrl('thumb') : $media->getUrl(),
             'name' => $media->file_name,
             'size' => $media->size,
         ])->toArray();

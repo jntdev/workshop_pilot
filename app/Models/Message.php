@@ -156,10 +156,11 @@ class Message extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')
-            ->width(300)
-            ->height(300)
-            ->sharpen(10)
-            ->nonQueued();
+        // Désactivé sur serveur mutualisé sans GD/Imagick
+        // $this->addMediaConversion('thumb')
+        //     ->width(300)
+        //     ->height(300)
+        //     ->sharpen(10)
+        //     ->nonQueued();
     }
 }
