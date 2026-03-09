@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\WorkMode;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreMessageRequest extends FormRequest
 {
@@ -19,9 +17,8 @@ class StoreMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'author_mode' => ['required', Rule::enum(WorkMode::class)],
-            'recipient_mode' => ['nullable', Rule::enum(WorkMode::class)],
-            'category' => ['required', Rule::in(['accueil', 'atelier', 'location', 'autre'])],
+            'recipient_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'category' => ['required', 'in:accueil,atelier,location,autre'],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'contact_phone' => ['nullable', 'string', 'max:50'],
             'contact_email' => ['nullable', 'email', 'max:255'],

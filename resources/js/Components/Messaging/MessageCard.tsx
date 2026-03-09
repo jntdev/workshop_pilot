@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useMessaging, getModeLabel } from '@/Contexts/MessagingContext';
-import { Message, WorkMode } from '@/types';
+import { useMessaging } from '@/Contexts/MessagingContext';
+import { Message } from '@/types';
 import ReplyForm from './ReplyForm';
 
 interface MessageCardProps {
@@ -28,7 +28,7 @@ function formatDate(dateString: string): string {
 
 export default function MessageCard({ message }: MessageCardProps) {
     const {
-        mode,
+        currentUserId,
         markMessageAsRead,
         markMessageAsResolved,
         reopenMessage,
@@ -43,17 +43,14 @@ export default function MessageCard({ message }: MessageCardProps) {
     const isUnread = !message.read_at;
     const isResolved = message.status === 'resolu';
     const hasContact = message.contact_name || message.contact_phone || message.contact_email;
-    const unreadReplies = message.replies.filter(r => !r.read_at && r.author_mode !== mode);
+    const unreadReplies = message.replies.filter(r => !r.read_at && r.author_user_id !== currentUserId);
 
-    // Le bouton "Info lue" n'apparait que si le message est destiné à l'utilisateur actuel
-    // (recipient_mode === mode) ou si c'est une note perso (author_mode === mode && recipient_mode === null)
-    const canMarkAsRead = message.recipient_mode === mode ||
-        (message.author_mode === mode && message.recipient_mode === null);
+    const canMarkAsRead = message.recipient_user_id === currentUserId ||
+        (message.author_user_id === currentUserId && message.recipient_user_id === null);
 
-    // L'auteur d'un message envoyé à l'autre voit "Info lue" quand le destinataire l'a lu
-    const isAuthorViewingOthersRead = message.author_mode === mode &&
-        message.recipient_mode !== null &&
-        message.recipient_mode !== mode &&
+    const isAuthorViewingOthersRead = message.author_user_id === currentUserId &&
+        message.recipient_user_id !== null &&
+        message.recipient_user_id !== currentUserId &&
         message.read_at !== null;
 
     const handleMarkRead = async () => {
@@ -90,7 +87,7 @@ export default function MessageCard({ message }: MessageCardProps) {
                             <span className="message-card__recipient">{message.recipient_label}</span>
                         </>
                     )}
-                    {!message.recipient_mode && (
+                    {!message.recipient_user_id && (
                         <span className="message-card__self">(note perso)</span>
                     )}
                 </div>
@@ -196,7 +193,7 @@ export default function MessageCard({ message }: MessageCardProps) {
                     {message.replies.map(reply => (
                         <div
                             key={reply.id}
-                            className={`message-card__reply ${!reply.read_at && reply.author_mode !== mode ? 'message-card__reply--unread' : ''}`}
+                            className={`message-card__reply ${!reply.read_at && reply.author_user_id !== currentUserId ? 'message-card__reply--unread' : ''}`}
                         >
                             <div className="message-card__reply-header">
                                 <span className="message-card__reply-author">{reply.author_label}</span>
@@ -209,7 +206,7 @@ export default function MessageCard({ message }: MessageCardProps) {
                                 <span className="message-card__reply-date">{formatDate(reply.created_at)}</span>
                             </div>
                             <div className="message-card__reply-content">{reply.content}</div>
-                            {!reply.read_at && reply.author_mode !== mode && (
+                            {!reply.read_at && reply.author_user_id !== currentUserId && (
                                 <button
                                     type="button"
                                     className="message-card__action message-card__action--read"

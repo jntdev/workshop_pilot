@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useMessaging, getModeLabel } from '@/Contexts/MessagingContext';
-import { Message, WorkMode, Photo } from '@/types';
+import { useMessaging } from '@/Contexts/MessagingContext';
+import { Message, Photo } from '@/types';
 import ReplyForm from './ReplyForm';
 import PhotoGallery from '../Photos/PhotoGallery';
 import PhotoUploadModal from '../Photos/PhotoUploadModal';
@@ -41,29 +41,32 @@ function formatRelative(dateString: string): string {
 
 export default function MessageDetail({ message, onClose }: MessageDetailProps) {
     const {
-        mode,
+        currentUserId,
         markMessageAsRead,
         markMessageAsResolved,
         reopenMessage,
         deleteMessage,
         markReplyAsRead,
+        updateReply,
+        deleteReply,
     } = useMessaging();
 
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
+    const [editingContent, setEditingContent] = useState('');
 
-    const isPersonalNote = message.recipient_mode === null;
+    const isPersonalNote = message.recipient_user_id === null;
     const isUnread = !message.read_at && !isPersonalNote;
     const isResolved = message.status === 'resolu';
     const hasContact = message.contact_name || message.contact_phone || message.contact_email;
 
-    // Pas de bouton "Info lue" pour les notes perso
-    const canMarkAsRead = !isPersonalNote && message.recipient_mode === mode;
+    const canMarkAsRead = !isPersonalNote && message.recipient_user_id === currentUserId;
 
-    const isAuthorViewingOthersRead = message.author_mode === mode &&
-        message.recipient_mode !== null &&
-        message.recipient_mode !== mode &&
+    const isAuthorViewingOthersRead = message.author_user_id === currentUserId &&
+        message.recipient_user_id !== null &&
+        message.recipient_user_id !== currentUserId &&
         message.read_at !== null;
 
     const handleMarkRead = async () => {
@@ -90,6 +93,24 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
         await markReplyAsRead(replyId);
     };
 
+    const handleEditReply = (replyId: number, content: string) => {
+        setEditingReplyId(replyId);
+        setEditingContent(content);
+    };
+
+    const handleSaveReply = async (replyId: number) => {
+        if (!editingContent.trim()) { return; }
+        await updateReply(replyId, editingContent.trim());
+        setEditingReplyId(null);
+        setEditingContent('');
+    };
+
+    const handleDeleteReply = async (replyId: number) => {
+        if (confirm('Supprimer cette reponse ?')) {
+            await deleteReply(replyId, message.id);
+        }
+    };
+
     return (
         <div className="message-detail">
             <div className="message-detail__header">
@@ -101,7 +122,7 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
                             <span className="message-detail__recipient">{message.recipient_label}</span>
                         </>
                     )}
-                    {!message.recipient_mode && (
+                    {!message.recipient_user_id && (
                         <span className="message-detail__self">(note perso)</span>
                     )}
                 </div>
@@ -199,12 +220,9 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
                 ) : (
                     <div className="message-detail__replies">
                         {message.replies.map(reply => {
-                            // Réponse reçue non lue (l'autre m'a envoyé, je n'ai pas lu)
-                            const isReplyReceivedUnread = reply.author_mode !== mode && !reply.read_at;
-                            // Réponse envoyée par moi, en attente de lecture
-                            const isReplyPendingRead = reply.author_mode === mode && !reply.read_at;
-                            // Réponse envoyée par moi, lue par l'autre
-                            const isReplyReadByOther = reply.author_mode === mode && reply.read_at !== null;
+                            const isReplyReceivedUnread = reply.author_user_id !== currentUserId && !reply.read_at;
+                            const isReplyPendingRead = reply.author_user_id === currentUserId && !reply.read_at;
+                            const isReplyReadByOther = reply.author_user_id === currentUserId && reply.read_at !== null;
 
                             const replyClassNames = [
                                 'message-detail__reply',
@@ -212,6 +230,9 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
                                 isReplyPendingRead && 'message-detail__reply--pending-read',
                                 isReplyReadByOther && 'message-detail__reply--read-by-other',
                             ].filter(Boolean).join(' ');
+
+                            const isMyReply = reply.author_user_id === currentUserId;
+                            const isEditing = editingReplyId === reply.id;
 
                             return (
                                 <div key={reply.id} className={replyClassNames}>
@@ -227,8 +248,54 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
                                         {isReplyReadByOther && (
                                             <span className="message-detail__reply-read-status">Lu</span>
                                         )}
+                                        {isMyReply && !isEditing && (
+                                            <div className="message-detail__reply-owner-actions">
+                                                <button
+                                                    type="button"
+                                                    className="message-detail__reply-edit"
+                                                    onClick={() => handleEditReply(reply.id, reply.content)}
+                                                >
+                                                    Modifier
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="message-detail__reply-delete"
+                                                    onClick={() => handleDeleteReply(reply.id)}
+                                                >
+                                                    Supprimer
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="message-detail__reply-content">{reply.content}</div>
+                                    {isEditing ? (
+                                        <div className="message-detail__reply-edit-form">
+                                            <textarea
+                                                className="message-detail__reply-edit-input"
+                                                value={editingContent}
+                                                onChange={e => setEditingContent(e.target.value)}
+                                                rows={3}
+                                                autoFocus
+                                            />
+                                            <div className="message-detail__reply-edit-actions">
+                                                <button
+                                                    type="button"
+                                                    className="message-detail__reply-edit-cancel"
+                                                    onClick={() => setEditingReplyId(null)}
+                                                >
+                                                    Annuler
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="message-detail__reply-edit-save"
+                                                    onClick={() => handleSaveReply(reply.id)}
+                                                >
+                                                    Enregistrer
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="message-detail__reply-content">{reply.content}</div>
+                                    )}
                                     {reply.photos && reply.photos.length > 0 && (
                                         <PhotoGallery photos={reply.photos} />
                                     )}
@@ -251,6 +318,7 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
                     {showReplyForm ? (
                         <ReplyForm
                             messageId={message.id}
+                            isPersonalNote={isPersonalNote}
                             onClose={() => setShowReplyForm(false)}
                         />
                     ) : (

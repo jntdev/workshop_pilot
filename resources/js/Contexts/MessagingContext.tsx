@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Message, WorkMode, MessagingState, UnreadByCategory, MessageCategory } from '@/types';
+import { Message, MessagingState, UnreadByCategory, MessageCategory, MessagingUser } from '@/types';
 
 interface MessagingContextValue extends MessagingState {
-    setMode: (mode: WorkMode) => void;
     togglePanel: () => void;
     openPanel: () => void;
     closePanel: () => void;
@@ -12,12 +11,14 @@ interface MessagingContextValue extends MessagingState {
     reopenMessage: (messageId: number) => Promise<void>;
     createMessage: (data: CreateMessageData) => Promise<Message>;
     createReply: (messageId: number, data: CreateReplyData) => Promise<void>;
+    updateReply: (replyId: number, content: string) => Promise<void>;
+    deleteReply: (replyId: number, messageId: number) => Promise<void>;
     deleteMessage: (messageId: number) => Promise<void>;
     markReplyAsRead: (replyId: number) => Promise<void>;
 }
 
 interface CreateMessageData {
-    recipient_mode: WorkMode | null;
+    recipient_user_id: number | null;
     category: MessageCategory;
     contact_name?: string;
     contact_phone?: string;
@@ -26,26 +27,20 @@ interface CreateMessageData {
 }
 
 interface CreateReplyData {
-    recipient_mode?: WorkMode | null;
+    recipient_user_id?: number | null;
     content: string;
+}
+
+interface MessagingProviderProps {
+    children: ReactNode;
+    currentUserId: number | null;
+    users: MessagingUser[];
 }
 
 const MessagingContext = createContext<MessagingContextValue | null>(null);
 
-// Utilise la même clé que usePrivacyMode pour synchronisation
-const STORAGE_KEY = 'workshop_privacy_mode';
-
 function getCsrfToken(): string {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-}
-
-function getStoredMode(): WorkMode {
-    if (typeof window === 'undefined') return 'atelier';
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'comptoir' || stored === 'atelier') {
-        return stored;
-    }
-    return 'atelier';
 }
 
 const defaultUnreadByCategory: UnreadByCategory = {
@@ -55,23 +50,18 @@ const defaultUnreadByCategory: UnreadByCategory = {
     autre: 0,
 };
 
-export function MessagingProvider({ children }: { children: ReactNode }) {
-    const [mode, setModeState] = useState<WorkMode>(getStoredMode);
+export function MessagingProvider({ children, currentUserId, users }: MessagingProviderProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadByCategory, setUnreadByCategory] = useState<UnreadByCategory>(defaultUnreadByCategory);
     const [isLoading, setIsLoading] = useState(false);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
 
-    const setMode = useCallback((newMode: WorkMode) => {
-        setModeState(newMode);
-        localStorage.setItem(STORAGE_KEY, newMode);
-    }, []);
-
     const fetchMessages = useCallback(async () => {
+        if (!currentUserId) { return; }
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/messages?mode=${mode}`, {
+            const response = await fetch('/api/messages', {
                 credentials: 'include',
             });
             if (response.ok) {
@@ -83,11 +73,12 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [mode]);
+    }, [currentUserId]);
 
     const fetchUnreadCount = useCallback(async () => {
+        if (!currentUserId) { return; }
         try {
-            const response = await fetch(`/api/messages/unread-count?mode=${mode}`, {
+            const response = await fetch('/api/messages/unread-count', {
                 credentials: 'include',
             });
             if (response.ok) {
@@ -98,48 +89,21 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error('Failed to fetch unread count:', error);
         }
-    }, [mode]);
+    }, [currentUserId]);
 
     const refreshMessages = useCallback(async () => {
         await Promise.all([fetchMessages(), fetchUnreadCount()]);
     }, [fetchMessages, fetchUnreadCount]);
 
-    // Fetch on mode change
     useEffect(() => {
         refreshMessages();
-    }, [mode, refreshMessages]);
+    }, [currentUserId, refreshMessages]);
 
     // Poll for updates every 30 seconds (will be replaced by WebSocket)
     useEffect(() => {
         const interval = setInterval(fetchUnreadCount, 30000);
         return () => clearInterval(interval);
     }, [fetchUnreadCount]);
-
-    // Sync with localStorage changes from usePrivacyMode toggle (other tabs)
-    useEffect(() => {
-        const handleStorageChange = (event: StorageEvent) => {
-            if (event.key === STORAGE_KEY && event.newValue) {
-                const newMode = event.newValue as WorkMode;
-                if (newMode === 'comptoir' || newMode === 'atelier') {
-                    setModeState(newMode);
-                }
-            }
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
-
-    // Poll localStorage for changes within same tab (toggle doesn't trigger storage event in same tab)
-    useEffect(() => {
-        const checkModeSync = () => {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored && (stored === 'comptoir' || stored === 'atelier') && stored !== mode) {
-                setModeState(stored);
-            }
-        };
-        const interval = setInterval(checkModeSync, 300);
-        return () => clearInterval(interval);
-    }, [mode]);
 
     const togglePanel = useCallback(() => {
         setIsPanelOpen(prev => !prev);
@@ -155,7 +119,6 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
 
     const markMessageAsRead = useCallback(async (messageId: number) => {
         try {
-            // Trouver le message pour connaître sa catégorie avant la requête
             const targetMessage = messages.find(m => m.id === messageId);
 
             const response = await fetch(`/api/messages/${messageId}/read`, {
@@ -172,7 +135,6 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
                 ));
                 setUnreadCount(prev => Math.max(0, prev - 1));
 
-                // Décrémenter le compteur de la catégorie correspondante
                 if (targetMessage) {
                     setUnreadByCategory(prev => ({
                         ...prev,
@@ -233,10 +195,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': getCsrfToken(),
             },
-            body: JSON.stringify({
-                author_mode: mode,
-                ...data,
-            }),
+            body: JSON.stringify(data),
         });
         if (!response.ok) {
             throw new Error('Failed to create message');
@@ -244,7 +203,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         const message = await response.json();
         setMessages(prev => [message, ...prev]);
         return message;
-    }, [mode]);
+    }, []);
 
     const createReply = useCallback(async (messageId: number, data: CreateReplyData) => {
         const response = await fetch(`/api/messages/${messageId}/replies`, {
@@ -254,10 +213,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': getCsrfToken(),
             },
-            body: JSON.stringify({
-                author_mode: mode,
-                ...data,
-            }),
+            body: JSON.stringify(data),
         });
         if (!response.ok) {
             throw new Error('Failed to create reply');
@@ -268,10 +224,46 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
                 ? { ...m, replies: [...m.replies, reply] }
                 : m
         ));
-    }, [mode]);
+    }, []);
+
+    const updateReply = useCallback(async (replyId: number, content: string) => {
+        const response = await fetch(`/api/replies/${replyId}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+            body: JSON.stringify({ content }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to update reply');
+        }
+        const updated = await response.json();
+        setMessages(prev => prev.map(m => ({
+            ...m,
+            replies: m.replies.map(r => r.id === replyId ? updated : r),
+        })));
+    }, []);
+
+    const deleteReply = useCallback(async (replyId: number, messageId: number) => {
+        const response = await fetch(`/api/replies/${replyId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+        });
+        if (response.ok) {
+            setMessages(prev => prev.map(m =>
+                m.id === messageId
+                    ? { ...m, replies: m.replies.filter(r => r.id !== replyId) }
+                    : m
+            ));
+        }
+    }, []);
 
     const deleteMessage = useCallback(async (messageId: number) => {
-        // Trouver le message avant suppression pour mettre à jour les compteurs si non lu
         const targetMessage = messages.find(m => m.id === messageId);
 
         const response = await fetch(`/api/messages/${messageId}`, {
@@ -284,7 +276,6 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
             setMessages(prev => prev.filter(m => m.id !== messageId));
 
-            // Si le message était non lu, décrémenter les compteurs
             if (targetMessage && !targetMessage.read_at) {
                 setUnreadCount(prev => Math.max(0, prev - 1));
                 setUnreadByCategory(prev => ({
@@ -319,13 +310,13 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const value: MessagingContextValue = {
-        mode,
+        currentUserId,
+        users,
         messages,
         unreadCount,
         unreadByCategory,
         isLoading,
         isPanelOpen,
-        setMode,
         togglePanel,
         openPanel,
         closePanel,
@@ -335,6 +326,8 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         reopenMessage,
         createMessage,
         createReply,
+        updateReply,
+        deleteReply,
         deleteMessage,
         markReplyAsRead,
     };
@@ -352,8 +345,4 @@ export function useMessaging(): MessagingContextValue {
         throw new Error('useMessaging must be used within a MessagingProvider');
     }
     return context;
-}
-
-export function getModeLabel(mode: WorkMode): string {
-    return mode === 'comptoir' ? 'Nicolas' : 'Jonathan';
 }

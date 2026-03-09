@@ -85,6 +85,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
     Route::post('/messages/{message}/replies', [MessageController::class, 'storeReply']);
     Route::patch('/replies/{reply}/read', [MessageController::class, 'markReplyAsRead']);
+    Route::put('/replies/{reply}', [MessageController::class, 'updateReply']);
+    Route::delete('/replies/{reply}', [MessageController::class, 'destroyReply']);
 
     // Upload tokens API routes
     Route::post('/upload-tokens', [UploadTokenController::class, 'store']);

@@ -1,20 +1,24 @@
 import { useState } from 'react';
-import { useMessaging, getModeLabel } from '@/Contexts/MessagingContext';
-import { WorkMode } from '@/types';
+import { useMessaging } from '@/Contexts/MessagingContext';
 
 interface ReplyFormProps {
     messageId: number;
+    isPersonalNote: boolean;
     onClose: () => void;
 }
 
-export default function ReplyForm({ messageId, onClose }: ReplyFormProps) {
-    const { mode, createReply } = useMessaging();
+export default function ReplyForm({ messageId, isPersonalNote, onClose }: ReplyFormProps) {
+    const { currentUserId, users, createReply } = useMessaging();
 
+    const otherUsers = users.filter(u => u.id !== currentUserId);
+    const currentUserName = users.find(u => u.id === currentUserId)?.name ?? '';
+
+    const [recipientUserId, setRecipientUserId] = useState<number | null>(
+        isPersonalNote ? null : (otherUsers[0]?.id ?? null)
+    );
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const otherMode: WorkMode = mode === 'comptoir' ? 'atelier' : 'comptoir';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,7 +32,7 @@ export default function ReplyForm({ messageId, onClose }: ReplyFormProps) {
 
         try {
             await createReply(messageId, {
-                recipient_mode: otherMode,
+                recipient_user_id: recipientUserId,
                 content: content.trim(),
             });
             onClose();
@@ -42,7 +46,7 @@ export default function ReplyForm({ messageId, onClose }: ReplyFormProps) {
     return (
         <form className="reply-form" onSubmit={handleSubmit}>
             <div className="reply-form__header">
-                <span>Repondre en tant que {getModeLabel(mode)}</span>
+                <span>Repondre en tant que {currentUserName}</span>
                 <button
                     type="button"
                     className="reply-form__close"
@@ -51,6 +55,26 @@ export default function ReplyForm({ messageId, onClose }: ReplyFormProps) {
                     &times;
                 </button>
             </div>
+
+            {!isPersonalNote && (
+                <div className="reply-form__recipient">
+                    <label>Pour</label>
+                    <div className="reply-form__radio-group">
+                        {otherUsers.map(u => (
+                            <label key={u.id} className="reply-form__radio">
+                                <input
+                                    type="radio"
+                                    name="recipient"
+                                    value={u.id}
+                                    checked={recipientUserId === u.id}
+                                    onChange={() => setRecipientUserId(u.id)}
+                                />
+                                <span>{u.name}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <textarea
                 className="reply-form__input"

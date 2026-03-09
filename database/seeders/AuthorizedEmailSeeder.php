@@ -15,6 +15,7 @@ class AuthorizedEmailSeeder extends Seeder
         $emails = [
             'jnt.marois@gmail.com',
             'lesvelosdarmorbzh@gmail.com',
+            'julien2705@gmail.com',
         ];
 
         foreach ($emails as $email) {

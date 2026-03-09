@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\WorkMode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,8 +16,8 @@ class MessageReply extends Model implements HasMedia
 
     protected $fillable = [
         'message_id',
-        'author_mode',
-        'recipient_mode',
+        'author_user_id',
+        'recipient_user_id',
         'content',
         'read_at',
     ];
@@ -26,8 +25,6 @@ class MessageReply extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'author_mode' => WorkMode::class,
-            'recipient_mode' => WorkMode::class,
             'read_at' => 'datetime',
         ];
     }
@@ -35,6 +32,16 @@ class MessageReply extends Model implements HasMedia
     public function message(): BelongsTo
     {
         return $this->belongsTo(Message::class);
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_user_id');
+    }
+
+    public function recipient(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recipient_user_id');
     }
 
     public function markAsRead(): void
@@ -46,12 +53,12 @@ class MessageReply extends Model implements HasMedia
 
     public function authorLabel(): string
     {
-        return $this->author_mode->label();
+        return $this->author->name;
     }
 
     public function recipientLabel(): ?string
     {
-        return $this->recipient_mode?->label();
+        return $this->recipient?->name;
     }
 
     public function registerMediaCollections(): void

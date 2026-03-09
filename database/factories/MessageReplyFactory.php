@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Enums\WorkMode;
 use App\Models\Message;
 use App\Models\MessageReply;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,8 +18,8 @@ class MessageReplyFactory extends Factory
     {
         return [
             'message_id' => Message::factory(),
-            'author_mode' => fake()->randomElement(WorkMode::cases()),
-            'recipient_mode' => fake()->optional(0.7)->randomElement(WorkMode::cases()),
+            'author_user_id' => User::factory(),
+            'recipient_user_id' => null,
             'content' => fake()->sentence(8),
             'read_at' => null,
         ];
@@ -28,28 +28,28 @@ class MessageReplyFactory extends Factory
     public function fromNicolas(): static
     {
         return $this->state(fn () => [
-            'author_mode' => WorkMode::Comptoir,
+            'author_user_id' => User::where('email', 'lesvelosdarmorbzh@gmail.com')->first()?->id ?? User::factory(),
         ]);
     }
 
     public function fromJonathan(): static
     {
         return $this->state(fn () => [
-            'author_mode' => WorkMode::Atelier,
+            'author_user_id' => User::where('email', 'jnt.marois@gmail.com')->first()?->id ?? User::factory(),
         ]);
     }
 
     public function toNicolas(): static
     {
         return $this->state(fn () => [
-            'recipient_mode' => WorkMode::Comptoir,
+            'recipient_user_id' => User::where('email', 'lesvelosdarmorbzh@gmail.com')->first()?->id ?? User::factory(),
         ]);
     }
 
     public function toJonathan(): static
     {
         return $this->state(fn () => [
-            'recipient_mode' => WorkMode::Atelier,
+            'recipient_user_id' => User::where('email', 'jnt.marois@gmail.com')->first()?->id ?? User::factory(),
         ]);
     }
 

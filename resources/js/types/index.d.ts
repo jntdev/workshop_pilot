@@ -2,6 +2,12 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    work_mode: WorkMode | null;
+}
+
+export interface MessagingUser {
+    id: number;
+    name: string;
 }
 
 export interface PageProps {
@@ -12,6 +18,7 @@ export interface PageProps {
         message: string | null;
         error: string | null;
     };
+    messaging_users: MessagingUser[];
 }
 
 export interface Client {
@@ -374,7 +381,7 @@ export interface ReservationDraftSelectors {
 }
 
 // Messagerie interne
-export type WorkMode = 'comptoir' | 'atelier';
+export type WorkMode = 'comptoir' | 'atelier' | 'julien';
 export type MessageCategory = 'accueil' | 'atelier' | 'location' | 'autre';
 
 export interface Photo {
@@ -388,9 +395,9 @@ export interface Photo {
 export interface MessageReply {
     id: number;
     message_id: number;
-    author_mode: WorkMode;
-    author_label: string; // Nicolas ou Jonathan
-    recipient_mode: WorkMode | null;
+    author_user_id: number;
+    author_label: string;
+    recipient_user_id: number | null;
     recipient_label: string | null;
     content: string;
     read_at: string | null;
@@ -400,9 +407,9 @@ export interface MessageReply {
 
 export interface Message {
     id: number;
-    author_mode: WorkMode;
-    author_label: string; // Nicolas ou Jonathan
-    recipient_mode: WorkMode | null;
+    author_user_id: number;
+    author_label: string;
+    recipient_user_id: number | null;
     recipient_label: string | null;
     category: MessageCategory;
     contact_name: string | null;
@@ -425,7 +432,8 @@ export interface UnreadByCategory {
 }
 
 export interface MessagingState {
-    mode: WorkMode;
+    currentUserId: number | null;
+    users: MessagingUser[];
     messages: Message[];
     unreadCount: number;
     unreadByCategory: UnreadByCategory;

@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreReplyRequest extends FormRequest
+class UpdateReplyRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,7 +17,6 @@ class StoreReplyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'recipient_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'content' => ['required', 'string', 'min:1'],
         ];
     }

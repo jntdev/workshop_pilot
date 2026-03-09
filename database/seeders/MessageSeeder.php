@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Message;
 use App\Models\MessageReply;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class MessageSeeder extends Seeder
@@ -15,6 +16,16 @@ class MessageSeeder extends Seeder
 
     private function seedManyMessagesForScrolling(): void
     {
+        $nicolas = User::where('email', 'lesvelosdarmorbzh@gmail.com')->first();
+        $jonathan = User::where('email', 'jnt.marois@gmail.com')->first();
+        $julien = User::where('email', 'julien2705@gmail.com')->first();
+
+        if (! $nicolas || ! $jonathan) {
+            $this->command->warn('Users not found — skipping MessageSeeder.');
+
+            return;
+        }
+
         $categories = ['accueil', 'atelier', 'location', 'autre'];
         $contacts = [
             ['name' => 'Jean Dupont', 'phone' => '06 12 34 56 78', 'email' => 'jean.dupont@email.com'],
@@ -93,22 +104,31 @@ class MessageSeeder extends Seeder
             'D\'accord, je le fais maintenant.',
         ];
 
-        // Créer 30 messages avec beaucoup de réponses
+        $users = [$nicolas, $jonathan];
+        if ($julien) {
+            $users[] = $julien;
+        }
+
         for ($i = 0; $i < 30; $i++) {
             $category = $categories[array_rand($categories)];
             $contents = $contentsByCategory[$category];
             $content = $contents[array_rand($contents)];
             $contact = $contacts[array_rand($contacts)];
 
-            $fromJonathan = $i % 2 === 0;
-            $forSelf = $i % 7 === 0; // ~15% notes perso
+            $author = $users[$i % count($users)];
+            $forSelf = $i % 7 === 0;
             $isRead = $i % 3 === 0;
             $isResolved = $i % 10 === 0;
             $hasContact = $i % 2 === 0;
 
+            $recipients = array_filter($users, fn ($u) => $u->id !== $author->id);
+            $recipient = $forSelf ? null : array_values($recipients)[0];
+
             $message = Message::factory()
-                ->when($fromJonathan, fn ($f) => $f->fromJonathan(), fn ($f) => $f->fromNicolas())
-                ->when($forSelf, fn ($f) => $f->forSelf(), fn ($f) => $fromJonathan ? $f->toNicolas() : $f->toJonathan())
+                ->state([
+                    'author_user_id' => $author->id,
+                    'recipient_user_id' => $recipient?->id,
+                ])
                 ->when($isRead && ! $forSelf, fn ($f) => $f->read())
                 ->when($isResolved, fn ($f) => $f->resolved())
                 ->create([
@@ -120,17 +140,19 @@ class MessageSeeder extends Seeder
                     'created_at' => now()->subHours(rand(1, 72))->subMinutes(rand(0, 59)),
                 ]);
 
-            // Ajouter entre 0 et 15 réponses par message
             $nbReplies = $forSelf ? 0 : rand(0, 15);
 
             for ($j = 0; $j < $nbReplies; $j++) {
-                $replyFromJonathan = $j % 2 === 0;
+                $replyAuthor = $users[$j % count($users)];
+                $replyRecipient = array_values(array_filter($users, fn ($u) => $u->id !== $replyAuthor->id))[0];
                 $replyIsRead = $j % 2 === 0 || rand(0, 1) === 1;
                 $replyContent = $replyContents[array_rand($replyContents)];
 
                 MessageReply::factory()
-                    ->when($replyFromJonathan, fn ($f) => $f->fromJonathan(), fn ($f) => $f->fromNicolas())
-                    ->when($replyFromJonathan, fn ($f) => $f->toNicolas(), fn ($f) => $f->toJonathan())
+                    ->state([
+                        'author_user_id' => $replyAuthor->id,
+                        'recipient_user_id' => $replyRecipient->id,
+                    ])
                     ->when($replyIsRead, fn ($f) => $f->read())
                     ->create([
                         'message_id' => $message->id,

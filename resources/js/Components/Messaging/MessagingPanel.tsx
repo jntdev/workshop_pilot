@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { useMessaging, getModeLabel } from '@/Contexts/MessagingContext';
-import { Message, WorkMode } from '@/types';
+import { useMessaging } from '@/Contexts/MessagingContext';
+import { Message } from '@/types';
 import MessageCard from './MessageCard';
 import NewMessageForm from './NewMessageForm';
 
 export default function MessagingPanel() {
     const {
-        mode,
+        currentUserId,
+        users,
         messages,
         unreadCount,
         isLoading,
         isPanelOpen,
         closePanel,
     } = useMessaging();
+
+    const currentUserName = users.find(u => u.id === currentUserId)?.name ?? '';
 
     const [showNewForm, setShowNewForm] = useState(false);
     const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
@@ -32,9 +35,11 @@ export default function MessagingPanel() {
                 <header className="messaging-panel__header">
                     <div className="messaging-panel__title">
                         <h2>Messages</h2>
-                        <span className="messaging-panel__mode">
-                            {getModeLabel(mode)}
-                        </span>
+                        {currentUserName && (
+                            <span className="messaging-panel__mode">
+                                {currentUserName}
+                            </span>
+                        )}
                         {unreadCount > 0 && (
                             <span className="messaging-panel__badge">{unreadCount}</span>
                         )}

@@ -5,7 +5,7 @@ import { Message, MessageCategory } from '@/types';
 import MessageListItem from '@/Components/Messaging/MessageListItem';
 import MessageDetail from '@/Components/Messaging/MessageDetail';
 import NewMessageForm from '@/Components/Messaging/NewMessageForm';
-import { useMessaging, getModeLabel } from '@/Contexts/MessagingContext';
+import { useMessaging } from '@/Contexts/MessagingContext';
 
 const CATEGORY_LABELS: Record<MessageCategory, string> = {
     accueil: 'Accueil',
@@ -18,13 +18,16 @@ const CATEGORIES: MessageCategory[] = ['accueil', 'atelier', 'location', 'autre'
 
 function MessagesContent() {
     const {
-        mode,
+        currentUserId,
+        users,
         messages,
         unreadCount,
         unreadByCategory,
         isLoading,
         refreshMessages,
     } = useMessaging();
+
+    const currentUserName = users.find(u => u.id === currentUserId)?.name ?? '';
 
     const [showNewForm, setShowNewForm] = useState(false);
     const [categoryFilter, setCategoryFilter] = useState<MessageCategory | 'all'>('all');
@@ -63,17 +66,20 @@ function MessagesContent() {
                 <div className="messages-page__header">
                     <div className="messages-page__title-row">
                         <h1 className="messages-page__title">Messages</h1>
-                        <span className="messages-page__mode">
-                            {getModeLabel(mode)}
-                        </span>
+                        {currentUserName && (
+                            <span className="messages-page__mode">
+                                {currentUserName}
+                            </span>
+                        )}
                         {unreadCount > 0 && (
                             <span className="messages-page__badge">{unreadCount} non lu{unreadCount > 1 ? 's' : ''}</span>
                         )}
                     </div>
-                    <p className="messages-page__subtitle">
-                        Vous consultez les messages en tant que <strong>{getModeLabel(mode)}</strong>.
-                        Basculez le mode Atelier/Comptoir dans le header pour changer.
-                    </p>
+                    {currentUserName && (
+                        <p className="messages-page__subtitle">
+                            Vous consultez les messages en tant que <strong>{currentUserName}</strong>.
+                        </p>
+                    )}
                 </div>
 
                 <div className="messages-page__toolbar messages-page__toolbar--categories">

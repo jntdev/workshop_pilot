@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useMessaging, getModeLabel } from '@/Contexts/MessagingContext';
-import { WorkMode, MessageCategory } from '@/types';
+import { useMessaging } from '@/Contexts/MessagingContext';
+import { MessageCategory } from '@/types';
 
 const CATEGORY_LABELS: Record<MessageCategory, string> = {
     accueil: 'Accueil',
@@ -16,9 +16,12 @@ interface NewMessageFormProps {
 }
 
 export default function NewMessageForm({ onClose }: NewMessageFormProps) {
-    const { mode, createMessage } = useMessaging();
+    const { currentUserId, users, createMessage } = useMessaging();
 
-    const [recipientMode, setRecipientMode] = useState<WorkMode | 'self'>('self');
+    const otherUsers = users.filter(u => u.id !== currentUserId);
+    const currentUserName = users.find(u => u.id === currentUserId)?.name ?? '';
+
+    const [recipientUserId, setRecipientUserId] = useState<number | 'self'>('self');
     const [category, setCategory] = useState<MessageCategory>('autre');
     const [contactName, setContactName] = useState('');
     const [contactPhone, setContactPhone] = useState('');
@@ -26,8 +29,6 @@ export default function NewMessageForm({ onClose }: NewMessageFormProps) {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const otherMode: WorkMode = mode === 'comptoir' ? 'atelier' : 'comptoir';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,7 +42,7 @@ export default function NewMessageForm({ onClose }: NewMessageFormProps) {
 
         try {
             await createMessage({
-                recipient_mode: recipientMode === 'self' ? null : recipientMode,
+                recipient_user_id: recipientUserId === 'self' ? null : recipientUserId,
                 category,
                 contact_name: contactName || undefined,
                 contact_phone: contactPhone || undefined,
@@ -78,21 +79,23 @@ export default function NewMessageForm({ onClose }: NewMessageFormProps) {
                                 type="radio"
                                 name="recipient"
                                 value="self"
-                                checked={recipientMode === 'self'}
-                                onChange={() => setRecipientMode('self')}
+                                checked={recipientUserId === 'self'}
+                                onChange={() => setRecipientUserId('self')}
                             />
-                            <span>Note pour moi ({getModeLabel(mode)})</span>
+                            <span>Note pour moi ({currentUserName})</span>
                         </label>
-                        <label className="new-message-form__radio">
-                            <input
-                                type="radio"
-                                name="recipient"
-                                value={otherMode}
-                                checked={recipientMode === otherMode}
-                                onChange={() => setRecipientMode(otherMode)}
-                            />
-                            <span>Pour {getModeLabel(otherMode)}</span>
-                        </label>
+                        {otherUsers.map(u => (
+                            <label key={u.id} className="new-message-form__radio">
+                                <input
+                                    type="radio"
+                                    name="recipient"
+                                    value={u.id}
+                                    checked={recipientUserId === u.id}
+                                    onChange={() => setRecipientUserId(u.id)}
+                                />
+                                <span>Pour {u.name}</span>
+                            </label>
+                        ))}
                     </div>
                 </div>
 

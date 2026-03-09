@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Enums\WorkMode;
 use App\Models\Message;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -15,11 +15,9 @@ class MessageFactory extends Factory
 
     public function definition(): array
     {
-        $authorMode = fake()->randomElement(WorkMode::cases());
-
         return [
-            'author_mode' => $authorMode,
-            'recipient_mode' => fake()->optional(0.7)->randomElement(WorkMode::cases()),
+            'author_user_id' => User::factory(),
+            'recipient_user_id' => null,
             'category' => fake()->randomElement(['accueil', 'atelier', 'location', 'autre']),
             'contact_name' => fake()->optional(0.6)->name(),
             'contact_phone' => fake()->optional(0.5)->phoneNumber(),
@@ -34,35 +32,42 @@ class MessageFactory extends Factory
     public function fromNicolas(): static
     {
         return $this->state(fn () => [
-            'author_mode' => WorkMode::Comptoir,
+            'author_user_id' => User::where('email', 'lesvelosdarmorbzh@gmail.com')->first()?->id ?? User::factory(),
         ]);
     }
 
     public function fromJonathan(): static
     {
         return $this->state(fn () => [
-            'author_mode' => WorkMode::Atelier,
+            'author_user_id' => User::where('email', 'jnt.marois@gmail.com')->first()?->id ?? User::factory(),
         ]);
     }
 
     public function toNicolas(): static
     {
         return $this->state(fn () => [
-            'recipient_mode' => WorkMode::Comptoir,
+            'recipient_user_id' => User::where('email', 'lesvelosdarmorbzh@gmail.com')->first()?->id ?? User::factory(),
         ]);
     }
 
     public function toJonathan(): static
     {
         return $this->state(fn () => [
-            'recipient_mode' => WorkMode::Atelier,
+            'recipient_user_id' => User::where('email', 'jnt.marois@gmail.com')->first()?->id ?? User::factory(),
+        ]);
+    }
+
+    public function toJulien(): static
+    {
+        return $this->state(fn () => [
+            'recipient_user_id' => User::where('email', 'julien2705@gmail.com')->first()?->id ?? User::factory(),
         ]);
     }
 
     public function forSelf(): static
     {
         return $this->state(fn () => [
-            'recipient_mode' => null,
+            'recipient_user_id' => null,
         ]);
     }
 

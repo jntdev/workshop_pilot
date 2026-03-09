@@ -5,19 +5,19 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMessageRequest;
 use App\Http\Requests\StoreReplyRequest;
+use App\Http\Requests\UpdateReplyRequest;
 use App\Models\Message;
 use App\Models\MessageReply;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MessageController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $mode = $request->input('mode', 'comptoir');
-
-        $messages = Message::forMode($mode)
-            ->with(['replies', 'media', 'replies.media'])
+        $messages = Message::forUser(Auth::id())
+            ->with(['author', 'recipient', 'replies.author', 'replies.recipient', 'media', 'replies.media'])
             ->get()
             ->map(fn (Message $message) => $this->formatMessage($message));
 
@@ -26,9 +26,9 @@ class MessageController extends Controller
 
     public function unreadCount(Request $request): JsonResponse
     {
-        $mode = $request->input('mode', 'comptoir');
-        $count = Message::unreadCountForMode($mode);
-        $byCategory = Message::unreadCountByCategoryForMode($mode);
+        $userId = Auth::id();
+        $count = Message::unreadCountForUser($userId);
+        $byCategory = Message::unreadCountByCategoryForUser($userId);
 
         return response()->json([
             'count' => $count,
@@ -41,8 +41,8 @@ class MessageController extends Controller
         $validated = $request->validated();
 
         $message = Message::create([
-            'author_mode' => $validated['author_mode'],
-            'recipient_mode' => $validated['recipient_mode'] ?? null,
+            'author_user_id' => Auth::id(),
+            'recipient_user_id' => $validated['recipient_user_id'] ?? null,
             'category' => $validated['category'],
             'contact_name' => $validated['contact_name'] ?? null,
             'contact_phone' => $validated['contact_phone'] ?? null,
@@ -51,7 +51,7 @@ class MessageController extends Controller
             'status' => 'ouvert',
         ]);
 
-        $message->load(['replies', 'media', 'replies.media']);
+        $message->load(['author', 'recipient', 'replies.author', 'replies.recipient', 'media', 'replies.media']);
 
         // TODO: Broadcast MessageCreated event
 
@@ -60,7 +60,7 @@ class MessageController extends Controller
 
     public function show(Message $message): JsonResponse
     {
-        $message->load(['replies', 'media', 'replies.media']);
+        $message->load(['author', 'recipient', 'replies.author', 'replies.recipient', 'media', 'replies.media']);
 
         return response()->json($this->formatMessage($message));
     }
@@ -110,14 +110,39 @@ class MessageController extends Controller
         $validated = $request->validated();
 
         $reply = $message->replies()->create([
-            'author_mode' => $validated['author_mode'],
-            'recipient_mode' => $validated['recipient_mode'] ?? null,
+            'author_user_id' => Auth::id(),
+            'recipient_user_id' => $validated['recipient_user_id'] ?? null,
             'content' => $validated['content'],
         ]);
+
+        $reply->load(['author', 'recipient', 'media']);
 
         // TODO: Broadcast ReplyCreated event
 
         return response()->json($this->formatReply($reply), 201);
+    }
+
+    public function updateReply(UpdateReplyRequest $request, MessageReply $reply): JsonResponse
+    {
+        if ($reply->author_user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $reply->update(['content' => $request->validated()['content']]);
+        $reply->load(['author', 'recipient', 'media']);
+
+        return response()->json($this->formatReply($reply));
+    }
+
+    public function destroyReply(MessageReply $reply): JsonResponse
+    {
+        if ($reply->author_user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $reply->delete();
+
+        return response()->json(null, 204);
     }
 
     public function markReplyAsRead(MessageReply $reply): JsonResponse
@@ -136,9 +161,9 @@ class MessageController extends Controller
     {
         return [
             'id' => $message->id,
-            'author_mode' => $message->author_mode->value,
+            'author_user_id' => $message->author_user_id,
             'author_label' => $message->authorLabel(),
-            'recipient_mode' => $message->recipient_mode?->value,
+            'recipient_user_id' => $message->recipient_user_id,
             'recipient_label' => $message->recipientLabel(),
             'category' => $message->category,
             'contact_name' => $message->contact_name,
@@ -159,9 +184,9 @@ class MessageController extends Controller
         return [
             'id' => $reply->id,
             'message_id' => $reply->message_id,
-            'author_mode' => $reply->author_mode->value,
+            'author_user_id' => $reply->author_user_id,
             'author_label' => $reply->authorLabel(),
-            'recipient_mode' => $reply->recipient_mode?->value,
+            'recipient_user_id' => $reply->recipient_user_id,
             'recipient_label' => $reply->recipientLabel(),
             'content' => $reply->content,
             'read_at' => $reply->read_at?->toISOString(),

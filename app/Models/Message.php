@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\WorkMode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -16,8 +16,8 @@ class Message extends Model implements HasMedia
     use InteractsWithMedia;
 
     protected $fillable = [
-        'author_mode',
-        'recipient_mode',
+        'author_user_id',
+        'recipient_user_id',
         'category',
         'contact_name',
         'contact_phone',
@@ -31,11 +31,19 @@ class Message extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'author_mode' => WorkMode::class,
-            'recipient_mode' => WorkMode::class,
             'read_at' => 'datetime',
             'resolved_at' => 'datetime',
         ];
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_user_id');
+    }
+
+    public function recipient(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recipient_user_id');
     }
 
     public function replies(): HasMany
@@ -45,45 +53,39 @@ class Message extends Model implements HasMedia
 
     public const CATEGORIES = ['accueil', 'atelier', 'location', 'autre'];
 
-    /**
-     * Compte les messages non lus pour un mode donné.
-     * Exclut les notes perso (recipient_mode = null) car elles n'ont pas de statut "lu".
-     */
-    public static function unreadCountForMode(WorkMode|string $mode): int
+    public static function unreadCountForUser(int $userId): int
     {
-        if (is_string($mode)) {
-            $mode = WorkMode::from($mode);
-        }
-
-        return self::where('status', 'ouvert')
+        $unreadMessages = self::where('status', 'ouvert')
             ->whereNull('read_at')
-            ->whereNotNull('recipient_mode') // Exclure les notes perso
-            ->where('recipient_mode', $mode->value)
+            ->whereNotNull('recipient_user_id')
+            ->where('recipient_user_id', $userId)
             ->count();
+
+        $unreadReplies = MessageReply::whereNull('read_at')
+            ->where('author_user_id', '!=', $userId)
+            ->whereHas('message', function ($q) use ($userId) {
+                $q->where('author_user_id', $userId)
+                    ->orWhere('recipient_user_id', $userId);
+            })
+            ->count();
+
+        return $unreadMessages + $unreadReplies;
     }
 
     /**
-     * Compte les messages non lus par catégorie pour un mode donné.
-     * Exclut les notes perso (recipient_mode = null) car elles n'ont pas de statut "lu".
-     *
      * @return array<string, int>
      */
-    public static function unreadCountByCategoryForMode(WorkMode|string $mode): array
+    public static function unreadCountByCategoryForUser(int $userId): array
     {
-        if (is_string($mode)) {
-            $mode = WorkMode::from($mode);
-        }
-
         $counts = self::where('status', 'ouvert')
             ->whereNull('read_at')
-            ->whereNotNull('recipient_mode') // Exclure les notes perso
-            ->where('recipient_mode', $mode->value)
+            ->whereNotNull('recipient_user_id')
+            ->where('recipient_user_id', $userId)
             ->selectRaw('category, COUNT(*) as count')
             ->groupBy('category')
             ->pluck('count', 'category')
             ->toArray();
 
-        // Assurer que toutes les catégories sont présentes
         $result = [];
         foreach (self::CATEGORIES as $cat) {
             $result[$cat] = $counts[$cat] ?? 0;
@@ -92,20 +94,11 @@ class Message extends Model implements HasMedia
         return $result;
     }
 
-    /**
-     * Messages pour un mode donné :
-     * - Messages destinés à ce mode
-     * - Messages créés par ce mode (envoyés ou notes perso)
-     */
-    public static function forMode(WorkMode|string $mode)
+    public static function forUser(int $userId)
     {
-        if (is_string($mode)) {
-            $mode = WorkMode::from($mode);
-        }
-
-        return self::where(function ($q) use ($mode) {
-            $q->where('recipient_mode', $mode->value)
-                ->orWhere('author_mode', $mode->value);
+        return self::where(function ($q) use ($userId) {
+            $q->where('recipient_user_id', $userId)
+                ->orWhere('author_user_id', $userId);
         })
             ->orderByDesc('created_at');
     }
@@ -140,12 +133,12 @@ class Message extends Model implements HasMedia
 
     public function authorLabel(): string
     {
-        return $this->author_mode->label();
+        return $this->author->name;
     }
 
     public function recipientLabel(): ?string
     {
-        return $this->recipient_mode?->label();
+        return $this->recipient?->name;
     }
 
     public function registerMediaCollections(): void
