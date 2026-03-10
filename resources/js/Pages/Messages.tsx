@@ -5,7 +5,9 @@ import { Message, MessageCategory } from '@/types';
 import MessageListItem from '@/Components/Messaging/MessageListItem';
 import MessageDetail from '@/Components/Messaging/MessageDetail';
 import NewMessageForm from '@/Components/Messaging/NewMessageForm';
+import ThemeToggle from '@/Components/Messaging/ThemeToggle';
 import { useMessaging } from '@/Contexts/MessagingContext';
+import { ThemeProvider, useTheme } from '@/Contexts/ThemeContext';
 
 const CATEGORY_LABELS: Record<MessageCategory, string> = {
     accueil: 'Accueil',
@@ -17,6 +19,7 @@ const CATEGORY_LABELS: Record<MessageCategory, string> = {
 const CATEGORIES: MessageCategory[] = ['accueil', 'atelier', 'location', 'autre'];
 
 function MessagesContent() {
+    const { isStarcraft } = useTheme();
     const {
         currentUserId,
         users,
@@ -62,7 +65,7 @@ function MessagesContent() {
         <>
             <Head title="Messages" />
 
-            <div className="messages-page">
+            <div className={`messages-page ${isStarcraft ? 'theme-starcraft' : ''}`}>
                 <div className="messages-page__header">
                     <div className="messages-page__title-row">
                         <h1 className="messages-page__title">Messages</h1>
@@ -112,6 +115,7 @@ function MessagesContent() {
                         })}
                     </div>
                     <div className="messages-page__actions">
+                        <ThemeToggle />
                         <button
                             type="button"
                             className="messages-page__refresh"
@@ -207,8 +211,10 @@ function MessagesContent() {
 
 export default function Messages() {
     return (
-        <MainLayout>
-            <MessagesContent />
-        </MainLayout>
+        <ThemeProvider>
+            <MainLayout>
+                <MessagesContent />
+            </MainLayout>
+        </ThemeProvider>
     );
 }

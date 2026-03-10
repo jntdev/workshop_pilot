@@ -33,6 +33,7 @@
 @use 'messaging/detail';
 @use 'messaging/message-card';
 @use 'messaging/forms' as messaging-forms;
+@use 'messaging/themes/starcraft';
 
 // Photos
 @use 'photos/modal' as photos-modal;

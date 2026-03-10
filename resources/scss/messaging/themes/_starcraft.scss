@@ -1,0 +1,1455 @@
+// =============================================================================
+// THEME STARCRAFT - Messagerie
+// =============================================================================
+// Thème optionnel inspiré de Starcraft/Command & Conquer
+// S'active uniquement quand .theme-starcraft est présent sur le conteneur parent
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 1. VARIABLES
+// -----------------------------------------------------------------------------
+
+// Fond noir semi-transparent (comme Starcraft)
+$sc-bg-panel: rgba(0, 0, 0, 0.75);
+$sc-bg-panel-lighter: rgba(0, 0, 0, 0.65);
+$sc-bg-input: rgba(0, 0, 0, 0.85);
+$sc-bg-hover: rgba(20, 20, 30, 0.8);
+$sc-bg-selected: rgba(0, 50, 100, 0.5);
+
+// Bordures
+$sc-border-red: #8b0000;
+$sc-border-red-glow: #ff3333;
+$sc-border-green: #2d5a27;
+$sc-border-green-glow: #33ff33;
+$sc-border-cyan: #0088aa;
+$sc-border-cyan-glow: #00ffff;
+$sc-border-metal: #3a3a4a;
+$sc-border-metal-light: #5a5a6a;
+
+// Texte
+$sc-text-green: #33ff33;
+$sc-text-green-dim: #22aa22;
+$sc-text-green-dark: #118811;
+$sc-text-white: #e0e0e0;
+$sc-text-gray: #888899;
+$sc-text-orange: #ffaa33;
+$sc-text-red: #ff4444;
+$sc-text-cyan: #00ddff;
+
+// Glows
+$sc-glow-red: 0 0 10px rgba(255, 51, 51, 0.4);
+$sc-glow-green: 0 0 10px rgba(51, 255, 51, 0.4);
+$sc-glow-cyan: 0 0 10px rgba(0, 255, 255, 0.4);
+
+// =============================================================================
+// 2. THEME CONTAINER
+// =============================================================================
+
+.theme-starcraft {
+    // Variables CSS pour override facile
+    --sc-font-mono: 'Courier New', 'Consolas', monospace;
+
+    // Font globale
+    font-family: var(--sc-font-mono);
+
+    // Background : image de fond Starcraft
+    background-color: #000 !important;
+    background-image: url('../../../images/messaging/starcraft-bg.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    min-height: 100vh;
+
+    // -------------------------------------------------------------------------
+    // 3. PANELS
+    // -------------------------------------------------------------------------
+
+    .messaging-panel {
+        background: $sc-bg-panel;
+        border: 2px solid $sc-border-red;
+        border-radius: 2px;
+        box-shadow: $sc-glow-red;
+        overflow-y: scroll;
+    }
+
+    // Message detail sans bordure (déjà dans colonne avec bordure)
+    .message-detail {
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        backdrop-filter: none;
+        overflow-y: auto;
+    }
+
+    // Header des panels
+    .messaging-panel__header,
+    .message-detail__header {
+        background: rgba(0, 0, 0, 0.5);
+        border-bottom: 1px solid $sc-border-red;
+        padding: 0.75rem 1rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.8125rem;
+        color: $sc-text-green;
+        text-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
+    }
+
+    .messaging-panel__title,
+    .message-detail__title {
+        color: $sc-text-green;
+        font-weight: 600;
+    }
+
+    .message-detail__author {
+        color: $sc-text-cyan;
+    }
+
+    .message-detail__recipient {
+        color: $sc-text-green;
+    }
+
+    .message-detail__arrow {
+        color: $sc-text-gray;
+    }
+
+    .message-detail__self {
+        color: $sc-text-gray;
+        font-style: normal;
+    }
+
+    // Close button
+    .messaging-panel__close,
+    .message-detail__close {
+        color: $sc-text-red;
+        font-size: 1.25rem;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        padding: 0.25rem 0.5rem;
+        transition: all 0.2s ease;
+
+        &:hover {
+            border-color: $sc-border-red;
+            box-shadow: $sc-glow-red;
+            text-shadow: 0 0 10px $sc-text-red;
+        }
+    }
+
+    // Meta info
+    .message-detail__meta {
+        background: rgba(0, 0, 0, 0.4);
+        border-bottom: 1px solid $sc-border-metal;
+        padding: 0.5rem 1rem;
+    }
+
+    .message-detail__date {
+        color: $sc-text-gray;
+        font-size: 0.75rem;
+    }
+
+    .message-detail__status {
+        background: rgba(51, 255, 51, 0.15);
+        color: $sc-text-green;
+        border: 1px solid $sc-border-green;
+        border-radius: 2px;
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    // Contact section
+    .message-detail__contact {
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid $sc-border-metal;
+        font-size: 0.8125rem;
+    }
+
+    .message-detail__contact-name {
+        color: $sc-text-white;
+    }
+
+    .message-detail__contact-phone,
+    .message-detail__contact-email {
+        color: $sc-text-cyan;
+
+        &:hover {
+            text-shadow: $sc-glow-cyan;
+        }
+    }
+
+    // Content
+    .message-detail__content {
+        color: $sc-text-white;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid $sc-border-metal;
+        line-height: 1.7;
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. BUTTONS
+    // -------------------------------------------------------------------------
+
+    // Base button style
+    .messaging-panel__tab,
+    .message-detail__action,
+    .message-detail__reply-btn,
+    .message-detail__photo-btn,
+    .reply-form__submit,
+    .reply-form__cancel,
+    .message-form__submit,
+    .message-form__cancel {
+        font-family: var(--sc-font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.75rem;
+        border-radius: 2px;
+        transition: all 0.15s ease;
+        position: relative;
+
+        // Effet biseauté
+        clip-path: polygon(0 4px,
+                4px 0,
+                calc(100% - 4px) 0,
+                100% 4px,
+                100% calc(100% - 4px),
+                calc(100% - 4px) 100%,
+                4px 100%,
+                0 calc(100% - 4px));
+    }
+
+    // Primary button (OK/Submit/Reply)
+    .message-detail__reply-btn,
+    .reply-form__submit,
+    .message-form__submit {
+        background: linear-gradient(180deg,
+                rgba(45, 90, 39, 0.9) 0%,
+                rgba(30, 60, 26, 0.95) 50%,
+                rgba(20, 40, 18, 1) 100%);
+        border: 1px solid $sc-border-green;
+        color: $sc-text-green;
+        padding: 0.5rem 1rem;
+
+        &:hover {
+            border-color: $sc-border-green-glow;
+            box-shadow: $sc-glow-green;
+            text-shadow: 0 0 8px $sc-text-green;
+            transform: translateY(-1px);
+        }
+
+        &:active {
+            background: linear-gradient(180deg,
+                    rgba(20, 40, 18, 1) 0%,
+                    rgba(30, 60, 26, 0.95) 50%,
+                    rgba(45, 90, 39, 0.9) 100%);
+            transform: translateY(0);
+        }
+    }
+
+    // Secondary button (Cancel)
+    .reply-form__cancel,
+    .message-form__cancel,
+    .message-detail__photo-btn {
+        background: linear-gradient(180deg,
+                rgba(60, 60, 70, 0.9) 0%,
+                rgba(40, 40, 50, 0.95) 50%,
+                rgba(25, 25, 35, 1) 100%);
+        border: 1px solid $sc-border-metal;
+        color: $sc-text-gray;
+        padding: 0.5rem 1rem;
+
+        &:hover {
+            border-color: $sc-border-metal-light;
+            color: $sc-text-white;
+            box-shadow: 0 0 8px rgba(100, 100, 120, 0.4);
+        }
+    }
+
+    // Action buttons (Mark read, Resolve, etc.)
+    .message-detail__action {
+        background: linear-gradient(180deg,
+                rgba(50, 50, 65, 0.9) 0%,
+                rgba(35, 35, 48, 0.95) 100%);
+        border: 1px solid $sc-border-metal;
+        color: $sc-text-gray;
+        padding: 0.375rem 0.75rem;
+
+        &:hover {
+            border-color: $sc-border-metal-light;
+            color: $sc-text-white;
+        }
+
+        &--read {
+            border-color: $sc-border-cyan;
+            color: $sc-text-cyan;
+
+            &:hover {
+                box-shadow: $sc-glow-cyan;
+                text-shadow: 0 0 8px $sc-text-cyan;
+            }
+        }
+
+        &--resolve {
+            border-color: $sc-border-green;
+            color: $sc-text-green;
+
+            &:hover {
+                box-shadow: $sc-glow-green;
+                text-shadow: 0 0 8px $sc-text-green;
+            }
+        }
+
+        &--reopen {
+            border-color: $sc-text-orange;
+            color: $sc-text-orange;
+
+            &:hover {
+                box-shadow: 0 0 10px rgba(255, 170, 51, 0.4);
+                text-shadow: 0 0 8px $sc-text-orange;
+            }
+        }
+
+        &--delete {
+            border-color: $sc-border-red;
+            color: $sc-text-red;
+
+            &:hover {
+                box-shadow: $sc-glow-red;
+                text-shadow: 0 0 8px $sc-text-red;
+            }
+
+            &:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+                box-shadow: none;
+            }
+        }
+    }
+
+    // Tab buttons
+    .messaging-panel__tab {
+        background: transparent;
+        border: 1px solid transparent;
+        color: $sc-text-gray;
+        padding: 0.5rem 0.75rem;
+
+        &:hover {
+            color: $sc-text-green-dim;
+            border-color: $sc-border-metal;
+        }
+
+        &--active {
+            background: rgba(45, 90, 39, 0.3);
+            border-color: $sc-border-green;
+            color: $sc-text-green;
+            box-shadow: inset 0 0 10px rgba(51, 255, 51, 0.1);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. FORMS
+    // -------------------------------------------------------------------------
+
+    // Input & Textarea
+    .reply-form__textarea,
+    .message-form__input,
+    .message-form__textarea,
+    .message-form__select,
+    .messaging-filters__search,
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    textarea,
+    select {
+        font-family: var(--sc-font-mono);
+        background: $sc-bg-input !important;
+        background-color: $sc-bg-input !important;
+        border: 1px solid $sc-border-metal;
+        border-radius: 2px;
+        color: $sc-text-green !important;
+        -webkit-text-fill-color: $sc-text-green;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+
+        &::placeholder {
+            color: $sc-text-green-dark;
+            opacity: 0.6;
+        }
+
+        &:focus {
+            outline: none;
+            border-color: $sc-border-green;
+            box-shadow: $sc-glow-green, inset 0 0 10px rgba(51, 255, 51, 0.05);
+        }
+
+        &:hover:not(:focus) {
+            border-color: $sc-border-metal-light;
+        }
+
+        // Override autofill styles
+        &:-webkit-autofill,
+        &:-webkit-autofill:hover,
+        &:-webkit-autofill:focus,
+        &:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px $sc-bg-input inset !important;
+            -webkit-text-fill-color: $sc-text-green !important;
+            background-color: $sc-bg-input !important;
+            caret-color: $sc-text-green;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+    }
+
+    // Select dropdown
+    select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2333ff33' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+
+    // Label
+    label {
+        color: $sc-text-gray;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.6875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. MESSAGE CARDS
+    // -------------------------------------------------------------------------
+
+    .message-list-item {
+        background: $sc-bg-panel-lighter;
+        border: 1px solid $sc-border-metal;
+        border-left: 3px solid $sc-border-metal;
+        border-radius: 2px;
+        margin-bottom: 0.375rem;
+        transition: all 0.15s ease;
+
+        &:hover {
+            background: $sc-bg-hover;
+            border-color: $sc-border-metal-light;
+        }
+
+        &--selected {
+            background: $sc-bg-selected;
+            border-color: $sc-border-cyan;
+            border-left-color: $sc-border-cyan;
+        }
+
+        &--unread {
+            border-left-color: $sc-border-green-glow;
+            background: rgba(0, 30, 0, 0.6);
+
+            .message-list-item__author {
+                color: $sc-text-green;
+                text-shadow: 0 0 8px rgba(51, 255, 51, 0.3);
+            }
+        }
+
+        &--resolved {
+            opacity: 0.6;
+            border-left-color: $sc-text-gray;
+        }
+    }
+
+    .message-list-item__header {
+        color: $sc-text-gray;
+        font-size: 0.75rem;
+    }
+
+    .message-list-item__author {
+        color: $sc-text-cyan;
+        font-weight: 600;
+    }
+
+    .message-list-item__recipient {
+        color: $sc-text-green-dim;
+    }
+
+    .message-list-item__date {
+        color: $sc-text-gray;
+        font-size: 0.6875rem;
+    }
+
+    .message-list-item__preview {
+        color: $sc-text-white;
+        opacity: 0.8;
+        font-size: 0.8125rem;
+    }
+
+    .message-list-item__category {
+        background: rgba(0, 136, 170, 0.2);
+        border: 1px solid $sc-border-cyan;
+        color: $sc-text-cyan;
+        font-size: 0.625rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0.125rem 0.375rem;
+        border-radius: 2px;
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. REPLIES SECTION
+    // -------------------------------------------------------------------------
+
+    .message-detail__replies-section {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    .message-detail__replies-header {
+        background: rgba(0, 0, 0, 0.4);
+        border-bottom: 1px solid $sc-border-metal;
+
+        h3 {
+            color: $sc-text-green;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.75rem;
+        }
+    }
+
+    .message-detail__reply {
+        background: $sc-bg-panel-lighter;
+        border: 1px solid $sc-border-metal;
+        border-left: 3px solid $sc-border-metal;
+        border-radius: 2px;
+        margin-bottom: 0.5rem;
+
+        &--unread {
+            border-left-color: $sc-border-cyan-glow;
+            background: rgba(0, 40, 60, 0.5);
+        }
+
+        &--pending-read {
+            border-left-color: $sc-text-orange;
+        }
+
+        &--read-by-other {
+            border-left-color: $sc-border-green;
+        }
+    }
+
+    .message-detail__reply-author {
+        color: $sc-text-cyan;
+    }
+
+    .message-detail__reply-recipient {
+        color: $sc-text-green-dim;
+    }
+
+    .message-detail__reply-date {
+        color: $sc-text-gray;
+        font-size: 0.6875rem;
+    }
+
+    .message-detail__reply-content {
+        color: $sc-text-white;
+    }
+
+    .message-detail__reply-read-status {
+        color: $sc-text-green;
+        font-size: 0.625rem;
+        text-transform: uppercase;
+    }
+
+    .message-detail__reply-footer {
+        background: rgba(0, 0, 0, 0.4);
+        border-top: 1px solid $sc-border-metal;
+    }
+
+    .message-detail__no-replies {
+        color: $sc-text-gray;
+        font-style: normal;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.75rem;
+    }
+
+    // Read status
+    .message-detail__read-status {
+        color: $sc-text-green;
+        font-style: normal;
+        font-size: 0.75rem;
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. BADGES
+    // -------------------------------------------------------------------------
+
+    .messaging-panel__badge,
+    .message-list-item__badge {
+        background: rgba(139, 0, 0, 0.8);
+        border: 1px solid $sc-border-red;
+        color: $sc-text-white;
+        font-family: var(--sc-font-mono);
+        font-size: 0.625rem;
+        font-weight: 600;
+        min-width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 2px;
+        box-shadow: $sc-glow-red;
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. SCROLLBAR
+    // -------------------------------------------------------------------------
+
+    // Webkit scrollbar
+    ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: linear-gradient(90deg,
+                rgba(20, 20, 30, 1) 0%,
+                rgba(10, 10, 18, 1) 50%,
+                rgba(20, 20, 30, 1) 100%);
+        border: 1px solid $sc-border-metal;
+        border-radius: 0;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg,
+                rgba(70, 70, 85, 1) 0%,
+                rgba(50, 50, 65, 1) 50%,
+                rgba(35, 35, 48, 1) 100%);
+        border: 1px solid $sc-border-green;
+        border-radius: 0;
+        min-height: 40px;
+
+        &:hover {
+            border-color: $sc-border-green-glow;
+            box-shadow: 0 0 5px rgba(51, 255, 51, 0.3);
+        }
+
+        &:active {
+            background: linear-gradient(180deg,
+                    rgba(35, 35, 48, 1) 0%,
+                    rgba(50, 50, 65, 1) 50%,
+                    rgba(70, 70, 85, 1) 100%);
+        }
+    }
+
+    ::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+
+    // Firefox scrollbar
+    scrollbar-width: thin;
+    scrollbar-color: $sc-border-metal-light transparent;
+
+    // -------------------------------------------------------------------------
+    // 10. FILTERS
+    // -------------------------------------------------------------------------
+
+    .messaging-filters {
+        background: rgba(20, 20, 30, 0.9);
+        border-bottom: 1px solid $sc-border-metal;
+        padding: 0.75rem;
+    }
+
+    .messaging-filters__tabs {
+        gap: 0.25rem;
+    }
+
+    // -------------------------------------------------------------------------
+    // 11. THEME TOGGLE BUTTON
+    // -------------------------------------------------------------------------
+
+    .theme-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        background: linear-gradient(180deg,
+                rgba(50, 50, 65, 0.9) 0%,
+                rgba(30, 30, 42, 0.95) 100%);
+        border: 1px solid $sc-border-metal;
+        border-radius: 2px;
+        color: $sc-text-gray;
+        font-family: var(--sc-font-mono);
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0.375rem 0.625rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            border-color: $sc-border-metal-light;
+            color: $sc-text-white;
+        }
+
+        &--active {
+            border-color: $sc-border-green;
+            color: $sc-text-green;
+            box-shadow: $sc-glow-green;
+
+            &:hover {
+                border-color: $sc-border-green-glow;
+            }
+        }
+
+        &__icon {
+            font-size: 0.875rem;
+        }
+
+        &__label {
+            font-weight: 600;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 12. PHOTO GALLERY
+    // -------------------------------------------------------------------------
+
+    .photo-gallery {
+        background: rgba(10, 10, 18, 0.8);
+        border: 1px solid $sc-border-metal;
+        border-radius: 2px;
+        padding: 0.5rem;
+    }
+
+    .photo-gallery__item {
+        border: 1px solid $sc-border-metal;
+        border-radius: 2px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+
+        &:hover {
+            border-color: $sc-border-cyan;
+            box-shadow: $sc-glow-cyan;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 13. PHOTO UPLOAD MODAL
+    // -------------------------------------------------------------------------
+
+    .photo-upload-modal__overlay {
+        background: rgba(5, 5, 10, 0.9);
+        backdrop-filter: blur(5px);
+    }
+
+    .photo-upload-modal {
+        background: $sc-bg-panel;
+        border: 2px solid $sc-border-red;
+        border-radius: 2px;
+        box-shadow: $sc-glow-red;
+        clip-path: polygon(0 12px,
+                12px 0,
+                calc(100% - 12px) 0,
+                100% 12px,
+                100% calc(100% - 12px),
+                calc(100% - 12px) 100%,
+                12px 100%,
+                0 calc(100% - 12px));
+    }
+
+    .photo-upload-modal__header {
+        background: linear-gradient(180deg,
+                rgba(60, 60, 80, 0.95) 0%,
+                rgba(35, 35, 50, 0.98) 100%);
+        border-bottom: 1px solid $sc-border-red;
+
+        h2 {
+            color: $sc-text-green;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.875rem;
+            text-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
+        }
+    }
+
+    .photo-upload-modal__close {
+        color: $sc-text-red;
+        background: transparent;
+        border: 1px solid transparent;
+
+        &:hover {
+            border-color: $sc-border-red;
+            box-shadow: $sc-glow-red;
+        }
+    }
+
+    .photo-upload-modal__content {
+        background: rgba(10, 10, 18, 0.8);
+    }
+
+    .photo-upload-modal__instructions {
+        color: $sc-text-gray;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.75rem;
+    }
+
+    .photo-upload-modal__qr-image {
+        border: 2px solid $sc-border-green;
+        border-radius: 2px;
+        box-shadow: $sc-glow-green;
+    }
+
+    .photo-upload-modal__done {
+        background: linear-gradient(180deg,
+                rgba(45, 90, 39, 0.9) 0%,
+                rgba(25, 50, 22, 0.95) 100%);
+        border: 1px solid $sc-border-green;
+        color: $sc-text-green;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-family: var(--sc-font-mono);
+
+        &:hover {
+            border-color: $sc-border-green-glow;
+            box-shadow: $sc-glow-green;
+        }
+
+        &--disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    }
+
+    .photo-upload-modal__error {
+        background: rgba(139, 0, 0, 0.3);
+        border: 1px solid $sc-border-red;
+        color: $sc-text-red;
+        border-radius: 2px;
+    }
+
+    .photo-upload-modal__loading {
+        color: $sc-text-green;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    // -------------------------------------------------------------------------
+    // 14. MESSAGE FORM
+    // -------------------------------------------------------------------------
+
+    .message-form {
+        background: $sc-bg-panel;
+        border: 2px solid $sc-border-red;
+        box-shadow: $sc-glow-red;
+    }
+
+    .message-form__header {
+        background: rgba(0, 0, 0, 0.4);
+        border-bottom: 1px solid $sc-border-red;
+
+        h2,
+        h3 {
+            color: $sc-text-green;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    }
+
+    .message-form__group {
+        label {
+            color: $sc-text-gray;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 15. NEW MESSAGE FORM
+    // -------------------------------------------------------------------------
+
+    .new-message-form {
+        background: $sc-bg-panel;
+        border: 2px solid $sc-border-red;
+        border-radius: 2px;
+        box-shadow: $sc-glow-red;
+        margin: 0 0 1rem;
+    }
+
+    .new-message-form__header {
+        background: rgba(0, 0, 0, 0.4);
+        border-bottom: 1px solid $sc-border-red;
+        padding: 0.75rem 1rem;
+        margin: -1rem -1rem 1rem;
+
+        h3 {
+            color: $sc-text-green;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.875rem;
+            text-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
+            margin: 0;
+        }
+    }
+
+    .new-message-form__close {
+        color: $sc-text-red;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        padding: 0.25rem 0.5rem;
+        transition: all 0.2s ease;
+
+        &:hover {
+            border-color: $sc-border-red;
+            box-shadow: $sc-glow-red;
+            text-shadow: 0 0 10px $sc-text-red;
+        }
+    }
+
+    .new-message-form__field {
+        margin-bottom: 1rem;
+
+        label {
+            color: $sc-text-gray;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.6875rem;
+            font-family: var(--sc-font-mono);
+        }
+
+        input,
+        textarea {
+            font-family: var(--sc-font-mono);
+            background: $sc-bg-input !important;
+            background-color: $sc-bg-input !important;
+            border: 1px solid $sc-border-metal;
+            border-radius: 2px;
+            color: $sc-text-green !important;
+            font-size: 0.875rem;
+            -webkit-text-fill-color: $sc-text-green;
+
+            &::placeholder {
+                color: $sc-text-green-dark;
+                opacity: 0.6;
+            }
+
+            &:focus {
+                outline: none;
+                border-color: $sc-border-green;
+                box-shadow: $sc-glow-green, inset 0 0 10px rgba(51, 255, 51, 0.05);
+            }
+
+            // Override autofill styles
+            &:-webkit-autofill,
+            &:-webkit-autofill:hover,
+            &:-webkit-autofill:focus,
+            &:-webkit-autofill:active {
+                -webkit-box-shadow: 0 0 0 1000px $sc-bg-input inset !important;
+                -webkit-text-fill-color: $sc-text-green !important;
+                background-color: $sc-bg-input !important;
+                caret-color: $sc-text-green;
+                transition: background-color 5000s ease-in-out 0s;
+            }
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+    }
+
+    .new-message-form__row {
+        gap: 1rem;
+    }
+
+    .new-message-form__radio-group {
+        gap: 0.5rem 1rem;
+    }
+
+    .new-message-form__radio {
+        font-family: var(--sc-font-mono);
+        font-size: 0.8125rem;
+        color: $sc-text-gray;
+        cursor: pointer;
+        transition: color 0.15s ease;
+
+        &:hover {
+            color: $sc-text-white;
+        }
+
+        input[type="radio"] {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1px solid $sc-border-metal;
+            border-radius: 50%;
+            background: $sc-bg-input;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s ease;
+
+            &:checked {
+                border-color: $sc-border-green;
+                background: $sc-bg-input;
+
+                &::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 6px;
+                    height: 6px;
+                    background: $sc-text-green;
+                    border-radius: 50%;
+                    box-shadow: 0 0 6px $sc-text-green;
+                }
+            }
+
+            &:hover {
+                border-color: $sc-border-metal-light;
+            }
+
+            &:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(51, 255, 51, 0.2);
+            }
+        }
+
+        span {
+            transition: color 0.15s ease;
+        }
+
+        &:has(input:checked) span {
+            color: $sc-text-green;
+        }
+    }
+
+    .new-message-form__contact {
+        background: rgba(15, 15, 25, 0.5);
+        border: 1px solid $sc-border-metal;
+        border-radius: 2px;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .new-message-form__field--small {
+        margin-bottom: 0.5rem;
+
+        label {
+            font-size: 0.625rem;
+        }
+
+        input {
+            font-size: 0.8125rem;
+            padding: 0.375rem 0.5rem;
+        }
+    }
+
+    .new-message-form__error {
+        background: rgba(139, 0, 0, 0.3);
+        border: 1px solid $sc-border-red;
+        border-radius: 2px;
+        color: $sc-text-red;
+        font-family: var(--sc-font-mono);
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .new-message-form__actions {
+        padding-top: 0.5rem;
+        border-top: 1px solid $sc-border-metal;
+        margin-top: 0.5rem;
+    }
+
+    .new-message-form__cancel {
+        background: linear-gradient(180deg,
+                rgba(60, 60, 70, 0.9) 0%,
+                rgba(40, 40, 50, 0.95) 50%,
+                rgba(25, 25, 35, 1) 100%);
+        border: 1px solid $sc-border-metal;
+        color: $sc-text-gray;
+        border-radius: 2px;
+        font-family: var(--sc-font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.75rem;
+        padding: 0.5rem 1rem;
+        clip-path: polygon(0 4px,
+                4px 0,
+                calc(100% - 4px) 0,
+                100% 4px,
+                100% calc(100% - 4px),
+                calc(100% - 4px) 100%,
+                4px 100%,
+                0 calc(100% - 4px));
+
+        &:hover {
+            border-color: $sc-border-metal-light;
+            color: $sc-text-white;
+        }
+    }
+
+    .new-message-form__submit {
+        background: linear-gradient(180deg,
+                rgba(45, 90, 39, 0.9) 0%,
+                rgba(30, 60, 26, 0.95) 50%,
+                rgba(20, 40, 18, 1) 100%);
+        border: 1px solid $sc-border-green;
+        color: $sc-text-green;
+        border-radius: 2px;
+        font-family: var(--sc-font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.75rem;
+        padding: 0.5rem 1rem;
+        clip-path: polygon(0 4px,
+                4px 0,
+                calc(100% - 4px) 0,
+                100% 4px,
+                100% calc(100% - 4px),
+                calc(100% - 4px) 100%,
+                4px 100%,
+                0 calc(100% - 4px));
+
+        &:hover {
+            border-color: $sc-border-green-glow;
+            box-shadow: $sc-glow-green;
+            text-shadow: 0 0 8px $sc-text-green;
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    }
+
+    // Reply form
+    .reply-form {
+        background: $sc-bg-panel-lighter;
+        border: 1px solid $sc-border-metal;
+        border-radius: 2px;
+    }
+
+    .reply-form__header {
+        color: $sc-text-gray;
+        font-family: var(--sc-font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.6875rem;
+        border-bottom: 1px solid $sc-border-metal;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .reply-form__close {
+        color: $sc-text-red;
+        background: transparent;
+        border: none;
+
+        &:hover {
+            text-shadow: 0 0 8px $sc-text-red;
+        }
+    }
+
+    .reply-form__input,
+    .reply-form__textarea {
+        font-family: var(--sc-font-mono);
+        background: $sc-bg-input;
+        border: 1px solid $sc-border-metal;
+        border-radius: 2px;
+        color: $sc-text-green;
+        font-size: 0.875rem;
+
+        &::placeholder {
+            color: $sc-text-green-dark;
+            opacity: 0.6;
+        }
+
+        &:focus {
+            outline: none;
+            border-color: $sc-border-green;
+            box-shadow: $sc-glow-green;
+        }
+    }
+
+    .reply-form__error {
+        background: rgba(139, 0, 0, 0.3);
+        border: 1px solid $sc-border-red;
+        border-radius: 2px;
+        color: $sc-text-red;
+        font-size: 0.75rem;
+    }
+
+    .reply-form__actions {
+        border-top: 1px solid $sc-border-metal;
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .reply-form__cancel {
+        background: linear-gradient(180deg, rgba(50, 50, 60, 0.9) 0%, rgba(30, 30, 40, 0.95) 100%);
+        border: 1px solid $sc-border-metal;
+        color: $sc-text-gray;
+        border-radius: 2px;
+        font-family: var(--sc-font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.6875rem;
+
+        &:hover {
+            border-color: $sc-border-metal-light;
+            color: $sc-text-white;
+        }
+    }
+
+    .reply-form__submit {
+        background: linear-gradient(180deg, rgba(45, 90, 39, 0.9) 0%, rgba(25, 50, 22, 0.95) 100%);
+        border: 1px solid $sc-border-green;
+        color: $sc-text-green;
+        border-radius: 2px;
+        font-family: var(--sc-font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.6875rem;
+
+        &:hover {
+            border-color: $sc-border-green-glow;
+            box-shadow: $sc-glow-green;
+            text-shadow: 0 0 8px $sc-text-green;
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 16. PAGE MESSAGES SPECIFICS
+    // -------------------------------------------------------------------------
+
+    &.messages-page {
+        padding: 1rem;
+    }
+
+    .messages-page__header {
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        background: $sc-bg-panel-lighter;
+        border-radius: 2px;
+    }
+
+    .messages-page__title {
+        color: $sc-text-green;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        text-shadow: 0 0 15px rgba(51, 255, 51, 0.5);
+    }
+
+    .messages-page__mode {
+        background: linear-gradient(180deg, rgba(0, 100, 150, 0.9) 0%, rgba(0, 60, 90, 0.95) 100%);
+        border: 1px solid $sc-border-cyan;
+        color: $sc-text-cyan;
+        border-radius: 2px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.75rem;
+    }
+
+    .messages-page__badge {
+        background: rgba(139, 0, 0, 0.8);
+        border: 1px solid $sc-border-red;
+        border-radius: 2px;
+        box-shadow: $sc-glow-red;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    .messages-page__subtitle {
+        color: $sc-text-gray;
+
+        strong {
+            color: $sc-text-cyan;
+        }
+    }
+
+    .messages-page__toolbar {
+        background: $sc-bg-panel;
+        border: 2px solid $sc-border-red;
+        border-radius: 2px;
+        box-shadow: $sc-glow-red;
+    }
+
+    .messages-page__filter {
+        background: transparent;
+        border: 1px solid $sc-border-metal;
+        color: $sc-text-gray;
+        border-radius: 2px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.6875rem;
+        font-family: var(--sc-font-mono);
+        transition: all 0.15s ease;
+
+        &:hover {
+            border-color: $sc-border-metal-light;
+            color: $sc-text-white;
+            background: rgba(40, 40, 55, 0.5);
+        }
+
+        &--active {
+            background: rgba(45, 90, 39, 0.4);
+            border-color: $sc-border-green;
+            color: $sc-text-green;
+            box-shadow: inset 0 0 10px rgba(51, 255, 51, 0.1);
+
+            &:hover {
+                background: rgba(45, 90, 39, 0.5);
+            }
+        }
+    }
+
+    .messages-page__filter-badge {
+        background: rgba(139, 0, 0, 0.9);
+        border: 1px solid $sc-border-red;
+        border-radius: 2px;
+        font-family: var(--sc-font-mono);
+        box-shadow: $sc-glow-red;
+    }
+
+    .messages-page__refresh {
+        background: linear-gradient(180deg, rgba(50, 50, 65, 0.9) 0%, rgba(30, 30, 42, 0.95) 100%);
+        border: 1px solid $sc-border-metal;
+        color: $sc-text-gray;
+        border-radius: 2px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.6875rem;
+        font-family: var(--sc-font-mono);
+
+        &:hover {
+            border-color: $sc-border-metal-light;
+            color: $sc-text-white;
+        }
+    }
+
+    .messages-page__new-btn {
+        background: linear-gradient(180deg, rgba(45, 90, 39, 0.9) 0%, rgba(25, 50, 22, 0.95) 100%);
+        border: 1px solid $sc-border-green;
+        color: $sc-text-green;
+        border-radius: 2px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.6875rem;
+        font-family: var(--sc-font-mono);
+
+        &:hover {
+            border-color: $sc-border-green-glow;
+            box-shadow: $sc-glow-green;
+            text-shadow: 0 0 8px $sc-text-green;
+        }
+    }
+
+    .messages-page__columns {
+        gap: 1rem;
+    }
+
+    .messages-page__left,
+    .messages-page__right {
+        background: $sc-bg-panel;
+        border: 2px solid $sc-border-red;
+        border-radius: 2px;
+        box-shadow: $sc-glow-red;
+        padding: 0.75rem;
+        overflow-y: scroll;
+    }
+
+    .messages-page__list {
+        overflow-y: scroll; // Toujours visible
+        padding-right: 0.25rem;
+    }
+
+    .messages-page__loading,
+    .messages-page__empty,
+    .messages-page__no-selection {
+        background: $sc-bg-panel-lighter;
+        border: 1px dashed $sc-border-metal;
+        border-radius: 2px;
+        color: $sc-text-gray;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.8125rem;
+    }
+
+    // -------------------------------------------------------------------------
+    // 16. ANIMATIONS
+    // -------------------------------------------------------------------------
+
+    @keyframes sc-pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.7;
+        }
+    }
+
+    @keyframes sc-glow-pulse {
+
+        0%,
+        100% {
+            box-shadow: $sc-glow-green;
+        }
+
+        50% {
+            box-shadow: 0 0 20px rgba(51, 255, 51, 0.6);
+        }
+    }
+
+    // Unread indicator pulse
+    .message-list-item--unread {
+        animation: sc-pulse 2s ease-in-out infinite;
+    }
+}
+
+// =============================================================================
+// DEFAULT THEME - Theme toggle styling (outside .theme-starcraft)
+// =============================================================================
+
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #666;
+    font-size: 0.75rem;
+    padding: 0.375rem 0.625rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #eee;
+        border-color: #ccc;
+    }
+
+    &--active {
+        background: #2d5a27;
+        border-color: #33ff33;
+        color: #33ff33;
+
+        &:hover {
+            background: #3a7a32;
+        }
+    }
+
+    &__icon {
+        font-size: 0.875rem;
+    }
+
+    &__label {
+        font-weight: 600;
+    }
+}
