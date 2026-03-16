@@ -727,6 +727,26 @@ $side-panel-width-planning: 700px;
     &--dimmed {
       opacity: 0.25;
     }
+
+    // Motif hachuré pour les réservations en attente d'acompte
+    &--pending-acompte {
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          -45deg,
+          transparent,
+          transparent 3px,
+          rgba(255, 255, 255, 0.4) 3px,
+          rgba(255, 255, 255, 0.4) 6px
+        );
+        pointer-events: none;
+        z-index: 1;
+      }
+    }
   }
 
   &__cell-banner {

@@ -61,6 +61,8 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
     const [formData, setFormData] = useState<ReservationFormData>(initialFormData);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSendingAcompteEmail, setIsSendingAcompteEmail] = useState(false);
+    const [acompteEmailMessage, setAcompteEmailMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -228,6 +230,58 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
             payments: prev.payments.filter((_, i) => i !== index),
         }));
     }, []);
+
+    // Envoi email demande d'acompte - utilise les données du formulaire directement
+    const handleSendAcompteEmail = useCallback(async () => {
+        const clientEmail = newClientData.email;
+        const clientNom = `${newClientData.nom} ${newClientData.prenom}`.trim();
+
+        if (!clientEmail || !formData.acompte_montant) return;
+
+        setIsSendingAcompteEmail(true);
+        setAcompteEmailMessage(null);
+
+        try {
+            // Toujours utiliser la route directe avec les données du formulaire
+            const response = await fetch('/api/reservations/send-acompte-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    client_email: clientEmail,
+                    client_nom: clientNom,
+                    montant_acompte: parseFloat(formData.acompte_montant),
+                    date_reservation: formData.date_reservation,
+                    date_retour: formData.date_retour,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setAcompteEmailMessage({ type: 'success', text: data.message });
+            } else {
+                setAcompteEmailMessage({ type: 'error', text: data.error || 'Erreur lors de l\'envoi' });
+            }
+        } catch {
+            setAcompteEmailMessage({ type: 'error', text: 'Erreur de connexion' });
+        } finally {
+            setIsSendingAcompteEmail(false);
+        }
+    }, [newClientData.email, newClientData.nom, newClientData.prenom, formData.acompte_montant, formData.date_reservation, formData.date_retour]);
+
+    // Peut envoyer email acompte si: acompte demandé, montant > 0, email dans le formulaire, dates renseignées
+    const canSendAcompteEmail = useMemo(() => {
+        return (
+            formData.acompte_demande &&
+            parseFloat(formData.acompte_montant) > 0 &&
+            newClientData.email &&
+            formData.date_reservation &&
+            formData.date_retour
+        );
+    }, [formData.acompte_demande, formData.acompte_montant, newClientData.email, formData.date_reservation, formData.date_retour]);
 
     const handleClientSelect = useCallback((client: Client) => {
         setSelectedClient(client);
@@ -814,6 +868,30 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                             <div className="reservation-form__tag reservation-form__tag--success">
                                 Acompte reçu
                             </div>
+                        )}
+
+                        {/* Bouton envoi email demande d'acompte */}
+                        {canSendAcompteEmail && !formData.acompte_paye_le && (
+                            <div className="reservation-form__acompte-email">
+                                <button
+                                    type="button"
+                                    className="reservation-form__btn reservation-form__btn--secondary"
+                                    onClick={handleSendAcompteEmail}
+                                    disabled={isSendingAcompteEmail}
+                                >
+                                    {isSendingAcompteEmail ? 'Envoi en cours...' : 'Envoyer demande d\'acompte'}
+                                </button>
+                                {acompteEmailMessage && (
+                                    <span className={`reservation-form__${acompteEmailMessage.type === 'success' ? 'success' : 'error'}`}>
+                                        {acompteEmailMessage.text}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                        {!newClientData.email && formData.acompte_demande && parseFloat(formData.acompte_montant) > 0 && (
+                            <span className="reservation-form__hint">
+                                Renseignez l'email du client pour envoyer la demande
+                            </span>
                         )}
                     </div>
                 )}

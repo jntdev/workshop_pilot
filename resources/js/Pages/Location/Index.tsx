@@ -229,8 +229,8 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                     actions.cancelSelection();
                 }
             } else {
-                // Passer directement en mode édition
-                setViewingReservationId(null);
+                // Mode édition avec highlight dans l'agenda
+                setViewingReservationId(reservationId);
                 setEditingReservation(reservation);
                 actions.loadReservation(reservation);
             }
@@ -547,7 +547,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
 
                     return (
                         <div
-                            className={`location-table__cell ${separatorClass} ${day.isToday ? 'location-table__cell--today' : ''} ${isHS ? 'location-table__cell--hs' : ''} ${isSelected ? 'location-table__cell--selected' : ''} ${isReserved && !isSelected ? 'location-table__cell--reserved' : ''} ${isViewing ? 'location-table__cell--viewing' : ''} ${isDimmed ? 'location-table__cell--dimmed' : ''} ${isSelectionMode ? 'location-table__cell--selectable' : ''}`}
+                            className={`location-table__cell ${separatorClass} ${day.isToday ? 'location-table__cell--today' : ''} ${isHS ? 'location-table__cell--hs' : ''} ${isSelected ? 'location-table__cell--selected' : ''} ${isReserved && !isSelected ? 'location-table__cell--reserved' : ''} ${isViewing ? 'location-table__cell--viewing' : ''} ${isDimmed ? 'location-table__cell--dimmed' : ''} ${isSelectionMode ? 'location-table__cell--selectable' : ''} ${reservedInfo?.statut === 'en_attente_acompte' ? 'location-table__cell--pending-acompte' : ''}`}
                             data-bike-id={bike.column_id}
                             data-status={bike.status}
                             data-color={cellColor}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreReservationRequest;
 use App\Http\Requests\UpdateReservationRequest;
+use App\Mail\AcompteRequestMail;
 use App\Models\Client;
 use App\Models\Reservation;
 use App\Services\Kpis\MonthlyKpiUpdater;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class ReservationController extends Controller
 {
@@ -285,6 +287,90 @@ class ReservationController extends Controller
         $reservation->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function sendAcompteEmail(string $id): JsonResponse
+    {
+        $reservation = Reservation::with('client')->find($id);
+
+        if (! $reservation) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Réservation non trouvée',
+            ], 404);
+        }
+
+        if (! $reservation->client) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Aucun client associé à cette réservation',
+            ], 422);
+        }
+
+        if (! $reservation->client->email) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Le client n\'a pas d\'adresse email',
+            ], 422);
+        }
+
+        $montantAcompte = $reservation->acompte_montant;
+        if (! $montantAcompte || $montantAcompte <= 0) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Le montant de l\'acompte n\'est pas renseigné',
+            ], 422);
+        }
+
+        Mail::mailer('location')
+            ->to($reservation->client->email)
+            ->send(new AcompteRequestMail($reservation, $montantAcompte));
+
+        return response()->json([
+            'success' => true,
+            'message' => "Email envoyé à {$reservation->client->email}",
+        ]);
+    }
+
+    /**
+     * Envoyer un email d'acompte sans réservation sauvegardée.
+     * Accepte les données directement dans le body.
+     */
+    public function sendAcompteEmailDirect(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'client_email' => ['required', 'email'],
+            'client_nom' => ['required', 'string'],
+            'montant_acompte' => ['required', 'numeric', 'min:0.01'],
+            'date_reservation' => ['required', 'date'],
+            'date_retour' => ['required', 'date'],
+        ]);
+
+        // Créer un objet temporaire pour le mail
+        $reservationData = (object) [
+            'date_reservation' => $validated['date_reservation'],
+            'date_retour' => $validated['date_retour'],
+            'client' => (object) [
+                'nom' => $validated['client_nom'],
+                'prenom' => '',
+            ],
+        ];
+
+        try {
+            Mail::mailer('location')
+                ->to($validated['client_email'])
+                ->send(new AcompteRequestMail($reservationData, $validated['montant_acompte']));
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Erreur lors de l\'envoi : ' . $e->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Email envoyé à {$validated['client_email']}",
+        ]);
     }
 
     private function formatReservation(Reservation $reservation): array

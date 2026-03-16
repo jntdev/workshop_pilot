@@ -51,6 +51,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/reservations', [ReservationController::class, 'store']);
     Route::put('/reservations/{id}', [ReservationController::class, 'update']);
     Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
+    Route::post('/reservations/{id}/send-acompte-email', [ReservationController::class, 'sendAcompteEmail']);
+    Route::post('/reservations/send-acompte-email', [ReservationController::class, 'sendAcompteEmailDirect']);
 
     // Location API routes
     Route::get('/location/planning', [LocationController::class, 'planning']);
