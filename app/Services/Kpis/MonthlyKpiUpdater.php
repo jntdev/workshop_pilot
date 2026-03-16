@@ -53,7 +53,7 @@ class MonthlyKpiUpdater
         $paymentsByMonth = [];
 
         foreach ($reservation->payments as $payment) {
-            $key = $payment->paid_at->year . '-' . $payment->paid_at->month;
+            $key = $payment->paid_at->year.'-'.$payment->paid_at->month;
             if (! isset($paymentsByMonth[$key])) {
                 $paymentsByMonth[$key] = [
                     'year' => $payment->paid_at->year,
@@ -66,7 +66,7 @@ class MonthlyKpiUpdater
 
         // Ajouter l'acompte si payé
         if ($reservation->acompte_paye_le && $reservation->acompte_montant > 0) {
-            $key = $reservation->acompte_paye_le->year . '-' . $reservation->acompte_paye_le->month;
+            $key = $reservation->acompte_paye_le->year.'-'.$reservation->acompte_paye_le->month;
             if (! isset($paymentsByMonth[$key])) {
                 $paymentsByMonth[$key] = [
                     'year' => $reservation->acompte_paye_le->year,
@@ -99,7 +99,12 @@ class MonthlyKpiUpdater
                 ->whereMonth('acompte_paye_le', $month)
                 ->sum('acompte_montant');
 
-            $totalRevenue = (float) $paymentsTotal + (float) $acomptesTotal;
+            // Total TTC (les paiements et acomptes sont en TTC)
+            $totalTtc = (float) $paymentsTotal + (float) $acomptesTotal;
+
+            // Convertir TTC en HT avec le taux de TVA configuré
+            $tvaRate = config('location.tva_rate', 20);
+            $totalHt = $totalTtc / (1 + $tvaRate / 100);
 
             // Compter le nombre de réservations avec au moins un paiement ce mois
             $reservationIds = \App\Models\ReservationPayment::whereYear('paid_at', $year)
@@ -123,12 +128,14 @@ class MonthlyKpiUpdater
                     [
                         'invoice_count' => 0,
                         'revenue_ht' => 0,
+                        'revenue_ttc' => 0,
                         'margin_ht' => 0,
                     ]
                 );
 
             $kpi->update([
-                'revenue_ht' => $totalRevenue,
+                'revenue_ht' => round($totalHt, 2),
+                'revenue_ttc' => round($totalTtc, 2),
                 'invoice_count' => $uniqueReservations,
                 'margin_ht' => 0, // Marge non disponible pour Location
             ]);

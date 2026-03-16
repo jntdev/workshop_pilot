@@ -90,6 +90,9 @@ class RebuildMonthlyKpis extends Command
         $deleted = MonthlyKpi::where('metier', Metier::Location->value)->delete();
         $this->line("  - {$deleted} ligne(s) supprimée(s)");
 
+        // Taux de TVA pour conversion TTC -> HT
+        $tvaRate = config('location.tva_rate', 20);
+
         // Agréger les paiements par année/mois
         $paymentAggregates = ReservationPayment::select(
             DB::raw('YEAR(paid_at) as year'),
@@ -99,7 +102,7 @@ class RebuildMonthlyKpis extends Command
         )
             ->groupBy(DB::raw('YEAR(paid_at)'), DB::raw('MONTH(paid_at)'))
             ->get()
-            ->keyBy(fn ($row) => $row->year . '-' . $row->month);
+            ->keyBy(fn ($row) => $row->year.'-'.$row->month);
 
         // Agréger les acomptes par année/mois
         $acompteAggregates = Reservation::whereNotNull('acompte_paye_le')
@@ -112,7 +115,7 @@ class RebuildMonthlyKpis extends Command
             )
             ->groupBy(DB::raw('YEAR(acompte_paye_le)'), DB::raw('MONTH(acompte_paye_le)'))
             ->get()
-            ->keyBy(fn ($row) => $row->year . '-' . $row->month);
+            ->keyBy(fn ($row) => $row->year.'-'.$row->month);
 
         // Combiner les deux sources
         $allMonths = $paymentAggregates->keys()->merge($acompteAggregates->keys())->unique();
@@ -125,7 +128,11 @@ class RebuildMonthlyKpis extends Command
             $year = $payment?->year ?? $acompte->year;
             $month = $payment?->month ?? $acompte->month;
 
-            $totalRevenue = ($payment->total_amount ?? 0) + ($acompte->total_acompte ?? 0);
+            // Total TTC (les paiements et acomptes sont en TTC)
+            $totalTtc = ($payment->total_amount ?? 0) + ($acompte->total_acompte ?? 0);
+
+            // Convertir TTC en HT
+            $totalHt = $totalTtc / (1 + $tvaRate / 100);
 
             // Compter les réservations uniques
             $reservationIdsFromPayments = $payment
@@ -151,7 +158,8 @@ class RebuildMonthlyKpis extends Command
                 'year' => $year,
                 'month' => $month,
                 'invoice_count' => $uniqueReservations,
-                'revenue_ht' => $totalRevenue,
+                'revenue_ht' => round($totalHt, 2),
+                'revenue_ttc' => round($totalTtc, 2),
                 'margin_ht' => 0,
             ]);
             $created++;

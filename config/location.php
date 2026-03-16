@@ -19,4 +19,16 @@ return [
         'banque' => env('LOCATION_RIB_BANQUE', ''),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Taux de TVA Location
+    |--------------------------------------------------------------------------
+    |
+    | Taux de TVA appliqué aux locations de vélos (par défaut 20%).
+    | Utilisé pour convertir les montants TTC en HT dans les KPIs.
+    |
+    */
+
+    'tva_rate' => env('LOCATION_TVA_RATE', 20),
+
 ];
