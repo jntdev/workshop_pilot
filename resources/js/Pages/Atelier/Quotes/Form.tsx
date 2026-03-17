@@ -313,25 +313,88 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         if (!quote) return;
 
         setIsConverting(true);
+        setErrors({});
+        setMessage(null);
+
+        // Valider le téléphone
+        const trimmedPhone = client.telephone.trim();
+        if (!trimmedPhone) {
+            setIsConverting(false);
+            setShowConvertModal(false);
+            setMessage('Le téléphone du client est obligatoire.');
+            return;
+        }
+
+        const sanitizedClient = { ...client, telephone: trimmedPhone };
+
+        // 1. D'abord sauvegarder les modifications en cours
+        const payload = {
+            client_id: sanitizedClient.id,
+            client_prenom: sanitizedClient.prenom,
+            client_nom: sanitizedClient.nom,
+            client_email: sanitizedClient.email || null,
+            client_telephone: sanitizedClient.telephone,
+            client_adresse: sanitizedClient.adresse || null,
+            client_origine_contact: sanitizedClient.origine_contact || null,
+            client_commentaires: sanitizedClient.commentaires || null,
+            client_avantage_type: sanitizedClient.avantage_type || 'aucun',
+            client_avantage_valeur: sanitizedClient.avantage_valeur || 0,
+            client_avantage_expiration: sanitizedClient.avantage_expiration || null,
+            bike_description: bikeDescription,
+            reception_comment: receptionComment,
+            remarks: remarks || null,
+            valid_until: validUntil,
+            discount_type: discountType,
+            discount_value: discountValue || null,
+            lines: lines.map((l, i) => ({ ...l, position: i })),
+            totals: totals,
+            actual_time_minutes: actualTimeMinutes,
+        };
+
         try {
-            const response = await fetch('/api/quotes/' + quote.id + '/convert-to-invoice', {
+            // Sauvegarder d'abord
+            const saveResponse = await fetch('/api/quotes/' + quote.id, {
+                method: 'PUT',
+                headers: apiHeaders(),
+                credentials: 'same-origin',
+                body: JSON.stringify(payload),
+            });
+
+            if (!saveResponse.ok) {
+                const errorData = await saveResponse.json();
+                if (errorData.errors) {
+                    const formattedErrors: Record<string, string> = {};
+                    Object.entries(errorData.errors).forEach(([key, value]) => {
+                        formattedErrors[key] = Array.isArray(value) ? value[0] : String(value);
+                    });
+                    setErrors(formattedErrors);
+                } else {
+                    setMessage(errorData.message || 'Une erreur est survenue lors de la sauvegarde.');
+                }
+                setShowConvertModal(false);
+                return;
+            }
+
+            // 2. Ensuite convertir en facture
+            const convertResponse = await fetch('/api/quotes/' + quote.id + '/convert-to-invoice', {
                 method: 'POST',
                 headers: apiHeaders(),
                 credentials: 'same-origin',
             });
 
-            if (response.ok) {
+            if (convertResponse.ok) {
                 setShowConvertModal(false);
                 router.visit('/atelier/devis/' + quote.id);
             } else {
-                const errorData = await response.json();
-                setMessage(errorData.message || 'Une erreur est survenue.');
+                const errorData = await convertResponse.json();
+                setMessage(errorData.message || 'Une erreur est survenue lors de la conversion.');
             }
         } catch (error) {
             console.error('Convert error:', error);
             setMessage('Une erreur est survenue lors de la conversion.');
         } finally {
             setIsConverting(false);
+            setShowConvertModal(false);
         }
     };
 
