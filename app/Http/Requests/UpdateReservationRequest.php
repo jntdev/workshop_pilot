@@ -69,6 +69,16 @@ class UpdateReservationRequest extends FormRequest
             'payments.*.method' => ['required', 'in:cb,liquide,cheque,virement,autre'],
             'payments.*.paid_at' => ['required', 'date'],
             'payments.*.note' => ['nullable', 'string'],
+
+            // Mise à jour des données client
+            'update_client' => ['sometimes', 'array'],
+            'update_client.prenom' => ['required_with:update_client', 'string', 'max:255'],
+            'update_client.nom' => ['required_with:update_client', 'string', 'max:255'],
+            'update_client.telephone' => ['required_with:update_client', 'string', 'max:20'],
+            'update_client.email' => ['nullable', 'email', 'max:255'],
+            'update_client.adresse' => ['nullable', 'string'],
+            'update_client.origine_contact' => ['nullable', 'string', 'max:255'],
+            'update_client.commentaires' => ['nullable', 'string'],
         ];
     }
 

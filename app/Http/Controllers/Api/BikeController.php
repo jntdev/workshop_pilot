@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Bike;
 use App\Models\BikeCategory;
+use App\Services\Agenda\AgendaVersioner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BikeController extends Controller
 {
+    public function __construct(
+        private AgendaVersioner $agendaVersioner
+    ) {}
+
     public function index(): JsonResponse
     {
         $bikes = Bike::with(['category', 'size'])->ordered()->get();
@@ -61,6 +66,8 @@ class BikeController extends Controller
         $bike->load(['category', 'size']);
         $bike->syncBikeType();
 
+        $this->agendaVersioner->bump();
+
         return response()->json($bike, 201);
     }
 
@@ -93,6 +100,8 @@ class BikeController extends Controller
         Bike::syncBikeTypeAfterDelete($oldContext);
         $bike->syncBikeType();
 
+        $this->agendaVersioner->bump();
+
         return response()->json($bike);
     }
 
@@ -111,6 +120,8 @@ class BikeController extends Controller
 
         Bike::syncBikeTypeAfterDelete($context);
 
+        $this->agendaVersioner->bump();
+
         return response()->json(['message' => 'Vélo supprimé']);
     }
 
@@ -125,6 +136,8 @@ class BikeController extends Controller
         foreach ($validated['bikes'] as $bikeData) {
             Bike::where('id', $bikeData['id'])->update(['sort_order' => $bikeData['sort_order']]);
         }
+
+        $this->agendaVersioner->bump();
 
         return response()->json(['message' => 'Ordre mis à jour']);
     }

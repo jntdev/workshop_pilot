@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BikeSize;
+use App\Services\Agenda\AgendaVersioner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BikeSizeController extends Controller
 {
+    public function __construct(
+        private AgendaVersioner $agendaVersioner
+    ) {}
+
     public function index(): JsonResponse
     {
         $sizes = BikeSize::ordered()->get();
@@ -32,6 +37,8 @@ class BikeSizeController extends Controller
 
         $size = BikeSize::create($validated);
 
+        $this->agendaVersioner->bump();
+
         return response()->json($size, 201);
     }
 
@@ -47,6 +54,8 @@ class BikeSizeController extends Controller
 
         $size->update($validated);
 
+        $this->agendaVersioner->bump();
+
         return response()->json($size);
     }
 
@@ -59,6 +68,8 @@ class BikeSizeController extends Controller
         }
 
         $size->delete();
+
+        $this->agendaVersioner->bump();
 
         return response()->json(['message' => 'Taille supprimée']);
     }

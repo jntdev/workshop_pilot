@@ -255,7 +255,7 @@ class QuoteController extends Controller
             'valid_until' => 'required|date',
             'discount_type' => 'nullable|in:amount,percent',
             'discount_value' => 'nullable|numeric|min:0',
-            'lines' => 'required|array|min:1',
+            'lines' => 'present|array',
             'lines.*.title' => 'required|string|max:255',
             'lines.*.reference' => 'nullable|string|max:100',
             'lines.*.quantity' => 'required|numeric|min:0.01',
@@ -383,7 +383,8 @@ class QuoteController extends Controller
         $today = now();
         $datePrefix = $today->format('Ymd');
 
-        $countToday = Quote::whereDate('created_at', $today->toDateString())->count();
+        // Include soft-deleted quotes to avoid duplicate references
+        $countToday = Quote::withTrashed()->whereDate('created_at', $today->toDateString())->count();
 
         return sprintf('%s-%d', $datePrefix, $countToday + 1);
     }

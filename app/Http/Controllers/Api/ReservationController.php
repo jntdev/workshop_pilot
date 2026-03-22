@@ -8,8 +8,8 @@ use App\Http\Requests\UpdateReservationRequest;
 use App\Mail\AcompteRequestMail;
 use App\Models\Client;
 use App\Models\Reservation;
+use App\Services\Agenda\AgendaVersioner;
 use App\Services\Kpis\MonthlyKpiUpdater;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\Mail;
 class ReservationController extends Controller
 {
     public function __construct(
-        private MonthlyKpiUpdater $kpiUpdater
+        private MonthlyKpiUpdater $kpiUpdater,
+        private AgendaVersioner $agendaVersioner
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -47,97 +48,6 @@ class ReservationController extends Controller
         $reservations = $query->get()->map(fn (Reservation $reservation) => $this->formatReservation($reservation));
 
         return response()->json($reservations);
-    }
-
-    /**
-     * Charge les réservations pour une fenêtre de dates spécifique.
-     * Utilisé pour le lazy loading quand l'utilisateur scroll au-delà de la fenêtre initiale.
-     */
-    public function window(Request $request): JsonResponse
-    {
-        $request->validate([
-            'start' => ['required', 'date'],
-            'end' => ['required', 'date', 'after_or_equal:start'],
-        ]);
-
-        $start = Carbon::parse($request->start)->startOfDay();
-        $end = Carbon::parse($request->end)->endOfDay();
-
-        $reservations = Reservation::with(['client', 'items.bikeType', 'payments'])
-            ->where('statut', '!=', 'annule')
-            ->where(function ($query) use ($start, $end) {
-                // Réservations dans la fenêtre demandée
-                $query->whereBetween('date_reservation', [$start, $end])
-                    // OU réservations commencées avant mais toujours actives dans la fenêtre
-                    ->orWhere(function ($q) use ($start) {
-                        $q->where('date_reservation', '<', $start)
-                            ->where('date_retour', '>=', $start);
-                    });
-            })
-            ->orderBy('date_reservation')
-            ->get()
-            ->map(fn (Reservation $reservation) => $this->formatReservationForCalendar($reservation));
-
-        return response()->json($reservations);
-    }
-
-    /**
-     * Format réservation pour l'affichage calendrier (même format que la page /location).
-     */
-    private function formatReservationForCalendar(Reservation $r): array
-    {
-        return [
-            'id' => $r->id,
-            'client_id' => $r->client_id,
-            'client_name' => $r->client ? "{$r->client->prenom} {$r->client->nom}" : 'Client inconnu',
-            'client' => $r->client ? [
-                'id' => $r->client->id,
-                'prenom' => $r->client->prenom,
-                'nom' => $r->client->nom,
-                'email' => $r->client->email,
-                'telephone' => $r->client->telephone,
-                'adresse' => $r->client->adresse,
-                'origine_contact' => $r->client->origine_contact,
-                'commentaires' => $r->client->commentaires,
-                'avantage_type' => $r->client->avantage_type,
-                'avantage_valeur' => $r->client->avantage_valeur,
-                'avantage_expiration' => $r->client->avantage_expiration,
-            ] : null,
-            'date_contact' => $r->date_contact?->format('Y-m-d\TH:i'),
-            'date_reservation' => $r->date_reservation->format('Y-m-d'),
-            'date_retour' => $r->date_retour->format('Y-m-d'),
-            'livraison_necessaire' => $r->livraison_necessaire,
-            'adresse_livraison' => $r->adresse_livraison,
-            'contact_livraison' => $r->contact_livraison,
-            'creneau_livraison' => $r->creneau_livraison,
-            'recuperation_necessaire' => $r->recuperation_necessaire,
-            'adresse_recuperation' => $r->adresse_recuperation,
-            'contact_recuperation' => $r->contact_recuperation,
-            'creneau_recuperation' => $r->creneau_recuperation,
-            'prix_total_ttc' => $r->prix_total_ttc,
-            'acompte_demande' => $r->acompte_demande,
-            'acompte_montant' => $r->acompte_montant,
-            'acompte_paye_le' => $r->acompte_paye_le?->format('Y-m-d'),
-            'paiement_final_le' => $r->paiement_final_le?->format('Y-m-d'),
-            'statut' => $r->statut,
-            'raison_annulation' => $r->raison_annulation,
-            'commentaires' => $r->commentaires,
-            'color' => $r->color ?? 0,
-            'selection' => $r->selection ?? [],
-            'items' => $r->items->map(fn ($item) => [
-                'bike_type_id' => $item->bike_type_id,
-                'quantite' => $item->quantite,
-            ])->toArray(),
-            'payments' => $r->payments->map(fn ($p) => [
-                'id' => $p->id,
-                'amount' => $p->amount,
-                'method' => $p->method,
-                'paid_at' => $p->paid_at->format('Y-m-d\TH:i'),
-                'note' => $p->note,
-            ])->toArray(),
-            'total_paid' => $r->totalPaid(),
-            'remaining' => $r->remaining(),
-        ];
     }
 
     public function show(string $id): JsonResponse
@@ -219,10 +129,14 @@ class ReservationController extends Controller
             $this->kpiUpdater->syncReservationPayments($reservation);
         }
 
+        // Incrémenter la version de l'agenda et récupérer la nouvelle version
+        $newVersion = $this->agendaVersioner->bump();
+
         $reservation->load(['client', 'items.bikeType', 'payments']);
 
         return response()->json([
             'data' => $this->formatReservation($reservation),
+            'version' => $newVersion,
         ], 201);
     }
 
@@ -239,9 +153,26 @@ class ReservationController extends Controller
         $validated = $request->validated();
         $items = $validated['items'] ?? null;
         $payments = $validated['payments'] ?? null;
-        unset($validated['items'], $validated['payments']);
+        $updateClientData = $validated['update_client'] ?? null;
+        unset($validated['items'], $validated['payments'], $validated['update_client']);
 
-        DB::transaction(function () use ($reservation, $validated, $items, $payments) {
+        DB::transaction(function () use ($reservation, $validated, $items, $payments, $updateClientData) {
+            // Mettre à jour le client si demandé
+            if ($updateClientData && $reservation->client_id) {
+                $client = Client::find($reservation->client_id);
+                if ($client) {
+                    $client->update([
+                        'prenom' => $updateClientData['prenom'],
+                        'nom' => $updateClientData['nom'],
+                        'telephone' => $updateClientData['telephone'],
+                        'email' => $updateClientData['email'] ?? $client->email,
+                        'adresse' => $updateClientData['adresse'] ?? $client->adresse,
+                        'origine_contact' => $updateClientData['origine_contact'] ?? $client->origine_contact,
+                        'commentaires' => $updateClientData['commentaires'] ?? $client->commentaires,
+                    ]);
+                }
+            }
+
             $reservation->update($validated);
 
             if ($items !== null) {
@@ -267,10 +198,14 @@ class ReservationController extends Controller
         // Mettre à jour les KPIs Location
         $this->kpiUpdater->syncReservationPayments($reservation);
 
+        // Incrémenter la version de l'agenda et récupérer la nouvelle version
+        $newVersion = $this->agendaVersioner->bump();
+
         $reservation->load(['client', 'items.bikeType', 'payments']);
 
         return response()->json([
             'data' => $this->formatReservation($reservation),
+            'version' => $newVersion,
         ]);
     }
 
@@ -286,7 +221,12 @@ class ReservationController extends Controller
 
         $reservation->delete();
 
-        return response()->json(null, 204);
+        // Incrémenter la version de l'agenda et récupérer la nouvelle version
+        $newVersion = $this->agendaVersioner->bump();
+
+        return response()->json([
+            'version' => $newVersion,
+        ]);
     }
 
     public function sendAcompteEmail(string $id): JsonResponse

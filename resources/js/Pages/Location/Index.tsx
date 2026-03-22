@@ -12,17 +12,17 @@ import ReservationForm from '@/Components/Location/ReservationForm';
 import ColorPicker from '@/Components/Location/ColorPicker';
 import PlanningPanel, { type PlanningReservation } from '@/Components/Location/PlanningPanel';
 import SettingsPanel from '@/Components/Location/SettingsPanel';
+import LocationSyncOverlay from '@/Components/Location/LocationSyncOverlay';
+import AgendaDriftBanner from '@/Components/Location/AgendaDriftBanner';
 import { useReservationDraft } from '@/hooks/useReservationDraft';
+import { useAgendaStore } from '@/hooks/useAgendaStore';
+import { useAgendaVersionWatcher } from '@/hooks/useAgendaVersionWatcher';
+import { useOptimisticMutation } from '@/hooks/useOptimisticMutation';
 import type { BikeDefinition, DayInfo, LocationPageProps, LoadedReservation, ReservationColorIndex } from '@/types';
 import { generateYearDays, formatDayHeader } from '@/utils/calendar';
 
 // Mode d'affichage du panneau latéral
 type SidePanelMode = 'closed' | 'reservation' | 'planning' | 'settings';
-
-// Taille des blocs de chargement (en jours)
-const LOAD_BLOCK_SIZE = 20;
-// Marge de déclenchement avant la fin de la fenêtre chargée (en jours)
-const LOAD_TRIGGER_MARGIN = 5;
 
 interface RowData extends DayInfo {
     [bikeId: string]: string | number | boolean | undefined;
@@ -40,37 +40,50 @@ interface ReservedCellInfo {
 
 const columnHelper = createColumnHelper<RowData>();
 
-// Helper pour formater une date en YYYY-MM-DD
-const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
-};
-
-// Helper pour ajouter des jours à une date
-const addDays = (date: Date, days: number): Date => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-};
-
-// Fonction de fusion des réservations (dé-duplication par ID)
-const mergeReservations = (existing: LoadedReservation[], incoming: LoadedReservation[]): LoadedReservation[] => {
-    const map = new Map(existing.map((r) => [r.id, r]));
-    incoming.forEach((r) => map.set(r.id, r));
-    return Array.from(map.values()).sort((a, b) => a.date_reservation.localeCompare(b.date_reservation));
-};
-
-export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, reservations: initialReservations, openAgenda }: LocationPageProps) {
+export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, reservations: initialReservations, openAgenda, agendaVersion }: LocationPageProps) {
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
-    const { draft, actions, selectors } = useReservationDraft({ bikes });
+    // Initialize AgendaStore with server data
+    const {
+        data: agendaData,
+        version: currentVersion,
+        isLoading: isAgendaLoading,
+        source: agendaSource,
+    } = useAgendaStore(agendaVersion, {
+        bikes,
+        bikeCategories,
+        bikeSizes,
+        reservations: initialReservations,
+    });
 
-    // État local des réservations (avec lazy loading)
-    const [reservations, setReservations] = useState<LoadedReservation[]>(initialReservations);
+    // Watch for version drift (multi-tab sync)
+    const {
+        hasDrift,
+        isRefreshing: isDriftRefreshing,
+        dismissDrift,
+    } = useAgendaVersionWatcher({ enabled: true });
 
-    // Synchroniser avec les props quand elles changent (reload Inertia)
+    // Use data from store or fallback to props
+    const activeBikes = agendaData?.bikes ?? bikes;
+    const activeCategories = agendaData?.bikeCategories ?? bikeCategories;
+    const activeSizes = agendaData?.bikeSizes ?? bikeSizes;
+
+    const { draft, actions, selectors } = useReservationDraft({ bikes: activeBikes });
+
+    // Optimistic mutation hook
+    const { updateReservation } = useOptimisticMutation();
+
+    // État local des réservations - sourced from AgendaStore
+    const [reservations, setReservations] = useState<LoadedReservation[]>(
+        agendaData?.reservations ?? initialReservations
+    );
+
+    // Synchroniser avec l'AgendaStore quand les données changent
     useEffect(() => {
-        setReservations(initialReservations);
-    }, [initialReservations]);
+        if (agendaData?.reservations) {
+            setReservations(agendaData.reservations);
+        }
+    }, [agendaData?.reservations]);
 
     // État pour la réservation en cours d'édition (mode formulaire)
     const [editingReservation, setEditingReservation] = useState<LoadedReservation | null>(null);
@@ -95,17 +108,6 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
 
     // État pour le vélo sélectionné (affichage des infos dans la bannière)
     const [selectedBike, setSelectedBike] = useState<BikeDefinition | null>(null);
-
-    // État pour le lazy loading
-    const [isLoadingWindow, setIsLoadingWindow] = useState(false);
-    const [loadedWindows, setLoadedWindows] = useState<Array<{ start: string; end: string }>>(() => {
-        // Fenêtre initiale : J-15 à J+30
-        const today = new Date();
-        return [{
-            start: formatDate(addDays(today, -15)),
-            end: formatDate(addDays(today, 30)),
-        }];
-    });
 
     // Index des réservations par ID pour accès rapide
     const reservationsById = useMemo(() => {
@@ -205,12 +207,12 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
     const rowData: RowData[] = useMemo(() => {
         return days.map((day) => {
             const row: RowData = { ...day };
-            bikes.forEach((bike) => {
+            activeBikes.forEach((bike) => {
                 row[bike.column_id] = 'available';
             });
             return row;
         });
-    }, [days, bikes]);
+    }, [days, activeBikes]);
 
     const handleCellClick = useCallback((date: string, bikeId: string, isHS: boolean) => {
         if (!draft.isActive) return;
@@ -241,32 +243,15 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
     const handleQuickColorChange = useCallback((newColor: ReservationColorIndex) => {
         if (!editingReservation || !viewingReservationId) return;
 
-        // Sauvegarder l'ID avant de fermer la visualisation
         const reservationId = viewingReservationId;
 
         // Fermer la visualisation immédiatement
         setViewingReservationId(null);
         setEditingReservation(null);
 
-        // Mettre à jour via API
-        fetch(`/api/reservations/${reservationId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-            },
-            body: JSON.stringify({ color: newColor }),
-        })
-            .then((response) => {
-                if (response.ok) {
-                    // Rafraîchir les données pour afficher la nouvelle couleur
-                    router.reload({ only: ['reservations'] });
-                }
-            })
-            .catch((error) => {
-                console.error('Erreur lors du changement de couleur:', error);
-            });
-    }, [editingReservation, viewingReservationId]);
+        // Optimistic update avec rollback automatique si erreur
+        updateReservation(reservationId, { color: newColor }, { color: newColor });
+    }, [editingReservation, viewingReservationId, updateReservation]);
 
     // Drag selection handlers
     const handleCellMouseDown = useCallback((date: string, bikeId: string, isHS: boolean, reservationId?: number) => {
@@ -413,50 +398,6 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         }
     }, [draft.isActive, viewingReservationId]);
 
-    // Vérifier si une date est dans une fenêtre déjà chargée
-    const isDateInLoadedWindow = useCallback((date: string): boolean => {
-        return loadedWindows.some(
-            (window) => date >= window.start && date <= window.end
-        );
-    }, [loadedWindows]);
-
-    // Charger une nouvelle fenêtre de réservations
-    const loadWindow = useCallback(async (start: string, end: string) => {
-        // Vérifier si cette fenêtre est déjà chargée
-        const alreadyLoaded = loadedWindows.some(
-            (w) => start >= w.start && end <= w.end
-        );
-        if (alreadyLoaded || isLoadingWindow) return;
-
-        setIsLoadingWindow(true);
-
-        try {
-            const response = await fetch(`/api/reservations/window?start=${start}&end=${end}`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-            });
-
-            if (response.ok) {
-                const newReservations: LoadedReservation[] = await response.json();
-
-                // Fusionner avec les réservations existantes
-                setReservations((current) => mergeReservations(current, newReservations));
-
-                // Ajouter cette fenêtre aux fenêtres chargées
-                setLoadedWindows((current) => [...current, { start, end }]);
-            }
-        } catch (error) {
-            console.error('Erreur lors du chargement des réservations:', error);
-        } finally {
-            setIsLoadingWindow(false);
-        }
-    }, [loadedWindows, isLoadingWindow]);
-
-    // Référence pour le debounce du scroll
-    const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
     // Référence pour stocker le virtualizer (sera défini plus tard)
     const rowVirtualizerRef = useRef<ReturnType<typeof useVirtualizer<HTMLDivElement>> | null>(null);
 
@@ -479,8 +420,8 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
 
         const bikeColumns: ReturnType<typeof columnHelper.accessor>[] = [];
 
-        bikes.forEach((bike, index) => {
-            const prevBike = index > 0 ? bikes[index - 1] : null;
+        activeBikes.forEach((bike, index) => {
+            const prevBike = index > 0 ? activeBikes[index - 1] : null;
             const isNewCategory = prevBike && prevBike.category?.name !== bike.category?.name;
             const isNewSize = prevBike && prevBike.size?.name !== bike.size?.name && !isNewCategory;
 
@@ -573,7 +514,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         });
 
         return [dateColumn, ...bikeColumns];
-    }, [bikes, handleColumnHover, handleCellMouseDown, handleCellMouseEnter, handleBikeHeaderClick, draft.cells, draft.isActive, draft.color, reservedCellsIndex, viewingCellsIndex, viewingReservationId, selectedBike]);
+    }, [activeBikes, handleColumnHover, handleCellMouseDown, handleCellMouseEnter, handleBikeHeaderClick, draft.cells, draft.isActive, draft.color, reservedCellsIndex, viewingCellsIndex, viewingReservationId, selectedBike]);
 
     const table = useReactTable({
         data: rowData,
@@ -606,7 +547,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         let currentColor = '';
         let currentColspan = 0;
 
-        bikes.forEach((bike) => {
+        activeBikes.forEach((bike) => {
             const categoryName = bike.category?.name ?? '';
             const categoryColor = bike.category?.color ?? '#888888';
 
@@ -629,7 +570,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         }
 
         return bands;
-    }, [bikes]);
+    }, [activeBikes]);
 
     // Calcul des colspans pour la bande de taille (avec spacers entre catégories)
     const sizeBands = useMemo(() => {
@@ -639,7 +580,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         let currentColor = '';
         let currentColspan = 0;
 
-        bikes.forEach((bike) => {
+        activeBikes.forEach((bike) => {
             const categoryName = bike.category?.name ?? '';
             const sizeName = bike.size?.name ?? '';
             const sizeColor = bike.size?.color ?? '#888888';
@@ -671,7 +612,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         }
 
         return bands;
-    }, [bikes]);
+    }, [activeBikes]);
 
     // Stocker la référence du virtualizer
     rowVirtualizerRef.current = rowVirtualizer;
@@ -683,79 +624,21 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         }
     }, [todayIndex, rowVirtualizer]);
 
-    // Gérer le scroll pour le lazy loading
-    useEffect(() => {
-        const container = tableContainerRef.current;
-        if (!container) return;
-
-        const handleScroll = () => {
-            if (scrollTimeoutRef.current) {
-                clearTimeout(scrollTimeoutRef.current);
-            }
-
-            scrollTimeoutRef.current = setTimeout(() => {
-                const virtualizer = rowVirtualizerRef.current;
-                if (!virtualizer) return;
-
-                const virtualItems = virtualizer.getVirtualItems();
-                if (virtualItems.length === 0) return;
-
-                // Trouver les dates visibles (premier et dernier élément virtuel)
-                const firstVisibleIndex = virtualItems[0].index;
-                const lastVisibleIndex = virtualItems[virtualItems.length - 1].index;
-
-                const firstVisibleDate = days[firstVisibleIndex]?.date;
-                const lastVisibleDate = days[lastVisibleIndex]?.date;
-
-                if (!firstVisibleDate || !lastVisibleDate) return;
-
-                // Vérifier si on approche d'une zone non chargée (vers le futur)
-                const checkFutureDate = days[Math.min(lastVisibleIndex + LOAD_TRIGGER_MARGIN, days.length - 1)]?.date;
-                if (checkFutureDate && !isDateInLoadedWindow(checkFutureDate)) {
-                    // Charger le bloc suivant (20 jours après la fin de la dernière fenêtre)
-                    const maxLoadedEnd = loadedWindows.reduce((max, w) => w.end > max ? w.end : max, '');
-                    if (maxLoadedEnd) {
-                        const startDate = new Date(maxLoadedEnd);
-                        startDate.setDate(startDate.getDate() + 1);
-                        const endDate = addDays(startDate, LOAD_BLOCK_SIZE);
-                        loadWindow(formatDate(startDate), formatDate(endDate));
-                    }
-                }
-
-                // Vérifier si on approche d'une zone non chargée (vers le passé)
-                const checkPastDate = days[Math.max(firstVisibleIndex - LOAD_TRIGGER_MARGIN, 0)]?.date;
-                if (checkPastDate && !isDateInLoadedWindow(checkPastDate)) {
-                    // Charger le bloc précédent (20 jours avant le début de la première fenêtre)
-                    const minLoadedStart = loadedWindows.reduce((min, w) => w.start < min ? w.start : min, '9999-12-31');
-                    if (minLoadedStart !== '9999-12-31') {
-                        const endDate = new Date(minLoadedStart);
-                        endDate.setDate(endDate.getDate() - 1);
-                        const startDate = addDays(endDate, -LOAD_BLOCK_SIZE);
-                        loadWindow(formatDate(startDate), formatDate(endDate));
-                    }
-                }
-            }, 200); // Debounce de 200ms
-        };
-
-        container.addEventListener('scroll', handleScroll);
-        return () => {
-            container.removeEventListener('scroll', handleScroll);
-            if (scrollTimeoutRef.current) {
-                clearTimeout(scrollTimeoutRef.current);
-            }
-        };
-    }, [days, loadedWindows, isDateInLoadedWindow, loadWindow]);
-
     return (
         <MainLayout>
             <Head title="Location" />
 
+            {/* Drift detection banner */}
+            <AgendaDriftBanner isVisible={hasDrift} onDismiss={dismissDrift} />
+
             <div id="location_calendar" className={`location ${sidePanelMode !== 'closed' ? 'location--panel-open' : ''} ${sidePanelMode === 'planning' ? 'location--panel-planning' : ''}`}>
+                {/* Sync overlay during loading */}
+                <LocationSyncOverlay isVisible={isAgendaLoading || isDriftRefreshing} />
+
                 <div className="location__table-panel">
                     <div className="location__header">
                         <h1 className="location__title">
                             Disponibilités {year}
-                            {isLoadingWindow && <span className="location__loading-indicator"> Chargement...</span>}
                         </h1>
                         <div className="location__header-actions">
                             <button
@@ -994,8 +877,8 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
 
                     {sidePanelMode === 'settings' && (
                         <SettingsPanel
-                            categories={bikeCategories}
-                            sizes={bikeSizes}
+                            categories={activeCategories}
+                            sizes={activeSizes}
                             onClose={() => setSidePanelMode('closed')}
                             onUpdate={() => router.reload()}
                         />

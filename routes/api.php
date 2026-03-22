@@ -46,7 +46,6 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Reservations API routes
     Route::get('/reservations', [ReservationController::class, 'index']);
-    Route::get('/reservations/window', [ReservationController::class, 'window']);
     Route::get('/reservations/{id}', [ReservationController::class, 'show']);
     Route::post('/reservations', [ReservationController::class, 'store']);
     Route::put('/reservations/{id}', [ReservationController::class, 'update']);
@@ -55,6 +54,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/reservations/send-acompte-email', [ReservationController::class, 'sendAcompteEmailDirect']);
 
     // Location API routes
+    Route::get('/location/version', [LocationController::class, 'version']);
+    Route::get('/location/full', [LocationController::class, 'full']);
     Route::get('/location/planning', [LocationController::class, 'planning']);
 
     // Bikes API routes

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\MobileUploadController;
+use App\Services\Agenda\AgendaVersioner;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -293,19 +294,16 @@ Route::middleware(['auth'])->group(function () {
             $year = now()->year;
             $openAgenda = $request->has('openAgenda') ? $request->boolean('openAgenda') : $openAgendaDefault;
 
-            // Fenêtre glissante : J-15 à J+30
-            $startWindow = now()->subDays(15)->startOfDay();
-            $endWindow = now()->addDays(30)->endOfDay();
+            // Charger toutes les réservations de l'année (non annulées)
+            $startYear = now()->startOfYear();
+            $endYear = now()->endOfYear();
 
-            // Charger les réservations dans la fenêtre glissante
             $reservations = \App\Models\Reservation::with(['client', 'items', 'payments'])
                 ->where('statut', '!=', 'annule')
-                ->where(function ($query) use ($startWindow, $endWindow) {
-                    $query->whereBetween('date_reservation', [$startWindow, $endWindow])
-                        ->orWhere(function ($q) use ($startWindow) {
-                            $q->where('date_reservation', '<', $startWindow)
-                                ->where('date_retour', '>=', now()->startOfDay());
-                        });
+                ->where(function ($query) use ($startYear, $endYear) {
+                    // Réservations dont la période chevauche l'année
+                    $query->where('date_retour', '>=', $startYear)
+                        ->where('date_reservation', '<=', $endYear);
                 })
                 ->orderBy('date_reservation')
                 ->get()
@@ -412,6 +410,7 @@ Route::middleware(['auth'])->group(function () {
                 'year' => $year,
                 'reservations' => $reservations,
                 'openAgenda' => $openAgenda,
+                'agendaVersion' => app(AgendaVersioner::class)->current(),
             ]);
         };
     };

@@ -236,6 +236,29 @@ export interface LocationPageProps extends PageProps {
     year: number;
     reservations: LoadedReservation[];
     openAgenda?: boolean;
+    agendaVersion: number;
+}
+
+// Types pour l'AgendaStore
+export interface AgendaData {
+    bikes: BikeDefinition[];
+    bikeCategories: BikeCategoryRef[];
+    bikeSizes: BikeSizeRef[];
+    reservations: LoadedReservation[];
+}
+
+export interface AgendaSnapshot {
+    version: number;
+    data: AgendaData;
+    savedAt: string;
+}
+
+export type AgendaSource = 'instance' | 'localStorage' | 'network';
+
+export interface AgendaLoadResult {
+    data: AgendaData;
+    version: number;
+    source: AgendaSource;
 }
 
 export interface LineCalculationResult {

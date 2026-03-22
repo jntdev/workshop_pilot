@@ -318,7 +318,7 @@ class ReservationApiTest extends TestCase
         // Supprimer
         $response = $this->actingAs($user)->deleteJson("/api/reservations/{$reservationId}");
 
-        $response->assertStatus(204);
+        $response->assertStatus(200);
         $this->assertDatabaseMissing('reservations', ['id' => $reservationId]);
     }
 
@@ -464,6 +464,7 @@ class ReservationApiTest extends TestCase
     public function it_can_update_client_when_creating_reservation(): void
     {
         $user = $this->getTestUser();
+        $uniqueEmail = 'updated-client-' . uniqid() . '@example.com';
         $client = Client::factory()->create([
             'prenom' => 'Ancien',
             'nom' => 'Nom',
@@ -475,7 +476,7 @@ class ReservationApiTest extends TestCase
                 'prenom' => 'Nouveau',
                 'nom' => 'NomModifié',
                 'telephone' => '0699999999',
-                'email' => 'nouveau@example.com',
+                'email' => $uniqueEmail,
                 'adresse' => 'Nouvelle adresse',
             ],
         ]);
@@ -493,7 +494,7 @@ class ReservationApiTest extends TestCase
             'prenom' => 'Nouveau',
             'nom' => 'NomModifié',
             'telephone' => '0699999999',
-            'email' => 'nouveau@example.com',
+            'email' => $uniqueEmail,
             'adresse' => 'Nouvelle adresse',
         ]);
     }
@@ -527,8 +528,8 @@ class ReservationApiTest extends TestCase
 
         $response->assertStatus(201);
         $this->assertCount(2, $response->json('data.payments'));
-        $response->assertJsonPath('data.total_paid', 150.0);
-        $response->assertJsonPath('data.remaining', 100.0); // 250 - 150
+        $this->assertEquals(150.0, $response->json('data.total_paid'));
+        $this->assertEquals(100.0, $response->json('data.remaining')); // 250 - 150
     }
 
     #[Test]
@@ -561,8 +562,8 @@ class ReservationApiTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertCount(1, $response->json('data.payments'));
-        $response->assertJsonPath('data.total_paid', 250.0);
-        $response->assertJsonPath('data.remaining', 0.0);
+        $this->assertEquals(250.0, $response->json('data.total_paid'));
+        $this->assertEquals(0.0, $response->json('data.remaining'));
     }
 
     #[Test]
@@ -652,7 +653,7 @@ class ReservationApiTest extends TestCase
         $response->assertStatus(200);
         $this->assertCount(1, $response->json('data.payments'));
         $response->assertJsonPath('data.payments.0.method', 'virement');
-        $response->assertJsonPath('data.total_paid', 250.0);
+        $this->assertEquals(250.0, $response->json('data.total_paid'));
     }
 
     #[Test]
@@ -682,7 +683,8 @@ class ReservationApiTest extends TestCase
 
         // Supprimer la réservation
         $response = $this->actingAs($user)->deleteJson("/api/reservations/{$reservationId}");
-        $response->assertStatus(204);
+        $response->assertStatus(200);
+        $response->assertJsonStructure(['version']);
 
         // Vérifier que les paiements ont été supprimés (cascade)
         $this->assertDatabaseMissing('reservation_payments', [

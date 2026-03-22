@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $quote->isInvoice() ? 'Facture' : 'Devis' }} {{ $quote->reference }}</title>
+    <title>{{ $quote->isInvoice() ? 'Facture' : ($quote->lines->isEmpty() ? 'Bon de dépôt' : 'Devis') }} {{ $quote->reference }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -271,13 +271,30 @@
             font-weight: bold;
             color: #333;
         }
+        .diagnostic-area {
+            background-color: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .diagnostic-lines {
+            width: 100%;
+        }
+        .diagnostic-line {
+            border-bottom: 1px solid #ccc;
+            height: 28px;
+            margin-bottom: 0;
+        }
+        .diagnostic-line:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         {{-- Logo temporarily disabled due to memory issues with large PNG file --}}
         {{-- <img src="{{ public_path('images/logo.png') }}" alt="{{ config('company.name') }}"> --}}
-        <h1>{{ $quote->isInvoice() ? 'FACTURE' : 'DEVIS' }}</h1>
+        <h1>{{ $quote->isInvoice() ? 'FACTURE' : ($quote->lines->isEmpty() ? 'BON DE DÉPÔT' : 'DEVIS') }}</h1>
         <div class="reference">{{ $quote->reference }}</div>
     </div>
 
@@ -342,58 +359,90 @@
         </div>
     </div>
 
-    <div class="section">
-        <h2 class="section-title">Prestations</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Intitulé</th>
-                    <th>Qté</th>
-                    <th>PV HT</th>
-                    <th>TVA %</th>
-                    <th>PV TTC</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($quote->lines as $line)
-                    <tr>
-                        <td>{{ $line->title }}</td>
-                        <td>{{ number_format((float)$line->quantity, 2, ',', ' ') }}</td>
-                        <td>{{ number_format((float)$line->sale_price_ht, 2, ',', ' ') }} €</td>
-                        <td>{{ number_format((float)$line->tva_rate, 0, ',', ' ') }} %</td>
-                        <td>{{ number_format((float)$line->sale_price_ttc, 2, ',', ' ') }} €</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    <div class="summary-row">
-        <div class="remarks">
-            <div class="remarks-title">Remarques</div>
-            @if($quote->remarks)
-                <div class="remarks-content">{{ $quote->remarks }}</div>
-            @else
-                <div class="remarks-empty">Aucune remarque</div>
-            @endif
+    @if($quote->lines->isEmpty())
+        {{-- Bon de dépôt : espace pour diagnostic manuel --}}
+        <div class="section">
+            <h2 class="section-title">Diagnostic / Observations atelier</h2>
+            <div class="diagnostic-area">
+                <div class="diagnostic-lines">
+                    @for($i = 0; $i < 12; $i++)
+                        <div class="diagnostic-line"></div>
+                    @endfor
+                </div>
+            </div>
         </div>
-        <div class="totals">
-            <table class="totals-table">
-                <tr>
-                    <td class="totals-label">Total HT</td>
-                    <td class="totals-value">{{ number_format((float)$quote->total_ht, 2, ',', ' ') }} €</td>
-                </tr>
-                <tr>
-                    <td class="totals-label">TVA</td>
-                    <td class="totals-value">{{ number_format((float)$quote->total_tva, 2, ',', ' ') }} €</td>
-                </tr>
-                <tr class="totals-row--total">
-                    <td class="totals-label">Total TTC</td>
-                    <td class="totals-value">{{ number_format((float)$quote->total_ttc, 2, ',', ' ') }} €</td>
-                </tr>
+
+        <div class="section" style="margin-top: 20px;">
+            <h2 class="section-title">Prestations à prévoir</h2>
+            <div class="diagnostic-area">
+                <div class="diagnostic-lines">
+                    @for($i = 0; $i < 8; $i++)
+                        <div class="diagnostic-line"></div>
+                    @endfor
+                </div>
+            </div>
+        </div>
+
+        @if($quote->remarks)
+            <div class="section" style="margin-top: 20px;">
+                <h2 class="section-title">Remarques</h2>
+                <div class="remarks-content">{{ $quote->remarks }}</div>
+            </div>
+        @endif
+    @else
+        <div class="section">
+            <h2 class="section-title">Prestations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Intitulé</th>
+                        <th>Qté</th>
+                        <th>PV HT</th>
+                        <th>TVA %</th>
+                        <th>PV TTC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($quote->lines as $line)
+                        <tr>
+                            <td>{{ $line->title }}</td>
+                            <td>{{ number_format((float)$line->quantity, 2, ',', ' ') }}</td>
+                            <td>{{ number_format((float)$line->sale_price_ht, 2, ',', ' ') }} €</td>
+                            <td>{{ number_format((float)$line->tva_rate, 0, ',', ' ') }} %</td>
+                            <td>{{ number_format((float)$line->sale_price_ttc, 2, ',', ' ') }} €</td>
+                        </tr>
+                    @endforeach
+                </tbody>
             </table>
         </div>
-    </div>
+
+        <div class="summary-row">
+            <div class="remarks">
+                <div class="remarks-title">Remarques</div>
+                @if($quote->remarks)
+                    <div class="remarks-content">{{ $quote->remarks }}</div>
+                @else
+                    <div class="remarks-empty">Aucune remarque</div>
+                @endif
+            </div>
+            <div class="totals">
+                <table class="totals-table">
+                    <tr>
+                        <td class="totals-label">Total HT</td>
+                        <td class="totals-value">{{ number_format((float)$quote->total_ht, 2, ',', ' ') }} €</td>
+                    </tr>
+                    <tr>
+                        <td class="totals-label">TVA</td>
+                        <td class="totals-value">{{ number_format((float)$quote->total_tva, 2, ',', ' ') }} €</td>
+                    </tr>
+                    <tr class="totals-row--total">
+                        <td class="totals-label">Total TTC</td>
+                        <td class="totals-value">{{ number_format((float)$quote->total_ttc, 2, ',', ' ') }} €</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    @endif
 
     <div class="legal-mentions">
         @if($quote->isInvoice())

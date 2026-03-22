@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { router } from '@inertiajs/react';
 import ClientSearch from '@/Components/Atelier/QuoteForm/ClientSearch';
 import ColorPicker from '@/Components/Location/ColorPicker';
+import { useOptimisticMutation } from '@/hooks/useOptimisticMutation';
 import type {
     Client,
     ReservationFormData,
@@ -61,6 +61,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
     const [formData, setFormData] = useState<ReservationFormData>(initialFormData);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const { createReservation, updateReservation } = useOptimisticMutation();
     const [isSendingAcompteEmail, setIsSendingAcompteEmail] = useState(false);
     const [acompteEmailMessage, setAcompteEmailMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -317,11 +318,6 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
         setMessage(null);
 
         try {
-            const csrfToken = document.cookie
-                .split('; ')
-                .find((row) => row.startsWith('XSRF-TOKEN='))
-                ?.split('=')[1];
-
             // Construire le payload
             // Filtrer les paiements valides (montant > 0)
             const validPayments = formData.payments
@@ -379,48 +375,37 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
             }
 
             const isEditing = !!draft.editingReservationId;
-            const url = isEditing
-                ? `/api/reservations/${draft.editingReservationId}`
-                : '/api/reservations';
 
-            const response = await fetch(url, {
-                method: isEditing ? 'PUT' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-XSRF-TOKEN': decodeURIComponent(csrfToken || ''),
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(payload),
-            });
+            // Utiliser les mutations optimistes
+            let result;
+            if (isEditing) {
+                result = await updateReservation(draft.editingReservationId!, payload);
+            } else {
+                result = await createReservation(payload);
+            }
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (data.errors) {
+            // Gérer les erreurs de validation (422)
+            if (!result.success) {
+                if (result.validationErrors) {
+                    // Mapper les erreurs champ par champ
                     const newErrors: Record<string, string> = {};
-                    Object.entries(data.errors).forEach(([key, messages]) => {
-                        // Mapper les erreurs new_client.* et update_client.* vers client_*
+                    Object.entries(result.validationErrors).forEach(([key, messages]) => {
                         let mappedKey = key;
+                        // Mapper new_client.* et update_client.* vers client_*
                         if (key.startsWith('new_client.')) {
-                            mappedKey = key.replace('new_client.', 'client_');
+                            mappedKey = 'client_' + key.replace('new_client.', '');
                         } else if (key.startsWith('update_client.')) {
-                            mappedKey = key.replace('update_client.', 'client_');
+                            mappedKey = 'client_' + key.replace('update_client.', '');
                         }
-                        newErrors[mappedKey] = (messages as string[])[0];
+                        newErrors[mappedKey] = messages[0];
                     });
                     setErrors(newErrors);
                 }
-                setMessage({ type: 'error', text: data.message || 'Erreur de validation' });
+                setMessage({ type: 'error', text: result.message || 'Erreur lors de la sauvegarde' });
                 return;
             }
 
             setMessage({ type: 'success', text: isEditing ? 'Réservation mise à jour avec succès' : 'Réservation créée avec succès' });
-
-            // Rafraîchir la page après un court délai pour voir le message de succès
-            setTimeout(() => {
-                router.reload({ only: ['reservations'] });
-            }, 800);
 
             setFormData(initialFormData);
             setSelectedClient(null);

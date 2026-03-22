@@ -106,6 +106,12 @@ export default function QuoteLinesTable({
                 <div className="quote-lines-table__cell"></div>
             </div>
 
+            {lines.every(isLineEmpty) && (
+                <div className="quote-lines-table__empty">
+                    <p>Aucune prestation renseignée. Le PDF sera généré comme un <strong>bon de dépôt</strong> avec un espace pour le diagnostic manuel.</p>
+                </div>
+            )}
+
             {lines.map((line, index) => (
                 <div className="quote-lines-table__row" key={index}>
                     {/* Intitulé */}
@@ -117,7 +123,6 @@ export default function QuoteLinesTable({
                             onKeyDown={handleKeyDown}
                             className="quote-lines-table__input"
                             placeholder="Intitulé"
-                            required
                             disabled={disabled}
                         />
                     </div>

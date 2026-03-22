@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BikeCategory;
+use App\Services\Agenda\AgendaVersioner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BikeCategoryController extends Controller
 {
+    public function __construct(
+        private AgendaVersioner $agendaVersioner
+    ) {}
+
     public function index(): JsonResponse
     {
         $categories = BikeCategory::ordered()->get();
@@ -38,6 +43,8 @@ class BikeCategoryController extends Controller
 
         $category = BikeCategory::create($validated);
 
+        $this->agendaVersioner->bump();
+
         return response()->json($category, 201);
     }
 
@@ -56,6 +63,8 @@ class BikeCategoryController extends Controller
 
         $category->update($validated);
 
+        $this->agendaVersioner->bump();
+
         return response()->json($category);
     }
 
@@ -68,6 +77,8 @@ class BikeCategoryController extends Controller
         }
 
         $category->delete();
+
+        $this->agendaVersioner->bump();
 
         return response()->json(['message' => 'Catégorie supprimée']);
     }

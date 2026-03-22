@@ -35,15 +35,15 @@ const emptyLine = (): QuoteLine => ({
     reference: null,
     quantity: '1',
     purchase_price_ht: '0',
-    sale_price_ht: '',
-    sale_price_ttc: '',
-    margin_amount_ht: '',
-    margin_rate: '',
+    sale_price_ht: '0',
+    sale_price_ttc: '0',
+    margin_amount_ht: '0',
+    margin_rate: '0',
     tva_rate: '20',
-    line_purchase_ht: '',
-    line_margin_ht: '',
-    line_total_ht: '',
-    line_total_ttc: '',
+    line_purchase_ht: '0',
+    line_margin_ht: '0',
+    line_total_ht: '0',
+    line_total_ttc: '0',
     position: 0,
     estimated_time_minutes: null,
 });
@@ -219,7 +219,6 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     };
 
     const handleRemoveLine = (index: number) => {
-        if (lines.length === 1) return;
         setLines(prev => prev.filter((_, i) => i !== index));
     };
 
@@ -229,6 +228,11 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
 
     const handleDiscountValueChange = (value: string) => {
         setDiscountValue(value);
+    };
+
+    // Filtre les lignes vides (sans titre) avant l'envoi au backend
+    const getFilledLines = () => {
+        return lines.filter(line => line.title && line.title.trim() !== '');
     };
 
     const handleSave = async (stayOnPage: boolean = false) => {
@@ -263,7 +267,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             valid_until: validUntil,
             discount_type: discountType,
             discount_value: discountValue || null,
-            lines: lines.map((l, i) => ({ ...l, position: i })),
+            lines: getFilledLines().map((l, i) => ({ ...l, position: i })),
             totals: totals,
             actual_time_minutes: actualTimeMinutes,
         };
@@ -346,7 +350,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             valid_until: validUntil,
             discount_type: discountType,
             discount_value: discountValue || null,
-            lines: lines.map((l, i) => ({ ...l, position: i })),
+            lines: getFilledLines().map((l, i) => ({ ...l, position: i })),
             totals: totals,
             actual_time_minutes: actualTimeMinutes,
         };

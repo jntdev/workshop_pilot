@@ -305,6 +305,26 @@
             background-color: darken($color-danger-red, 10%);
         }
     }
+
+    &__empty {
+        padding: 2rem;
+        text-align: center;
+        background-color: lighten($color-primary-blue, 48%);
+        border: 2px dashed $color-primary-blue;
+        border-radius: 8px;
+        margin: 1rem 0;
+
+        p {
+            margin: 0;
+            color: $color-neutral-dark;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        strong {
+            color: $color-primary-blue;
+        }
+    }
 }
 
 // Quote Totals

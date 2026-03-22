@@ -48,211 +48,136 @@ class ReservationWindowTest extends TestCase
     }
 
     #[Test]
-    public function window_endpoint_requires_start_and_end_dates(): void
+    public function full_endpoint_loads_non_cancelled_reservations_overlapping_current_year(): void
     {
-        $response = $this->actingAs($this->user)->getJson('/api/reservations/window');
+        Carbon::setTestNow(Carbon::create(2026, 6, 15));
 
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['start', 'end']);
-    }
-
-    #[Test]
-    public function window_endpoint_validates_end_after_start(): void
-    {
-        $response = $this->actingAs($this->user)->getJson('/api/reservations/window?start=2026-03-15&end=2026-03-01');
-
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['end']);
-    }
-
-    #[Test]
-    public function window_returns_reservations_within_date_range(): void
-    {
-        // Réservation dans la fenêtre
-        $inWindow = $this->createReservation([
-            'date_reservation' => '2026-02-20',
-            'date_retour' => '2026-02-25',
+        $overlapFromPreviousYear = $this->createReservation([
+            'date_reservation' => '2025-12-28',
+            'date_retour' => '2026-01-03',
         ]);
 
-        // Réservation hors fenêtre (avant)
-        $beforeWindow = $this->createReservation([
-            'date_reservation' => '2026-01-01',
-            'date_retour' => '2026-01-10',
+        $insideYear = $this->createReservation([
+            'date_reservation' => '2026-06-10',
+            'date_retour' => '2026-06-12',
         ]);
 
-        // Réservation hors fenêtre (après)
-        $afterWindow = $this->createReservation([
-            'date_reservation' => '2026-04-01',
-            'date_retour' => '2026-04-10',
+        $overlapToNextYear = $this->createReservation([
+            'date_reservation' => '2026-12-30',
+            'date_retour' => '2027-01-02',
         ]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/reservations/window?start=2026-02-01&end=2026-03-15');
-
-        $response->assertStatus(200);
-        $ids = collect($response->json())->pluck('id')->toArray();
-
-        $this->assertContains($inWindow->id, $ids);
-        $this->assertNotContains($beforeWindow->id, $ids);
-        $this->assertNotContains($afterWindow->id, $ids);
-    }
-
-    #[Test]
-    public function window_returns_active_reservations_started_before_window(): void
-    {
-        // Réservation commencée avant la fenêtre mais toujours active
-        $activeBeforeWindow = $this->createReservation([
-            'date_reservation' => '2026-01-15',
-            'date_retour' => '2026-02-20', // Se termine dans la fenêtre
+        $beforeYear = $this->createReservation([
+            'date_reservation' => '2025-01-10',
+            'date_retour' => '2025-01-15',
         ]);
 
-        // Réservation commencée et terminée avant la fenêtre
-        $completedBeforeWindow = $this->createReservation([
-            'date_reservation' => '2026-01-01',
-            'date_retour' => '2026-01-15', // Terminée avant la fenêtre
+        $afterYear = $this->createReservation([
+            'date_reservation' => '2027-02-10',
+            'date_retour' => '2027-02-15',
         ]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/reservations/window?start=2026-02-01&end=2026-03-15');
-
-        $response->assertStatus(200);
-        $ids = collect($response->json())->pluck('id')->toArray();
-
-        $this->assertContains($activeBeforeWindow->id, $ids);
-        $this->assertNotContains($completedBeforeWindow->id, $ids);
-    }
-
-    #[Test]
-    public function window_excludes_cancelled_reservations(): void
-    {
-        // Réservation annulée dans la fenêtre
-        $cancelled = $this->createReservation([
-            'date_reservation' => '2026-02-20',
-            'date_retour' => '2026-02-25',
+        $cancelledInsideYear = $this->createReservation([
+            'date_reservation' => '2026-07-01',
+            'date_retour' => '2026-07-05',
             'statut' => 'annule',
             'raison_annulation' => 'Test annulation',
         ]);
 
-        // Réservation active dans la fenêtre
-        $active = $this->createReservation([
-            'date_reservation' => '2026-02-20',
-            'date_retour' => '2026-02-25',
-            'statut' => 'reserve',
-        ]);
-
-        $response = $this->actingAs($this->user)->getJson('/api/reservations/window?start=2026-02-01&end=2026-03-15');
+        $response = $this->actingAs($this->user)->getJson('/api/location/full');
 
         $response->assertStatus(200);
-        $ids = collect($response->json())->pluck('id')->toArray();
+        $ids = collect($response->json('reservations'))->pluck('id')->all();
 
-        $this->assertNotContains($cancelled->id, $ids);
-        $this->assertContains($active->id, $ids);
+        $this->assertContains($overlapFromPreviousYear->id, $ids);
+        $this->assertContains($insideYear->id, $ids);
+        $this->assertContains($overlapToNextYear->id, $ids);
+        $this->assertNotContains($beforeYear->id, $ids);
+        $this->assertNotContains($afterYear->id, $ids);
+        $this->assertNotContains($cancelledInsideYear->id, $ids);
+
+        Carbon::setTestNow();
     }
 
     #[Test]
-    public function window_returns_correct_format_for_calendar(): void
+    public function full_endpoint_returns_reservations_with_calendar_fields(): void
     {
+        Carbon::setTestNow(Carbon::create(2026, 6, 15));
+
         $reservation = $this->createReservation([
-            'date_reservation' => '2026-02-20',
-            'date_retour' => '2026-02-25',
+            'date_reservation' => '2026-06-20',
+            'date_retour' => '2026-06-25',
             'selection' => [
-                ['bike_id' => 'VAE_mb_1', 'dates' => ['2026-02-20', '2026-02-21']],
+                ['bike_id' => 'bike_1', 'dates' => ['2026-06-20', '2026-06-21']],
             ],
             'color' => 5,
         ]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/reservations/window?start=2026-02-01&end=2026-03-15');
+        $response = $this->actingAs($this->user)->getJson('/api/location/full');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
-            '*' => [
-                'id',
-                'client_id',
-                'client_name',
-                'client',
-                'date_reservation',
-                'date_retour',
-                'selection',
-                'color',
-                'statut',
-                'items',
+            'version',
+            'bikes',
+            'bikeCategories',
+            'bikeSizes',
+            'reservations' => [
+                '*' => [
+                    'id',
+                    'client_id',
+                    'client_name',
+                    'client',
+                    'date_reservation',
+                    'date_retour',
+                    'selection',
+                    'color',
+                    'statut',
+                    'items',
+                    'payments',
+                    'total_paid',
+                    'remaining',
+                ],
             ],
         ]);
 
-        $reservationData = collect($response->json())->firstWhere('id', $reservation->id);
-        $this->assertEquals('2026-02-20', $reservationData['date_reservation']);
-        $this->assertEquals(5, $reservationData['color']);
+        $reservationData = collect($response->json('reservations'))->firstWhere('id', $reservation->id);
+        $this->assertSame('2026-06-20', $reservationData['date_reservation']);
+        $this->assertSame(5, $reservationData['color']);
         $this->assertNotEmpty($reservationData['selection']);
+
+        Carbon::setTestNow();
     }
 
     #[Test]
-    public function location_page_loads_reservations_in_sliding_window(): void
+    public function location_page_and_full_endpoint_use_the_same_reservation_scope_for_current_year(): void
     {
-        // Freeze time to 2026-02-16
         Carbon::setTestNow(Carbon::create(2026, 2, 16));
 
-        // J-15 = 2026-02-01, J+30 = 2026-03-18
-
-        // Réservation du 1er janvier (terminée >15 jours) - NE DOIT PAS être chargée
-        $oldReservation = $this->createReservation([
-            'date_reservation' => '2026-01-01',
-            'date_retour' => '2026-01-10',
-        ]);
-
-        // Réservation du 10-20 février (dans la fenêtre) - DOIT être chargée
-        $inWindowReservation = $this->createReservation([
+        $included = $this->createReservation([
             'date_reservation' => '2026-02-10',
             'date_retour' => '2026-02-20',
         ]);
 
-        // Réservation du 5 janvier au 25 février (commencée avant mais active) - DOIT être chargée
-        $activeReservation = $this->createReservation([
-            'date_reservation' => '2026-01-05',
-            'date_retour' => '2026-02-25',
+        $excluded = $this->createReservation([
+            'date_reservation' => '2025-12-01',
+            'date_retour' => '2025-12-10',
         ]);
 
-        // Réservation du 25 mars (au-delà de +30 jours) - NE DOIT PAS être chargée
-        $futureReservation = $this->createReservation([
-            'date_reservation' => '2026-03-25',
-            'date_retour' => '2026-04-01',
-        ]);
+        $locationResponse = $this->actingAs($this->user)->get('/location');
+        $fullResponse = $this->actingAs($this->user)->getJson('/api/location/full');
 
-        $response = $this->actingAs($this->user)->get('/location');
+        $locationResponse->assertStatus(200);
+        $fullResponse->assertStatus(200);
 
-        $response->assertStatus(200);
-        $response->assertInertia(function ($page) use ($oldReservation, $inWindowReservation, $activeReservation, $futureReservation) {
-            $reservations = collect($page->toArray()['props']['reservations']);
-            $ids = $reservations->pluck('id')->toArray();
+        $locationResponse->assertInertia(function ($page) use ($fullResponse, $included, $excluded) {
+            $props = $page->toArray()['props'];
+            $locationIds = collect($props['reservations'])->pluck('id')->sort()->values()->all();
+            $fullIds = collect($fullResponse->json('reservations'))->pluck('id')->sort()->values()->all();
 
-            // Vérifier les critères d'acceptance
-            $this->assertNotContains($oldReservation->id, $ids, 'Réservation du 1er janvier NE devrait PAS être chargée');
-            $this->assertContains($inWindowReservation->id, $ids, 'Réservation du 10-20 février DEVRAIT être chargée');
-            $this->assertContains($activeReservation->id, $ids, 'Réservation du 5 jan - 25 fév DEVRAIT être chargée (active)');
-            $this->assertNotContains($futureReservation->id, $ids, 'Réservation du 25 mars NE devrait PAS être chargée');
-        });
-
-        Carbon::setTestNow(); // Reset time
-    }
-
-    #[Test]
-    public function location_page_excludes_cancelled_from_sliding_window(): void
-    {
-        Carbon::setTestNow(Carbon::create(2026, 2, 16));
-
-        // Réservation annulée dans la fenêtre
-        $cancelledReservation = $this->createReservation([
-            'date_reservation' => '2026-02-10',
-            'date_retour' => '2026-02-20',
-            'statut' => 'annule',
-            'raison_annulation' => 'Test',
-        ]);
-
-        $response = $this->actingAs($this->user)->get('/location');
-
-        $response->assertStatus(200);
-        $response->assertInertia(function ($page) use ($cancelledReservation) {
-            $reservations = collect($page->toArray()['props']['reservations']);
-            $ids = $reservations->pluck('id')->toArray();
-
-            $this->assertNotContains($cancelledReservation->id, $ids, 'Réservation annulée NE devrait PAS être chargée');
+            $this->assertSame($fullIds, $locationIds);
+            $this->assertContains($included->id, $locationIds);
+            $this->assertNotContains($excluded->id, $locationIds);
+            $this->assertArrayHasKey('agendaVersion', $props);
         });
 
         Carbon::setTestNow();
