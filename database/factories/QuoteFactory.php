@@ -31,6 +31,8 @@ class QuoteFactory extends Factory
             'total_tva' => '0.00',
             'total_ttc' => '0.00',
             'margin_total_ht' => '0.00',
+            'total_estimated_time_minutes' => null,
+            'actual_time_minutes' => null,
         ];
     }
 
@@ -103,6 +105,14 @@ class QuoteFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'metier' => Metier::Location,
+        ]);
+    }
+
+    public function withTimeTracking(int $estimatedMinutes = 120, ?int $actualMinutes = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'total_estimated_time_minutes' => $estimatedMinutes,
+            'actual_time_minutes' => $actualMinutes,
         ]);
     }
 }

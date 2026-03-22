@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Frontend;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class RoutingTest extends TestCase
@@ -11,44 +13,57 @@ class RoutingTest extends TestCase
 
     public function test_home_dashboard_route_is_accessible(): void
     {
-        $response = $this->get('/');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/');
 
         $response->assertStatus(200);
-        $response->assertViewIs('home.dashboard');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Dashboard')
+        );
     }
 
     public function test_clients_index_route_is_accessible(): void
     {
-        $response = $this->get('/clients');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/clients');
 
         $response->assertStatus(200);
-        $response->assertViewIs('clients.index');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Clients/Index')
+        );
     }
 
     public function test_atelier_index_route_is_accessible(): void
     {
-        $response = $this->get('/atelier');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/atelier');
 
         $response->assertStatus(200);
-        $response->assertViewIs('atelier.index');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Atelier/Index')
+        );
     }
 
     public function test_location_index_route_is_accessible(): void
     {
-        $response = $this->get('/location');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/location');
 
         $response->assertStatus(200);
-        $response->assertViewIs('location.index');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Location/Index')
+        );
     }
 
-    public function test_dashboard_displays_navigation_cards(): void
+    public function test_unauthenticated_user_is_redirected(): void
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
-        $response->assertSee('Clients');
-        $response->assertSee('Atelier');
-        $response->assertSee('Location');
+        $response->assertStatus(302);
     }
 
     public function test_named_routes_are_defined(): void

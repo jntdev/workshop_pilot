@@ -5,6 +5,7 @@ namespace Tests\Feature\Feature\Quotes;
 use App\Models\Quote;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class QuoteToInvoiceConversionTest extends TestCase
@@ -65,7 +66,7 @@ class QuoteToInvoiceConversionTest extends TestCase
 
         $response = $this->delete(route('atelier.quotes.destroy', $quote));
 
-        $response->assertRedirect(route('atelier.quotes.index'));
+        $response->assertRedirect(route('atelier.index'));
         $response->assertSessionHas('error', 'Impossible de supprimer une facture.');
 
         $this->assertDatabaseHas('quotes', ['id' => $quote->id]);
@@ -77,7 +78,7 @@ class QuoteToInvoiceConversionTest extends TestCase
 
         $response = $this->delete(route('atelier.quotes.destroy', $quote));
 
-        $response->assertRedirect(route('atelier.quotes.index'));
+        $response->assertRedirect(route('atelier.index'));
         $response->assertSessionHas('message', 'Devis supprimé avec succès.');
 
         $this->assertSoftDeleted('quotes', ['id' => $quote->id]);
@@ -85,14 +86,16 @@ class QuoteToInvoiceConversionTest extends TestCase
 
     public function test_quotes_list_shows_correct_type(): void
     {
-        $quote = Quote::factory()->asQuote()->create();
-        $invoice = Quote::factory()->asInvoice()->create();
+        Quote::factory()->asQuote()->create();
+        Quote::factory()->asInvoice()->create();
 
-        $response = $this->get(route('atelier.quotes.index'));
+        $response = $this->get(route('atelier.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Devis');
-        $response->assertSee('Facture');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Atelier/Index')
+            ->has('quotes')
+        );
     }
 
     public function test_invoice_show_page_hides_edit_button(): void
@@ -102,8 +105,12 @@ class QuoteToInvoiceConversionTest extends TestCase
         $response = $this->get(route('atelier.quotes.show', $invoice));
 
         $response->assertStatus(200);
-        $response->assertDontSee('Modifier');
-        $response->assertSee('Facture');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Atelier/Quotes/Show')
+            ->has('quote')
+            ->where('quote.is_invoice', true)
+            ->where('quote.can_edit', false)
+        );
     }
 
     public function test_quote_show_page_shows_edit_button(): void
@@ -113,7 +120,11 @@ class QuoteToInvoiceConversionTest extends TestCase
         $response = $this->get(route('atelier.quotes.show', $quote));
 
         $response->assertStatus(200);
-        $response->assertSee('Modifier');
-        $response->assertSee('Devis');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Atelier/Quotes/Show')
+            ->has('quote')
+            ->where('quote.is_invoice', false)
+            ->where('quote.can_edit', true)
+        );
     }
 }

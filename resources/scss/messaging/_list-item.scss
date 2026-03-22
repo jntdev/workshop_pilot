@@ -1,0 +1,139 @@
+// Item de liste de messages (colonne gauche)
+@use '../base/colors' as *;
+
+.message-list-item {
+    padding: 0.75rem 1rem;
+    background: $color-bg-white;
+    border: 1px solid $color-border-light;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: $color-bg-light;
+        border-color: $color-border-medium;
+    }
+
+    &--selected {
+        border-color: $color-primary-blue;
+        background: lighten($color-primary-blue, 48%);
+
+        &:hover {
+            background: lighten($color-primary-blue, 46%);
+        }
+    }
+
+    &--unread {
+        border-left: 3px solid $color-primary-blue;
+    }
+
+    // Message envoyé par moi, en attente de lecture par l'autre
+    &--pending-read {
+        border-left: 3px solid $color-toggle-mango;
+    }
+
+    // Message envoyé par moi, lu par l'autre
+    &--read-by-other {
+        border-left: 3px solid $color-status-ok;
+    }
+
+    &--resolved {
+        opacity: 0.7;
+    }
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+
+    &__from {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.8125rem;
+    }
+
+    &__author {
+        font-weight: 600;
+        color: $color-primary-blue;
+    }
+
+    &__arrow {
+        color: $color-neutral-medium;
+        font-size: 0.75rem;
+    }
+
+    &__recipient {
+        font-weight: 500;
+        color: $color-neutral-dark;
+    }
+
+    &__self {
+        font-style: italic;
+        color: $color-neutral-medium;
+        font-size: 0.75rem;
+    }
+
+    &__date {
+        font-size: 0.75rem;
+        color: $color-neutral-medium;
+    }
+
+    &__contact {
+        font-size: 0.75rem;
+        color: $color-neutral-dark;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    &__preview {
+        font-size: 0.8125rem;
+        color: $color-neutral-medium;
+        line-height: 1.4;
+        margin-bottom: 0.5rem;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    &__footer {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__status {
+        font-size: 0.6875rem;
+        padding: 0.125rem 0.375rem;
+        border-radius: 4px;
+        font-weight: 500;
+
+        &--resolved {
+            background: lighten($color-success-green, 45%);
+            color: $color-success-green;
+        }
+    }
+
+    &__replies {
+        font-size: 0.75rem;
+        color: $color-neutral-medium;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    &__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1rem;
+        height: 1rem;
+        padding: 0 0.25rem;
+        background: $color-danger-red;
+        color: white;
+        font-size: 0.625rem;
+        font-weight: 600;
+        border-radius: 9999px;
+    }
+}

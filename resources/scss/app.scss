@@ -21,3 +21,19 @@
 @use 'clients/index-page' as clients-page;
 @use 'atelier/index-page' as atelier-page;
 @use 'location/index-page' as location-page;
+@use 'location/reservation-form';
+@use 'location/planning';
+@use 'location/settings-panel';
+@use 'bikes/index-page' as bikes-page;
+
+// Messagerie
+@use 'messaging/button';
+@use 'messaging/page';
+@use 'messaging/list-item';
+@use 'messaging/detail';
+@use 'messaging/message-card';
+@use 'messaging/forms' as messaging-forms;
+
+// Photos
+@use 'photos/modal' as photos-modal;
+@use 'photos/gallery' as photos-gallery;

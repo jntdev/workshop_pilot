@@ -2,48 +2,53 @@
 
 namespace Tests\Feature\Feedback;
 
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class FeedbackBannerTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_feedback_banner_displays_success_message(): void
     {
-        session()->flash('feedback', [
-            'type' => 'success',
-            'message' => 'Operation reussie',
-        ]);
+        $user = User::factory()->create();
 
-        $response = $this->get(route('home'));
+        $response = $this->actingAs($user)
+            ->withSession(['message' => 'Opération réussie'])
+            ->get(route('home'));
 
         $response->assertStatus(200);
-        $response->assertSee('window.feedbackBannerData', false);
-        $response->assertSee('feedback-banner--hidden', false);
-        $response->assertSee('"type":"success"', false);
-        $response->assertSee('Operation reussie', false);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('flash.message', 'Opération réussie')
+        );
     }
 
     public function test_feedback_banner_displays_error_message(): void
     {
-        session()->flash('feedback', [
-            'type' => 'error',
-            'message' => 'Une erreur est survenue',
-        ]);
+        $user = User::factory()->create();
 
-        $response = $this->get(route('home'));
+        $response = $this->actingAs($user)
+            ->withSession(['error' => 'Une erreur est survenue'])
+            ->get(route('home'));
 
         $response->assertStatus(200);
-        $response->assertSee('window.feedbackBannerData', false);
-        $response->assertSee('feedback-banner--hidden', false);
-        $response->assertSee('"type":"error"', false);
-        $response->assertSee('Une erreur est survenue', false);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('flash.error', 'Une erreur est survenue')
+        );
     }
 
     public function test_feedback_banner_not_visible_without_message(): void
     {
-        $response = $this->get(route('home'));
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('home'));
 
         $response->assertStatus(200);
-        $response->assertSee('feedback-banner--hidden', false);
-        $response->assertDontSee('window.feedbackBannerData', false);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('flash.message', null)
+            ->where('flash.error', null)
+        );
     }
 }

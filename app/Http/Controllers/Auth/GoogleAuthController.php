@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\WorkMode;
 use App\Http\Controllers\Controller;
 use App\Models\AuthorizedEmail;
 use App\Models\User;
@@ -65,19 +66,28 @@ class GoogleAuthController extends Controller
             $user->email = $email;
             $user->name = $googleUser->getName() ?: $email;
             $user->password = Str::random(64);
-        } elseif ($googleUser->getName()) {
-            $user->name = $googleUser->getName();
         }
 
         if (! $user->email_verified_at) {
             $user->email_verified_at = now();
         }
 
+        $user->work_mode = $this->resolveWorkMode($email);
         $user->save();
 
         Auth::login($user);
         $request->session()->regenerate();
 
         return redirect()->intended(config('fortify.home'));
+    }
+
+    private function resolveWorkMode(string $email): ?WorkMode
+    {
+        return match ($email) {
+            'jnt.marois@gmail.com' => WorkMode::Atelier,
+            'lesvelosdarmorbzh@gmail.com' => WorkMode::Comptoir,
+            'julien2705@gmail.com' => WorkMode::Julien,
+            default => null,
+        };
     }
 }

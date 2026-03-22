@@ -1,0 +1,92 @@
+// Input component styles
+
+.input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.input-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.input {
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--color-border, #ddd);
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    // Number input: compact size for 7 digits + hide spinners
+    &[type='number'] {
+        width: 7ch;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-primary, #3498db);
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+    }
+
+    &:disabled {
+        background-color: var(--color-disabled-bg, #f5f5f5);
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    &--error {
+        border-color: var(--color-error, #e74c3c);
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.15);
+        }
+    }
+
+    &::placeholder {
+        color: var(--color-placeholder, #999);
+    }
+}
+
+.input-error {
+    font-size: 0.75rem;
+    color: var(--color-error, #e74c3c);
+}
+
+// Test composant page styles
+.test-composant {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 1.5rem;
+    background: var(--color-card-bg, #fff);
+    border-radius: 8px;
+    margin-top: 1rem;
+
+    &__section {
+        padding: 1.5rem;
+        background: var(--color-section-bg, #f8f9fa);
+        border-radius: 6px;
+
+        h2 {
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+            color: var(--color-heading, #333);
+        }
+
+        p {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary, #666);
+        }
+    }
+}

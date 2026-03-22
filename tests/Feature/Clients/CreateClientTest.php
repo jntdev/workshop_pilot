@@ -3,6 +3,7 @@
 namespace Tests\Feature\Clients;
 
 use App\Models\Client;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,6 +13,8 @@ class CreateClientTest extends TestCase
 
     public function test_client_can_be_created_with_valid_data(): void
     {
+        $user = User::factory()->create();
+
         $clientData = [
             'prenom' => 'Jean',
             'nom' => 'Dupont',
@@ -25,7 +28,7 @@ class CreateClientTest extends TestCase
             'avantage_expiration' => '2025-12-31',
         ];
 
-        $response = $this->postJson('/api/clients', $clientData);
+        $response = $this->actingAs($user)->postJson('/api/clients', $clientData);
 
         $response->assertStatus(201)
             ->assertJsonStructure([
@@ -63,6 +66,8 @@ class CreateClientTest extends TestCase
 
     public function test_client_creation_requires_prenom(): void
     {
+        $user = User::factory()->create();
+
         $clientData = [
             'nom' => 'Dupont',
             'telephone' => '0123456789',
@@ -70,7 +75,7 @@ class CreateClientTest extends TestCase
             'avantage_valeur' => 0,
         ];
 
-        $response = $this->postJson('/api/clients', $clientData);
+        $response = $this->actingAs($user)->postJson('/api/clients', $clientData);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['prenom']);
@@ -78,6 +83,8 @@ class CreateClientTest extends TestCase
 
     public function test_client_creation_requires_nom(): void
     {
+        $user = User::factory()->create();
+
         $clientData = [
             'prenom' => 'Jean',
             'telephone' => '0123456789',
@@ -85,7 +92,7 @@ class CreateClientTest extends TestCase
             'avantage_valeur' => 0,
         ];
 
-        $response = $this->postJson('/api/clients', $clientData);
+        $response = $this->actingAs($user)->postJson('/api/clients', $clientData);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['nom']);
@@ -93,6 +100,8 @@ class CreateClientTest extends TestCase
 
     public function test_client_creation_requires_telephone(): void
     {
+        $user = User::factory()->create();
+
         $clientData = [
             'prenom' => 'Jean',
             'nom' => 'Dupont',
@@ -100,7 +109,7 @@ class CreateClientTest extends TestCase
             'avantage_valeur' => 0,
         ];
 
-        $response = $this->postJson('/api/clients', $clientData);
+        $response = $this->actingAs($user)->postJson('/api/clients', $clientData);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['telephone']);
@@ -108,6 +117,7 @@ class CreateClientTest extends TestCase
 
     public function test_client_email_must_be_unique(): void
     {
+        $user = User::factory()->create();
         Client::factory()->create(['email' => 'test@example.com']);
 
         $clientData = [
@@ -119,7 +129,7 @@ class CreateClientTest extends TestCase
             'avantage_valeur' => 0,
         ];
 
-        $response = $this->postJson('/api/clients', $clientData);
+        $response = $this->actingAs($user)->postJson('/api/clients', $clientData);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['email']);
@@ -127,6 +137,8 @@ class CreateClientTest extends TestCase
 
     public function test_avantage_pourcentage_validates_value_range(): void
     {
+        $user = User::factory()->create();
+
         $clientData = [
             'prenom' => 'Jean',
             'nom' => 'Dupont',
@@ -135,7 +147,7 @@ class CreateClientTest extends TestCase
             'avantage_valeur' => 150,
         ];
 
-        $response = $this->postJson('/api/clients', $clientData);
+        $response = $this->actingAs($user)->postJson('/api/clients', $clientData);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['avantage_valeur']);
@@ -143,6 +155,8 @@ class CreateClientTest extends TestCase
 
     public function test_avantage_montant_validates_positive_value(): void
     {
+        $user = User::factory()->create();
+
         $clientData = [
             'prenom' => 'Jean',
             'nom' => 'Dupont',
@@ -151,7 +165,7 @@ class CreateClientTest extends TestCase
             'avantage_valeur' => 0,
         ];
 
-        $response = $this->postJson('/api/clients', $clientData);
+        $response = $this->actingAs($user)->postJson('/api/clients', $clientData);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['avantage_valeur']);
@@ -159,6 +173,8 @@ class CreateClientTest extends TestCase
 
     public function test_avantage_aucun_requires_zero_value(): void
     {
+        $user = User::factory()->create();
+
         $clientData = [
             'prenom' => 'Jean',
             'nom' => 'Dupont',
@@ -167,7 +183,7 @@ class CreateClientTest extends TestCase
             'avantage_valeur' => 10,
         ];
 
-        $response = $this->postJson('/api/clients', $clientData);
+        $response = $this->actingAs($user)->postJson('/api/clients', $clientData);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['avantage_valeur']);

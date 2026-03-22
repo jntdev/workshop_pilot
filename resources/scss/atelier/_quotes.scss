@@ -3,7 +3,7 @@
 
 // Quote Form
 .quote-form {
-    max-width: 1400px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: 2rem;
 
@@ -186,6 +186,33 @@
             }
         }
     }
+
+    &__summary-row {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    &__remarks {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__totals-wrapper {
+        flex: 0 0 400px;
+    }
+
+    &__subsection-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin-bottom: 0.75rem;
+    }
+
+    &__remarks-input {
+        min-height: 150px;
+        resize: vertical;
+    }
 }
 
 // Quote Lines Table
@@ -194,7 +221,8 @@
 
     &__header {
         display: grid;
-        grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 60px;
+        // Intitulé, Réf, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, ×
+        grid-template-columns: 1.8fr 0.5fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         background-color: $color-bg-light;
@@ -206,7 +234,8 @@
 
     &__row {
         display: grid;
-        grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 60px;
+        // Intitulé, Réf, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, ×
+        grid-template-columns: 1.8fr 0.5fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         border-bottom: 1px solid $color-border-light;
@@ -220,6 +249,18 @@
     &__cell {
         display: flex;
         align-items: center;
+        min-width: 0; // Prevent grid blowout
+
+        &--readonly {
+            font-weight: 600;
+            color: $color-neutral-dark;
+            font-size: 0.9rem;
+            padding-left: 0.5rem; // Align with input padding
+        }
+    }
+
+    &__header &__cell {
+        padding-left: 0.5rem; // Align header text with input content
     }
 
     &__input {
@@ -258,9 +299,30 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        margin-left: 0.75rem;
 
         &:hover {
             background-color: darken($color-danger-red, 10%);
+        }
+    }
+
+    &__empty {
+        padding: 2rem;
+        text-align: center;
+        background-color: lighten($color-primary-blue, 48%);
+        border: 2px dashed $color-primary-blue;
+        border-radius: 8px;
+        margin: 1rem 0;
+
+        p {
+            margin: 0;
+            color: $color-neutral-dark;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        strong {
+            color: $color-primary-blue;
         }
     }
 }
@@ -297,6 +359,58 @@
     &__value {
         font-weight: 600;
         color: $color-neutral-dark;
+    }
+
+    &__time-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px dashed $color-border-light;
+    }
+
+    &__time-value {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    &__time-input {
+        width: 80px;
+        padding: 0.5rem;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        text-align: right;
+
+        &:focus {
+            outline: none;
+            border-color: $color-primary-blue;
+        }
+    }
+
+    &__time-unit {
+        color: $color-neutral-medium;
+        font-size: 0.9rem;
+    }
+
+    &__save-time-btn {
+        margin-left: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        background-color: $color-success-green;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: darken($color-success-green, 10%);
+        }
+
+        &:disabled {
+            background-color: $color-neutral-medium;
+            cursor: not-allowed;
+        }
     }
 }
 
@@ -374,7 +488,7 @@
 
 // Quote Show Page
 .quote-show {
-    max-width: 1200px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: 2rem;
 
@@ -444,12 +558,40 @@
         }
     }
 
+    &__summary-row {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    &__remarks {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__remarks-content {
+        background-color: $color-bg-light;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        line-height: 1.6;
+        color: $color-neutral-dark;
+    }
+
+    &__remarks-empty {
+        color: $color-neutral-medium;
+        font-style: italic;
+        padding: 1rem 0;
+    }
+
+    &__totals-wrapper {
+        flex: 0 0 400px;
+    }
+
     &__totals {
         background-color: $color-bg-light;
         padding: 1.5rem;
         border-radius: 8px;
-        max-width: 500px;
-        margin-left: auto;
     }
 
     &__totals-row {
@@ -474,6 +616,22 @@
         margin-top: 1.5rem;
         display: grid;
         gap: 1rem;
+    }
+
+    &__time-section {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: lighten($color-bg-light, 2%);
+        border-radius: 6px;
+        border-left: 3px solid $color-neutral-medium;
+    }
+
+    &__subsection-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: $color-neutral-medium;
+        margin-bottom: 1rem;
+        font-style: italic;
     }
 
     &__actions {
@@ -516,7 +674,7 @@
 
 // Quotes List Page
 .quotes-list {
-    max-width: 1200px;
+    max-width: 1800px;
     margin: 0 auto;
     padding: 2rem;
 
@@ -662,9 +820,9 @@
     .quote-lines-table {
         &__header,
         &__row {
-            grid-template-columns: 1.5fr 0.6fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 50px;
+            grid-template-columns: 1.4fr 0.5fr 0.4fr 0.5fr 0.5fr 0.5fr 0.5fr 0.4fr 0.5fr 0.6fr 0.6fr 0.4fr 35px;
             gap: 0.25rem;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
     }
 
@@ -920,5 +1078,113 @@
                 background-color: darken($color-danger-red, 10%);
             }
         }
+    }
+}
+
+// Modal générique
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-width: 450px;
+    width: 90%;
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid $color-border-light;
+    }
+
+    &__title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin: 0;
+    }
+
+    &__close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: $color-neutral-medium;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+
+        &:hover {
+            color: $color-neutral-dark;
+        }
+    }
+
+    &__body {
+        padding: 1.5rem;
+    }
+
+    &__field {
+        margin-bottom: 1rem;
+    }
+
+    &__label {
+        display: block;
+        font-weight: 500;
+        color: $color-neutral-dark;
+        margin-bottom: 0.5rem;
+    }
+
+    &__input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        font-size: 1rem;
+
+        &:focus {
+            outline: none;
+            border-color: $color-primary-blue;
+            box-shadow: 0 0 0 3px rgba($color-primary-blue, 0.1);
+        }
+
+        &:disabled {
+            background-color: $color-neutral-light;
+            cursor: not-allowed;
+        }
+    }
+
+    &__error {
+        color: $color-danger-red;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    &__success {
+        color: $color-success-green;
+        font-size: 1rem;
+        text-align: center;
+        padding: 1rem 0;
+    }
+
+    &__footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid $color-border-light;
+        background-color: $color-bg-light;
+        border-radius: 0 0 8px 8px;
     }
 }

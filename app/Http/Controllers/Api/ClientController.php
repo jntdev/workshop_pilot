@@ -7,19 +7,41 @@ use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
-    /**
-     * Display a listing of clients.
-     */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $clients = Client::all();
+        $search = $request->input('search', '');
 
-        return response()->json([
-            'data' => $clients,
+        $query = Client::query()->orderBy('nom')->orderBy('prenom');
+
+        if ($search !== '') {
+            $search = strtolower($search);
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(prenom) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(nom) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(telephone) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
+            });
+        }
+
+        $clients = $query->get()->map(fn (Client $client) => [
+            'id' => $client->id,
+            'prenom' => $client->prenom,
+            'nom' => $client->nom,
+            'email' => $client->email,
+            'telephone' => $client->telephone,
+            'adresse' => $client->adresse,
+            'origine_contact' => $client->origine_contact,
+            'commentaires' => $client->commentaires,
+            'avantage_type' => $client->avantage_type,
+            'avantage_valeur' => $client->avantage_valeur,
+            'avantage_expiration' => $client->avantage_expiration?->format('Y-m-d'),
         ]);
+
+        return response()->json($clients);
     }
 
     /**

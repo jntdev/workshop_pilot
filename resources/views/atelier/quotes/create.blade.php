@@ -3,7 +3,7 @@
         <div class="breadcrumb">
             <a href="{{ route('atelier.index') }}">Atelier</a>
             <span>&gt;</span>
-            <a href="{{ route('atelier.quotes.index') }}">Devis</a>
+            <a href="{{ route('atelier.index') }}">Devis</a>
             <span>&gt;</span>
             <span>Nouveau</span>
         </div>

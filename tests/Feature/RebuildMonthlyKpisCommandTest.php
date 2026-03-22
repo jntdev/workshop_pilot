@@ -11,6 +11,15 @@ class RebuildMonthlyKpisCommandTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Nettoyer les tables pour éviter les interférences avec d'autres tests
+        MonthlyKpi::query()->delete();
+        Quote::query()->forceDelete();
+    }
+
     public function test_rebuild_creates_kpis_from_invoices(): void
     {
         // Créer des factures sur deux mois différents

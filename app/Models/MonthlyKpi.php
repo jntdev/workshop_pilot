@@ -17,6 +17,7 @@ class MonthlyKpi extends Model
         'month',
         'invoice_count',
         'revenue_ht',
+        'revenue_ttc',
         'margin_ht',
     ];
 
@@ -28,6 +29,7 @@ class MonthlyKpi extends Model
             'month' => 'integer',
             'invoice_count' => 'integer',
             'revenue_ht' => 'decimal:2',
+            'revenue_ttc' => 'decimal:2',
             'margin_ht' => 'decimal:2',
         ];
     }

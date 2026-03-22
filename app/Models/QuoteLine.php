@@ -21,7 +21,12 @@ class QuoteLine extends Model
         'margin_amount_ht',
         'margin_rate',
         'tva_rate',
+        'line_purchase_ht',
+        'line_margin_ht',
+        'line_total_ht',
+        'line_total_ttc',
         'position',
+        'estimated_time_minutes',
     ];
 
     protected function casts(): array
@@ -34,6 +39,11 @@ class QuoteLine extends Model
             'margin_amount_ht' => 'decimal:2',
             'margin_rate' => 'decimal:4',
             'tva_rate' => 'decimal:4',
+            'line_purchase_ht' => 'decimal:2',
+            'line_margin_ht' => 'decimal:2',
+            'line_total_ht' => 'decimal:2',
+            'line_total_ttc' => 'decimal:2',
+            'estimated_time_minutes' => 'integer',
         ];
     }
 

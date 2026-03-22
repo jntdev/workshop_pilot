@@ -97,6 +97,21 @@ return [
             'retry_after' => 60,
         ],
 
+        'location' => [
+            'transport' => 'smtp',
+            'host' => env('MAIL_LOCATION_HOST', env('MAIL_HOST', '127.0.0.1')),
+            'port' => env('MAIL_LOCATION_PORT', 587),
+            'encryption' => env('MAIL_LOCATION_ENCRYPTION', 'tls'),
+            'username' => env('MAIL_LOCATION_USERNAME'),
+            'password' => env('MAIL_LOCATION_PASSWORD'),
+            'timeout' => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'from' => [
+                'address' => env('MAIL_LOCATION_FROM_ADDRESS'),
+                'name' => env('MAIL_LOCATION_FROM_NAME', 'Location Vélos'),
+            ],
+        ],
+
     ],
 
     /*
