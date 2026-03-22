@@ -14,6 +14,7 @@ import PlanningPanel, { type PlanningReservation } from '@/Components/Location/P
 import SettingsPanel from '@/Components/Location/SettingsPanel';
 import LocationSyncOverlay from '@/Components/Location/LocationSyncOverlay';
 import AgendaDriftBanner from '@/Components/Location/AgendaDriftBanner';
+import ReservationSearch from '@/Components/Location/ReservationSearch';
 import { useReservationDraft } from '@/hooks/useReservationDraft';
 import { useAgendaStore } from '@/hooks/useAgendaStore';
 import { useAgendaVersionWatcher } from '@/hooks/useAgendaVersionWatcher';
@@ -161,8 +162,9 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
 
         for (const reservation of reservations) {
             // Extraire le nom de famille (dernier mot du nom complet)
-            const nameParts = reservation.client_name.split(' ');
-            const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : reservation.client_name;
+            const clientName = reservation.client_name || '';
+            const nameParts = clientName.split(' ');
+            const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : clientName;
 
             // Parcourir la sélection de chaque réservation
             for (const bike of reservation.selection) {
@@ -176,7 +178,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                     index.set(key, {
                         reservationId: reservation.id,
                         color: reservation.color as ReservationColorIndex,
-                        clientName: reservation.client_name,
+                        clientName: clientName,
                         clientLastName: lastName,
                         statut: reservation.statut,
                         isFirstCell: date === firstDate,
@@ -252,6 +254,28 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         // Optimistic update avec rollback automatique si erreur
         updateReservation(reservationId, { color: newColor }, { color: newColor });
     }, [editingReservation, viewingReservationId, updateReservation]);
+
+    // Gestionnaire pour la recherche de réservation
+    const handleSearchSelect = useCallback((reservation: LoadedReservation) => {
+        // Trouver l'index de la première date de la réservation
+        const firstDate = reservation.date_reservation;
+        const rowIndex = days.findIndex((day) => day.date === firstDate);
+
+        // Scroll fluide vers la ligne correspondante
+        if (rowIndex >= 0 && rowVirtualizerRef.current) {
+            rowVirtualizerRef.current.scrollToIndex(rowIndex, {
+                align: 'start',
+                behavior: 'smooth',
+            });
+        }
+
+        // Activer le mode visualisation et ouvrir le formulaire
+        setViewingReservationId(reservation.id);
+        setEditingReservation(reservation);
+        setSelectedBike(null);
+        actions.loadReservation(reservation);
+        setSidePanelMode('reservation');
+    }, [days, actions]);
 
     // Drag selection handlers
     const handleCellMouseDown = useCallback((date: string, bikeId: string, isHS: boolean, reservationId?: number) => {
@@ -726,6 +750,12 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                                     x
                                 </button>
                             </div>
+                        )}
+                        {sidePanelMode === 'closed' && !selectedBike && !viewingReservationId && !draft.isActive && (
+                            <ReservationSearch
+                                reservations={reservations}
+                                onSelect={handleSearchSelect}
+                            />
                         )}
                     </div>
 

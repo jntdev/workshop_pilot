@@ -191,15 +191,22 @@ class AgendaStore {
         if (!this.currentData) return;
 
         const existing = this.currentData.reservations.find((r) => r.id === reservation.id);
+        let newReservations: LoadedReservation[];
         if (existing) {
             // Update existing
-            this.currentData.reservations = this.currentData.reservations.map((r) =>
+            newReservations = this.currentData.reservations.map((r) =>
                 r.id === reservation.id ? reservation : r
             );
         } else {
             // Add new
-            this.currentData.reservations = [...this.currentData.reservations, reservation];
+            newReservations = [...this.currentData.reservations, reservation];
         }
+
+        // Create new data object to trigger React re-renders
+        this.currentData = {
+            ...this.currentData,
+            reservations: newReservations,
+        };
 
         // Update version if provided
         if (newVersion !== undefined) {
@@ -217,7 +224,11 @@ class AgendaStore {
     removeReservation(reservationId: number, newVersion?: number): void {
         if (!this.currentData) return;
 
-        this.currentData.reservations = this.currentData.reservations.filter((r) => r.id !== reservationId);
+        // Create new data object to trigger React re-renders
+        this.currentData = {
+            ...this.currentData,
+            reservations: this.currentData.reservations.filter((r) => r.id !== reservationId),
+        };
 
         // Update version if provided
         if (newVersion !== undefined) {

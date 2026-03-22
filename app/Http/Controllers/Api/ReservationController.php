@@ -318,6 +318,9 @@ class ReservationController extends Controller
         return [
             'id' => $reservation->id,
             'client_id' => $reservation->client_id,
+            'client_name' => $reservation->client
+                ? "{$reservation->client->prenom} {$reservation->client->nom}"
+                : 'Client inconnu',
             'client' => $reservation->client ? [
                 'id' => $reservation->client->id,
                 'prenom' => $reservation->client->prenom,
