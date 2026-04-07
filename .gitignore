@@ -24,3 +24,4 @@ database/database-testing.sqlite
 Homestead.json
 Homestead.yaml
 Thumbs.db
+.env_prod
