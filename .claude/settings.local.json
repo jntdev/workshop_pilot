@@ -75,7 +75,9 @@
       "Bash(grep -n \"authorized_emails\\\\|jnt.marois\\\\|lesvelosdarmor\" /c/code/workshop_pilot/database/seeders/*.php)",
       "Bash(echo \"EXIT: $?\")",
       "Bash(/opt/homebrew/bin/php vendor/bin/pint --dirty)",
-      "Bash(sail pint --dirty)"
+      "Bash(sail pint --dirty)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
