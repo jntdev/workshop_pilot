@@ -29,6 +29,13 @@ class MessageReply extends Model implements HasMedia
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::created(function (MessageReply $reply) {
+            $reply->message->touchActivity();
+        });
+    }
+
     public function message(): BelongsTo
     {
         return $this->belongsTo(Message::class);

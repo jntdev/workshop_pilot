@@ -1,26 +1,17 @@
 import { useState } from 'react';
 import MainLayout from '@/Layouts/MainLayout';
-import { Head } from '@inertiajs/react';
-import { Message, MessageCategory } from '@/types';
+import { Head, router } from '@inertiajs/react';
 import MessageListItem from '@/Components/Messaging/MessageListItem';
 import MessageDetail from '@/Components/Messaging/MessageDetail';
 import NewMessageForm from '@/Components/Messaging/NewMessageForm';
 import { useMessaging } from '@/Contexts/MessagingContext';
-
-const CATEGORY_LABELS: Record<MessageCategory, string> = {
-    accueil: 'Accueil',
-    atelier: 'Atelier',
-    location: 'Location',
-    autre: 'Autre',
-};
-
-const CATEGORIES: MessageCategory[] = ['accueil', 'atelier', 'location', 'autre'];
 
 function MessagesContent() {
     const {
         currentUserId,
         users,
         messages,
+        categories,
         unreadCount,
         unreadByCategory,
         isLoading,
@@ -30,13 +21,13 @@ function MessagesContent() {
     const currentUserName = users.find(u => u.id === currentUserId)?.name ?? '';
 
     const [showNewForm, setShowNewForm] = useState(false);
-    const [categoryFilter, setCategoryFilter] = useState<MessageCategory | 'all'>('all');
+    const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all');
     const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'resolved'>('all');
     const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
 
     const filteredMessages = messages.filter(m => {
         // Filtre catégorie
-        if (categoryFilter !== 'all' && m.category !== categoryFilter) return false;
+        if (categoryFilter !== 'all' && m.category_id !== categoryFilter) return false;
         // Filtre statut
         if (statusFilter === 'open') return m.status === 'ouvert';
         if (statusFilter === 'resolved') return m.status === 'resolu';
@@ -46,7 +37,7 @@ function MessagesContent() {
     // Compteurs pour les filtres de statut (dans la catégorie sélectionnée)
     const messagesInCategory = categoryFilter === 'all'
         ? messages
-        : messages.filter(m => m.category === categoryFilter);
+        : messages.filter(m => m.category_id === categoryFilter);
 
     const selectedMessage = messages.find(m => m.id === selectedMessageId) || null;
 
@@ -56,6 +47,10 @@ function MessagesContent() {
 
     const handleCloseDetail = () => {
         setSelectedMessageId(null);
+    };
+
+    const handleGoToSettings = () => {
+        router.visit('/messages/settings');
     };
 
     return (
@@ -94,16 +89,23 @@ function MessagesContent() {
                                 <span className="messages-page__filter-badge">{unreadCount}</span>
                             )}
                         </button>
-                        {CATEGORIES.map(cat => {
-                            const unread = unreadByCategory[cat] || 0;
+                        {categories.map(cat => {
+                            const unread = unreadByCategory[cat.id] || 0;
                             return (
                                 <button
-                                    key={cat}
+                                    key={cat.id}
                                     type="button"
-                                    className={`messages-page__filter messages-page__filter--category ${categoryFilter === cat ? 'messages-page__filter--active' : ''}`}
-                                    onClick={() => setCategoryFilter(cat)}
+                                    className={`messages-page__filter messages-page__filter--category ${categoryFilter === cat.id ? 'messages-page__filter--active' : ''}`}
+                                    onClick={() => setCategoryFilter(cat.id)}
+                                    style={{
+                                        borderColor: categoryFilter === cat.id ? cat.color : undefined,
+                                    }}
                                 >
-                                    {CATEGORY_LABELS[cat]}
+                                    <span
+                                        className="messages-page__filter-dot"
+                                        style={{ backgroundColor: cat.color }}
+                                    />
+                                    {cat.label}
                                     {unread > 0 && (
                                         <span className="messages-page__filter-badge">{unread}</span>
                                     )}
@@ -112,6 +114,14 @@ function MessagesContent() {
                         })}
                     </div>
                     <div className="messages-page__actions">
+                        <button
+                            type="button"
+                            className="messages-page__settings-btn"
+                            onClick={handleGoToSettings}
+                            title="Reglages"
+                        >
+                            Reglages
+                        </button>
                         <button
                             type="button"
                             className="messages-page__refresh"

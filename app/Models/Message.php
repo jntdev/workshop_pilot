@@ -18,7 +18,7 @@ class Message extends Model implements HasMedia
     protected $fillable = [
         'author_user_id',
         'recipient_user_id',
-        'category',
+        'category_id',
         'contact_name',
         'contact_phone',
         'contact_email',
@@ -26,6 +26,7 @@ class Message extends Model implements HasMedia
         'status',
         'read_at',
         'resolved_at',
+        'last_activity_at',
     ];
 
     protected function casts(): array
@@ -33,7 +34,20 @@ class Message extends Model implements HasMedia
         return [
             'read_at' => 'datetime',
             'resolved_at' => 'datetime',
+            'last_activity_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Message $message) {
+            $message->last_activity_at = now();
+        });
+    }
+
+    public function touchActivity(): void
+    {
+        $this->update(['last_activity_at' => now()]);
     }
 
     public function author(): BelongsTo
@@ -46,12 +60,15 @@ class Message extends Model implements HasMedia
         return $this->belongsTo(User::class, 'recipient_user_id');
     }
 
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(MessageCategory::class, 'category_id');
+    }
+
     public function replies(): HasMany
     {
         return $this->hasMany(MessageReply::class)->orderBy('created_at');
     }
-
-    public const CATEGORIES = ['accueil', 'atelier', 'location', 'autre'];
 
     public static function unreadCountForUser(int $userId): int
     {
@@ -73,25 +90,18 @@ class Message extends Model implements HasMedia
     }
 
     /**
-     * @return array<string, int>
+     * @return array<int, int> category_id => count
      */
     public static function unreadCountByCategoryForUser(int $userId): array
     {
-        $counts = self::where('status', 'ouvert')
+        return self::where('status', 'ouvert')
             ->whereNull('read_at')
             ->whereNotNull('recipient_user_id')
             ->where('recipient_user_id', $userId)
-            ->selectRaw('category, COUNT(*) as count')
-            ->groupBy('category')
-            ->pluck('count', 'category')
+            ->selectRaw('category_id, COUNT(*) as count')
+            ->groupBy('category_id')
+            ->pluck('count', 'category_id')
             ->toArray();
-
-        $result = [];
-        foreach (self::CATEGORIES as $cat) {
-            $result[$cat] = $counts[$cat] ?? 0;
-        }
-
-        return $result;
     }
 
     public static function forUser(int $userId)
@@ -100,7 +110,7 @@ class Message extends Model implements HasMedia
             $q->where('recipient_user_id', $userId)
                 ->orWhere('author_user_id', $userId);
         })
-            ->orderByDesc('created_at');
+            ->orderByDesc('last_activity_at');
     }
 
     public function markAsRead(): void

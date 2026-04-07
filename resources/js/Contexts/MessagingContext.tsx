@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Message, MessagingState, UnreadByCategory, MessageCategory, MessagingUser } from '@/types';
+import { Message, MessagingState, UnreadByCategory, MessageCategoryData, MessagingUser } from '@/types';
 
 interface MessagingContextValue extends MessagingState {
+    categories: MessageCategoryData[];
     togglePanel: () => void;
     openPanel: () => void;
     closePanel: () => void;
     refreshMessages: () => Promise<void>;
+    refreshCategories: () => Promise<void>;
     markMessageAsRead: (messageId: number) => Promise<void>;
     markMessageAsResolved: (messageId: number) => Promise<void>;
     reopenMessage: (messageId: number) => Promise<void>;
@@ -15,11 +17,15 @@ interface MessagingContextValue extends MessagingState {
     deleteReply: (replyId: number, messageId: number) => Promise<void>;
     deleteMessage: (messageId: number) => Promise<void>;
     markReplyAsRead: (replyId: number) => Promise<void>;
+    updateMessageCategory: (messageId: number, categoryId: number) => Promise<void>;
+    createCategory: (label: string, color?: string) => Promise<MessageCategoryData>;
+    updateCategory: (categoryId: number, data: { label?: string; color?: string }) => Promise<void>;
+    deleteCategory: (categoryId: number) => Promise<void>;
 }
 
 interface CreateMessageData {
     recipient_user_id: number | null;
-    category: MessageCategory;
+    category_id: number;
     contact_name?: string;
     contact_phone?: string;
     contact_email?: string;
@@ -43,19 +49,27 @@ function getCsrfToken(): string {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
 
-const defaultUnreadByCategory: UnreadByCategory = {
-    accueil: 0,
-    atelier: 0,
-    location: 0,
-    autre: 0,
-};
-
 export function MessagingProvider({ children, currentUserId, users }: MessagingProviderProps) {
     const [messages, setMessages] = useState<Message[]>([]);
+    const [categories, setCategories] = useState<MessageCategoryData[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [unreadByCategory, setUnreadByCategory] = useState<UnreadByCategory>(defaultUnreadByCategory);
+    const [unreadByCategory, setUnreadByCategory] = useState<UnreadByCategory>({});
     const [isLoading, setIsLoading] = useState(false);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+    const fetchCategories = useCallback(async () => {
+        try {
+            const response = await fetch('/api/message-categories', {
+                credentials: 'include',
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCategories(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+        }
+    }, []);
 
     const fetchMessages = useCallback(async () => {
         if (!currentUserId) { return; }
@@ -84,7 +98,7 @@ export function MessagingProvider({ children, currentUserId, users }: MessagingP
             if (response.ok) {
                 const data = await response.json();
                 setUnreadCount(data.count);
-                setUnreadByCategory(data.by_category || defaultUnreadByCategory);
+                setUnreadByCategory(data.by_category || {});
             }
         } catch (error) {
             console.error('Failed to fetch unread count:', error);
@@ -94,6 +108,14 @@ export function MessagingProvider({ children, currentUserId, users }: MessagingP
     const refreshMessages = useCallback(async () => {
         await Promise.all([fetchMessages(), fetchUnreadCount()]);
     }, [fetchMessages, fetchUnreadCount]);
+
+    const refreshCategories = useCallback(async () => {
+        await fetchCategories();
+    }, [fetchCategories]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
 
     useEffect(() => {
         refreshMessages();
@@ -135,10 +157,10 @@ export function MessagingProvider({ children, currentUserId, users }: MessagingP
                 ));
                 setUnreadCount(prev => Math.max(0, prev - 1));
 
-                if (targetMessage) {
+                if (targetMessage?.category_id) {
                     setUnreadByCategory(prev => ({
                         ...prev,
-                        [targetMessage.category]: Math.max(0, prev[targetMessage.category] - 1),
+                        [targetMessage.category_id!]: Math.max(0, (prev[targetMessage.category_id!] || 0) - 1),
                     }));
                 }
             }
@@ -276,11 +298,11 @@ export function MessagingProvider({ children, currentUserId, users }: MessagingP
         if (response.ok) {
             setMessages(prev => prev.filter(m => m.id !== messageId));
 
-            if (targetMessage && !targetMessage.read_at) {
+            if (targetMessage && !targetMessage.read_at && targetMessage.category_id) {
                 setUnreadCount(prev => Math.max(0, prev - 1));
                 setUnreadByCategory(prev => ({
                     ...prev,
-                    [targetMessage.category]: Math.max(0, prev[targetMessage.category] - 1),
+                    [targetMessage.category_id!]: Math.max(0, (prev[targetMessage.category_id!] || 0) - 1),
                 }));
             }
         }
@@ -309,10 +331,82 @@ export function MessagingProvider({ children, currentUserId, users }: MessagingP
         }
     }, []);
 
+    const updateMessageCategory = useCallback(async (messageId: number, categoryId: number) => {
+        try {
+            const response = await fetch(`/api/messages/${messageId}/category`, {
+                method: 'PATCH',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                },
+                body: JSON.stringify({ category_id: categoryId }),
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setMessages(prev => prev.map(m =>
+                    m.id === messageId ? { ...m, category_id: data.category_id, category: data.category } : m
+                ));
+            }
+        } catch (error) {
+            console.error('Failed to update message category:', error);
+        }
+    }, []);
+
+    const createCategory = useCallback(async (label: string, color?: string): Promise<MessageCategoryData> => {
+        const response = await fetch('/api/message-categories', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+            body: JSON.stringify({ label, color }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to create category');
+        }
+        const category = await response.json();
+        setCategories(prev => [...prev, category].sort((a, b) => a.position - b.position));
+        return category;
+    }, []);
+
+    const updateCategory = useCallback(async (categoryId: number, data: { label?: string; color?: string }) => {
+        const response = await fetch(`/api/message-categories/${categoryId}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+            body: JSON.stringify(data),
+        });
+        if (response.ok) {
+            const updated = await response.json();
+            setCategories(prev => prev.map(c => c.id === categoryId ? updated : c));
+        }
+    }, []);
+
+    const deleteCategory = useCallback(async (categoryId: number) => {
+        const response = await fetch(`/api/message-categories/${categoryId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: {
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+        });
+        if (response.ok) {
+            setCategories(prev => prev.filter(c => c.id !== categoryId));
+            // Refresh messages to update category references
+            await fetchMessages();
+        }
+    }, [fetchMessages]);
+
     const value: MessagingContextValue = {
         currentUserId,
         users,
         messages,
+        categories,
         unreadCount,
         unreadByCategory,
         isLoading,
@@ -321,6 +415,7 @@ export function MessagingProvider({ children, currentUserId, users }: MessagingP
         openPanel,
         closePanel,
         refreshMessages,
+        refreshCategories,
         markMessageAsRead,
         markMessageAsResolved,
         reopenMessage,
@@ -330,6 +425,10 @@ export function MessagingProvider({ children, currentUserId, users }: MessagingP
         deleteReply,
         deleteMessage,
         markReplyAsRead,
+        updateMessageCategory,
+        createCategory,
+        updateCategory,
+        deleteCategory,
     };
 
     return (

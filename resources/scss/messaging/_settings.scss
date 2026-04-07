@@ -1,0 +1,218 @@
+// Page de reglages des messages
+@use '../base/colors' as *;
+
+.messages-settings {
+    padding: 1.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+
+    &__header {
+        margin-bottom: 2rem;
+    }
+
+    &__back {
+        background: none;
+        border: none;
+        color: $color-primary-blue;
+        font-size: 0.875rem;
+        cursor: pointer;
+        padding: 0;
+        margin-bottom: 0.5rem;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    &__title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin: 0;
+    }
+
+    &__section {
+        background: $color-bg-white;
+        border: 1px solid $color-border-light;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    &__section-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin: 0 0 0.5rem;
+    }
+
+    &__section-desc {
+        font-size: 0.875rem;
+        color: $color-neutral-medium;
+        margin: 0 0 1.5rem;
+    }
+
+    &__categories {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+    }
+
+    &__category {
+        background: $color-bg-light;
+        border: 1px solid $color-border-light;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+    }
+
+    &__category-view {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__category-edit {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    &__category-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    &__category-label {
+        flex: 1;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: $color-neutral-dark;
+    }
+
+    &__category-default {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: $color-neutral-medium;
+        margin-left: 0.5rem;
+    }
+
+    &__category-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    &__new-category {
+        border-top: 1px solid $color-border-light;
+        padding-top: 1.5rem;
+    }
+
+    &__new-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: $color-neutral-dark;
+        margin: 0 0 1rem;
+    }
+
+    &__new-form {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__color-input {
+        width: 40px;
+        height: 40px;
+        border: 1px solid $color-border-medium;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 2px;
+
+        &::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        &::-webkit-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+    }
+
+    &__text-input {
+        flex: 1;
+        padding: 0.625rem 0.75rem;
+        font-size: 0.875rem;
+        border: 1px solid $color-border-medium;
+        border-radius: 6px;
+        background: $color-bg-white;
+
+        &:focus {
+            outline: none;
+            border-color: $color-primary-blue;
+        }
+    }
+
+    &__btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s, opacity 0.15s;
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        &--create {
+            background: $color-primary-blue;
+            color: white;
+
+            &:hover:not(:disabled) {
+                background: darken($color-primary-blue, 10%);
+            }
+        }
+
+        &--edit {
+            background: $color-bg-light;
+            color: $color-neutral-dark;
+            border: 1px solid $color-border-medium;
+
+            &:hover {
+                background: darken($color-bg-light, 5%);
+            }
+        }
+
+        &--delete {
+            background: transparent;
+            color: $color-danger-red;
+
+            &:hover {
+                background: rgba($color-danger-red, 0.1);
+            }
+        }
+
+        &--save {
+            background: $color-success-green;
+            color: white;
+
+            &:hover {
+                background: darken($color-success-green, 10%);
+            }
+        }
+
+        &--cancel {
+            background: $color-bg-light;
+            color: $color-neutral-dark;
+
+            &:hover {
+                background: darken($color-bg-light, 5%);
+            }
+        }
+    }
+}

@@ -405,7 +405,15 @@ export interface ReservationDraftSelectors {
 
 // Messagerie interne
 export type WorkMode = 'comptoir' | 'atelier' | 'julien';
-export type MessageCategory = 'accueil' | 'atelier' | 'location' | 'autre';
+
+export interface MessageCategoryData {
+    id: number;
+    slug: string;
+    label: string;
+    color: string;
+    position: number;
+    is_default: boolean;
+}
 
 export interface Photo {
     id: number;
@@ -434,7 +442,13 @@ export interface Message {
     author_label: string;
     recipient_user_id: number | null;
     recipient_label: string | null;
-    category: MessageCategory;
+    category_id: number | null;
+    category: {
+        id: number;
+        slug: string;
+        label: string;
+        color: string;
+    } | null;
     contact_name: string | null;
     contact_phone: string | null;
     contact_email: string | null;
@@ -448,10 +462,7 @@ export interface Message {
 }
 
 export interface UnreadByCategory {
-    accueil: number;
-    atelier: number;
-    location: number;
-    autre: number;
+    [categoryId: number]: number;
 }
 
 export interface MessagingState {

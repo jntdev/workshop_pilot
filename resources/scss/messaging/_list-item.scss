@@ -109,6 +109,11 @@
         border-radius: 4px;
         font-weight: 500;
 
+        &--new {
+            background: $color-primary-blue;
+            color: white;
+        }
+
         &--resolved {
             background: lighten($color-success-green, 45%);
             color: $color-success-green;

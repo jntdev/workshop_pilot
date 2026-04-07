@@ -17,7 +17,7 @@ class MessageController extends Controller
     public function index(Request $request): JsonResponse
     {
         $messages = Message::forUser(Auth::id())
-            ->with(['author', 'recipient', 'replies.author', 'replies.recipient', 'media', 'replies.media'])
+            ->with(['author', 'recipient', 'category', 'replies.author', 'replies.recipient', 'media', 'replies.media'])
             ->get()
             ->map(fn (Message $message) => $this->formatMessage($message));
 
@@ -43,7 +43,7 @@ class MessageController extends Controller
         $message = Message::create([
             'author_user_id' => Auth::id(),
             'recipient_user_id' => $validated['recipient_user_id'] ?? null,
-            'category' => $validated['category'],
+            'category_id' => $validated['category_id'],
             'contact_name' => $validated['contact_name'] ?? null,
             'contact_phone' => $validated['contact_phone'] ?? null,
             'contact_email' => $validated['contact_email'] ?? null,
@@ -51,7 +51,7 @@ class MessageController extends Controller
             'status' => 'ouvert',
         ]);
 
-        $message->load(['author', 'recipient', 'replies.author', 'replies.recipient', 'media', 'replies.media']);
+        $message->load(['author', 'recipient', 'category', 'replies.author', 'replies.recipient', 'media', 'replies.media']);
 
         // TODO: Broadcast MessageCreated event
 
@@ -60,9 +60,30 @@ class MessageController extends Controller
 
     public function show(Message $message): JsonResponse
     {
-        $message->load(['author', 'recipient', 'replies.author', 'replies.recipient', 'media', 'replies.media']);
+        $message->load(['author', 'recipient', 'category', 'replies.author', 'replies.recipient', 'media', 'replies.media']);
 
         return response()->json($this->formatMessage($message));
+    }
+
+    public function updateCategory(Request $request, Message $message): JsonResponse
+    {
+        $validated = $request->validate([
+            'category_id' => 'required|exists:message_categories,id',
+        ]);
+
+        $message->update(['category_id' => $validated['category_id']]);
+        $message->load('category');
+
+        return response()->json([
+            'success' => true,
+            'category_id' => $message->category_id,
+            'category' => $message->category ? [
+                'id' => $message->category->id,
+                'slug' => $message->category->slug,
+                'label' => $message->category->label,
+                'color' => $message->category->color,
+            ] : null,
+        ]);
     }
 
     public function markAsRead(Message $message): JsonResponse
@@ -165,7 +186,13 @@ class MessageController extends Controller
             'author_label' => $message->authorLabel(),
             'recipient_user_id' => $message->recipient_user_id,
             'recipient_label' => $message->recipientLabel(),
-            'category' => $message->category,
+            'category_id' => $message->category_id,
+            'category' => $message->category ? [
+                'id' => $message->category->id,
+                'slug' => $message->category->slug,
+                'label' => $message->category->label,
+                'color' => $message->category->color,
+            ] : null,
             'contact_name' => $message->contact_name,
             'contact_phone' => $message->contact_phone,
             'contact_email' => $message->contact_email,

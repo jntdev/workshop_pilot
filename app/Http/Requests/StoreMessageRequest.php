@@ -18,7 +18,7 @@ class StoreMessageRequest extends FormRequest
     {
         return [
             'recipient_user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'category' => ['required', 'in:accueil,atelier,location,autre'],
+            'category_id' => ['required', 'integer', 'exists:message_categories,id'],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'contact_phone' => ['nullable', 'string', 'max:50'],
             'contact_email' => ['nullable', 'email', 'max:255'],

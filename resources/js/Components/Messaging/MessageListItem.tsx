@@ -1,4 +1,4 @@
-import { useMessaging, getModeLabel } from '@/Contexts/MessagingContext';
+import { useMessaging } from '@/Contexts/MessagingContext';
 import { Message } from '@/types';
 
 interface MessageListItemProps {
@@ -27,20 +27,20 @@ function formatDate(dateString: string): string {
 }
 
 export default function MessageListItem({ message, isSelected, onClick }: MessageListItemProps) {
-    const { mode } = useMessaging();
+    const { currentUserId } = useMessaging();
 
-    const isPersonalNote = message.recipient_mode === null;
+    const isPersonalNote = message.recipient_user_id === null;
     const isResolved = message.status === 'resolu';
     const hasReplies = message.replies.length > 0;
-    const unreadReplies = message.replies.filter(r => !r.read_at && r.author_mode !== mode).length;
+    const unreadReplies = message.replies.filter(r => !r.read_at && r.author_user_id !== currentUserId).length;
 
     // Déterminer l'état du message pour le style de bordure
     // - Bleu : message reçu non lu (destinataire = moi, pas encore lu)
     // - Jaune : message envoyé par moi, pas encore lu par l'autre
     // - Vert : message envoyé par moi, lu par l'autre
-    const isReceivedUnread = !isPersonalNote && message.recipient_mode === mode && !message.read_at;
-    const isSentPendingRead = !isPersonalNote && message.author_mode === mode && message.recipient_mode !== mode && !message.read_at;
-    const isSentReadByOther = !isPersonalNote && message.author_mode === mode && message.recipient_mode !== mode && message.read_at !== null;
+    const isReceivedUnread = !isPersonalNote && message.recipient_user_id === currentUserId && !message.read_at;
+    const isSentPendingRead = !isPersonalNote && message.author_user_id === currentUserId && message.recipient_user_id !== currentUserId && !message.read_at;
+    const isSentReadByOther = !isPersonalNote && message.author_user_id === currentUserId && message.recipient_user_id !== currentUserId && message.read_at !== null;
 
     // Truncate content for preview
     const preview = message.content.length > 80
@@ -70,7 +70,7 @@ export default function MessageListItem({ message, isSelected, onClick }: Messag
                             <span className="message-list-item__recipient">{message.recipient_label}</span>
                         </>
                     )}
-                    {!message.recipient_mode && (
+                    {!message.recipient_user_id && (
                         <span className="message-list-item__self">(perso)</span>
                     )}
                 </div>
@@ -84,6 +84,9 @@ export default function MessageListItem({ message, isSelected, onClick }: Messag
             <div className="message-list-item__preview">{preview}</div>
 
             <div className="message-list-item__footer">
+                {isReceivedUnread && (
+                    <span className="message-list-item__status message-list-item__status--new">Nouveau</span>
+                )}
                 {isResolved && (
                     <span className="message-list-item__status message-list-item__status--resolved">Resolu</span>
                 )}

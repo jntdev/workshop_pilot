@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BikeController;
 use App\Http\Controllers\Api\BikeSizeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\MessageCategoryController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\PhotoController;
 use App\Http\Controllers\Api\QuoteController;
@@ -77,6 +78,13 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/bike-sizes/{id}', [BikeSizeController::class, 'update']);
     Route::delete('/bike-sizes/{id}', [BikeSizeController::class, 'destroy']);
 
+    // Message categories API routes
+    Route::get('/message-categories', [MessageCategoryController::class, 'index']);
+    Route::post('/message-categories', [MessageCategoryController::class, 'store']);
+    Route::put('/message-categories/{messageCategory}', [MessageCategoryController::class, 'update']);
+    Route::delete('/message-categories/{messageCategory}', [MessageCategoryController::class, 'destroy']);
+    Route::post('/message-categories/reorder', [MessageCategoryController::class, 'reorder']);
+
     // Messages API routes
     Route::get('/messages', [MessageController::class, 'index']);
     Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
@@ -85,6 +93,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::patch('/messages/{message}/read', [MessageController::class, 'markAsRead']);
     Route::patch('/messages/{message}/resolve', [MessageController::class, 'markAsResolved']);
     Route::patch('/messages/{message}/reopen', [MessageController::class, 'reopen']);
+    Route::patch('/messages/{message}/category', [MessageController::class, 'updateCategory']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
     Route::post('/messages/{message}/replies', [MessageController::class, 'storeReply']);
     Route::patch('/replies/{reply}/read', [MessageController::class, 'markReplyAsRead']);

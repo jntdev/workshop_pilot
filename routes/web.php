@@ -482,6 +482,10 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('Messages');
     })->name('messages.index');
 
+    Route::get('/messages/settings', function () {
+        return Inertia::render('MessagesSettings');
+    })->name('messages.settings');
+
     Route::get('/counter', function () {
         return view('counter-demo');
     })->name('counter');
