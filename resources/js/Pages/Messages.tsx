@@ -22,7 +22,7 @@ function MessagesContent() {
 
     const [showNewForm, setShowNewForm] = useState(false);
     const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'resolved'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'resolved'>('open');
     const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
 
     const filteredMessages = messages.filter(m => {
