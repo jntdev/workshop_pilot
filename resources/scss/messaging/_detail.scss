@@ -70,6 +70,76 @@
         border-bottom: 1px solid $color-border-light;
     }
 
+    &__category-picker {
+        position: relative;
+    }
+
+    &__category-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        background: $color-bg-white;
+        color: $color-neutral-dark;
+        cursor: pointer;
+        transition: background 0.1s;
+
+        &:hover {
+            background: $color-bg-light;
+        }
+    }
+
+    &__category-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    &__category-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        z-index: 50;
+        min-width: 140px;
+        background: $color-bg-white;
+        border: 1px solid $color-border-medium;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 0.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    &__category-option {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        width: 100%;
+        text-align: left;
+        padding: 0.375rem 0.5rem;
+        font-size: 0.8125rem;
+        color: $color-neutral-dark;
+        background: none;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+
+        &:hover {
+            background: $color-bg-light;
+        }
+
+        &--active {
+            font-weight: 600;
+            background: $color-bg-light;
+        }
+    }
+
     &__date {
         font-size: 0.8125rem;
         color: $color-neutral-medium;

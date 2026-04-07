@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useMessaging } from '@/Contexts/MessagingContext';
 import { Message, Photo } from '@/types';
 import ReplyForm from './ReplyForm';
@@ -42,6 +42,7 @@ function formatRelative(dateString: string): string {
 export default function MessageDetail({ message, onClose }: MessageDetailProps) {
     const {
         currentUserId,
+        categories,
         markMessageAsRead,
         markMessageAsResolved,
         reopenMessage,
@@ -49,6 +50,7 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
         markReplyAsRead,
         updateReply,
         deleteReply,
+        updateMessageCategory,
     } = useMessaging();
 
     const [showReplyForm, setShowReplyForm] = useState(false);
@@ -56,6 +58,19 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
     const [editingContent, setEditingContent] = useState('');
+    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+    const categoryPickerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!showCategoryPicker) { return; }
+        const handleClickOutside = (e: MouseEvent) => {
+            if (categoryPickerRef.current && !categoryPickerRef.current.contains(e.target as Node)) {
+                setShowCategoryPicker(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showCategoryPicker]);
 
     const isPersonalNote = message.recipient_user_id === null;
     const isUnread = !message.read_at && !isPersonalNote;
@@ -79,6 +94,11 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
 
     const handleReopen = async () => {
         await reopenMessage(message.id);
+    };
+
+    const handleCategoryChange = async (categoryId: number) => {
+        setShowCategoryPicker(false);
+        await updateMessageCategory(message.id, categoryId);
     };
 
     const handleDelete = async () => {
@@ -137,6 +157,41 @@ export default function MessageDetail({ message, onClose }: MessageDetailProps) 
 
             <div className="message-detail__meta">
                 <span className="message-detail__date">{formatDate(message.created_at)}</span>
+
+                <div className="message-detail__category-picker" ref={categoryPickerRef}>
+                    <button
+                        type="button"
+                        className="message-detail__category-badge"
+                        onClick={() => setShowCategoryPicker(prev => !prev)}
+                    >
+                        {message.category && (
+                            <span
+                                className="message-detail__category-dot"
+                                style={{ backgroundColor: message.category.color }}
+                            />
+                        )}
+                        <span>{message.category?.label ?? 'Sans catégorie'}</span>
+                    </button>
+                    {showCategoryPicker && (
+                        <div className="message-detail__category-dropdown">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    className={`message-detail__category-option${cat.id === message.category_id ? ' message-detail__category-option--active' : ''}`}
+                                    onClick={() => handleCategoryChange(cat.id)}
+                                >
+                                    <span
+                                        className="message-detail__category-dot"
+                                        style={{ backgroundColor: cat.color }}
+                                    />
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
                 {isResolved && (
                     <span className="message-detail__status">Resolu</span>
                 )}

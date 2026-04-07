@@ -84,6 +84,15 @@ export default function MessageListItem({ message, isSelected, onClick }: Messag
             <div className="message-list-item__preview">{preview}</div>
 
             <div className="message-list-item__footer">
+                {message.category && (
+                    <span className="message-list-item__category">
+                        <span
+                            className="message-list-item__category-dot"
+                            style={{ backgroundColor: message.category.color }}
+                        />
+                        {message.category.label}
+                    </span>
+                )}
                 {isReceivedUnread && (
                     <span className="message-list-item__status message-list-item__status--new">Nouveau</span>
                 )}
