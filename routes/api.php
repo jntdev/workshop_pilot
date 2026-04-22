@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MessageCategoryController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\OrderLineController;
 use App\Http\Controllers\Api\PhotoController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ReservationController;
@@ -35,10 +36,13 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
 
     // Quotes API routes
+    Route::get('/quotes/order-lines', [OrderLineController::class, 'index']);
+    Route::patch('/quote-lines/{quoteLine}/order-status', [OrderLineController::class, 'updateOrderStatus']);
     Route::get('/quotes/{quote}', [QuoteController::class, 'show']);
     Route::post('/quotes', [QuoteController::class, 'store']);
     Route::put('/quotes/{quote}', [QuoteController::class, 'update']);
     Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy']);
+    Route::patch('/quotes/{quote}/status', [QuoteController::class, 'updateStatus']);
     Route::post('/quotes/{quote}/convert-to-invoice', [QuoteController::class, 'convertToInvoice']);
     Route::patch('/quotes/{quote}/actual-time', [QuoteController::class, 'updateActualTime']);
     Route::post('/quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);

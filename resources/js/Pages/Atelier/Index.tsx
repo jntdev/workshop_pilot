@@ -126,6 +126,12 @@ export default function AtelierIndex({
                     >
                         Nouveau devis
                     </Link>
+                    <Link
+                        href="/atelier/pieces-a-commander"
+                        className="atelier-index__btn atelier-index__btn--secondary"
+                    >
+                        Pièces à commander
+                    </Link>
                 </div>
 
                 <div className="atelier-index__quotes">

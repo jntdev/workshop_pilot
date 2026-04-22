@@ -17,6 +17,7 @@ class Quote extends Model
 
     protected $attributes = [
         'metier' => 'atelier',
+        'status' => 'reception',
     ];
 
     protected $fillable = [

@@ -2,24 +2,42 @@
 
 namespace App\Enums;
 
-/**
- * @deprecated Utilisé uniquement pour la compatibilité avec les anciennes données.
- *             Le nouveau workflow 7.1 utilise `invoiced_at` pour distinguer devis/facture.
- */
 enum QuoteStatus: string
 {
-    case Draft = 'brouillon';
-    case Ready = 'prêt';
-    case Editable = 'modifiable';
-    case Invoiced = 'facturé';
+    case Reception = 'reception';
+    case ToComplete = 'to_complete';
+    case ToQuote = 'to_quote';
+    case PendingValidation = 'pending_validation';
+    case Validated = 'validated';
+    case InProgress = 'in_progress';
+    case Done = 'done';
+    case Invoiced = 'invoiced';
 
     public function label(): string
     {
         return match ($this) {
-            self::Draft => 'Brouillon',
-            self::Ready => 'Prêt',
-            self::Editable => 'Modifiable',
+            self::Reception => 'Bon de réception',
+            self::ToComplete => 'À compléter',
+            self::ToQuote => 'À chiffrer',
+            self::PendingValidation => 'Attente validation',
+            self::Validated => 'Validé',
+            self::InProgress => 'En cours',
+            self::Done => 'Terminé',
             self::Invoiced => 'Facturé',
         };
+    }
+
+    /** Statuts visibles dans l'onglet devis (hors facture). */
+    public static function quoteStatuses(): array
+    {
+        return [
+            self::Reception,
+            self::ToComplete,
+            self::ToQuote,
+            self::PendingValidation,
+            self::Validated,
+            self::InProgress,
+            self::Done,
+        ];
     }
 }

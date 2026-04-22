@@ -1,0 +1,164 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.order-lines {
+    &__error {
+        background-color: lighten($color-danger-red, 40%);
+        color: darken($color-danger-red, 10%);
+        border: 1px solid $color-danger-red;
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    &__toolbar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    &__filter {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+    &__loading,
+    &__empty {
+        padding: 2rem;
+        text-align: center;
+        color: $color-neutral-medium;
+        font-size: 0.95rem;
+    }
+
+    &__table {
+        border: 1px solid $color-border-light;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    &__header {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.5fr 0.8fr 0.4fr 0.8fr 1fr;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background-color: $color-bg-light;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: $color-neutral-dark;
+    }
+
+    &__row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.5fr 0.8fr 0.4fr 0.8fr 1fr;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-top: 1px solid $color-border-light;
+        align-items: center;
+        font-size: 0.9rem;
+
+        &:hover {
+            background-color: lighten($color-bg-light, 3%);
+        }
+
+        &--received {
+            opacity: 0.6;
+        }
+    }
+
+    &__cell {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &--muted {
+            color: $color-neutral-medium;
+            font-size: 0.85rem;
+        }
+
+        &--ref {
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        &--qty {
+            text-align: center;
+        }
+
+        &--actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            overflow: visible;
+            white-space: normal;
+        }
+    }
+
+    &__badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.78rem;
+        font-weight: 600;
+
+        &--to-order {
+            background-color: lighten(#ff9800, 40%);
+            color: darken(#ff9800, 25%);
+        }
+
+        &--ordered {
+            background-color: lighten($color-primary-blue, 42%);
+            color: darken($color-primary-blue, 10%);
+        }
+
+        &--received {
+            background-color: lighten(#4caf50, 42%);
+            color: darken(#4caf50, 20%);
+        }
+    }
+
+    &__btn {
+        padding: 0.3rem 0.7rem;
+        border-radius: 4px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        display: inline-block;
+        white-space: nowrap;
+        transition: opacity 0.15s;
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        &--ordered {
+            background-color: $color-primary-blue;
+            color: white;
+        }
+
+        &--received {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        &--unmark {
+            background-color: transparent;
+            border: 1px solid $color-border-light;
+            color: $color-neutral-dark;
+        }
+
+        &--consult {
+            background-color: transparent;
+            border: 1px solid $color-primary-blue;
+            color: $color-primary-blue;
+        }
+    }
+}

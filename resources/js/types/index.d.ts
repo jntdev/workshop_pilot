@@ -69,6 +69,9 @@ export interface QuoteLine {
     line_total_ttc?: string;
     position: number;
     estimated_time_minutes?: number | null;
+    needs_order: boolean;
+    ordered_at: string | null;
+    received_at: string | null;
 }
 
 export interface QuoteTotals {
@@ -101,8 +104,19 @@ export interface QuoteDetail {
     is_invoice: boolean;
     can_edit: boolean;
     can_delete: boolean;
+    status: QuoteStatusSlug | null;
     lines: QuoteLine[];
 }
+
+export type QuoteStatusSlug =
+    | 'reception'
+    | 'to_complete'
+    | 'to_quote'
+    | 'pending_validation'
+    | 'validated'
+    | 'in_progress'
+    | 'done'
+    | 'invoiced';
 
 export interface Quote {
     id: number;
@@ -114,6 +128,7 @@ export interface Quote {
     total_tva: string;
     total_ttc: string;
     margin_total_ht: string;
+    status: QuoteStatusSlug | null;
     invoiced_at: string | null;
     created_at: string;
     can_delete: boolean;

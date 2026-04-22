@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Quote } from '@/types';
+import { Quote, QuoteStatusSlug } from '@/types';
 
 interface QuotesTabsProps {
     quotes: Quote[];
@@ -11,6 +11,42 @@ interface QuotesTabsProps {
 
 type TabType = 'quotes' | 'invoices' | 'clients';
 
+const STATUS_LABELS: Record<QuoteStatusSlug, string> = {
+    reception: 'Bon de réception',
+    to_complete: 'À compléter',
+    to_quote: 'À chiffrer',
+    pending_validation: 'Attente validation',
+    validated: 'Validé',
+    in_progress: 'En cours',
+    done: 'Terminé',
+    invoiced: 'Facturé',
+};
+
+const QUOTE_STATUSES: QuoteStatusSlug[] = [
+    'reception',
+    'to_complete',
+    'to_quote',
+    'pending_validation',
+    'validated',
+    'in_progress',
+    'done',
+];
+
+const STATUS_FILTER_LABELS: Record<string, string> = {
+    all: 'Tous',
+    to_complete: 'À compléter',
+    to_quote: 'À chiffrer',
+    pending_validation: 'Attente validation',
+    validated: 'Validé',
+    in_progress: 'En cours',
+    done: 'Terminé',
+};
+
+const getCsrfToken = (): string => {
+    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+};
+
 function formatCurrency(value: string | number): string {
     const num = typeof value === 'string' ? parseFloat(value) : value;
     return new Intl.NumberFormat('fr-FR', {
@@ -20,16 +56,16 @@ function formatCurrency(value: string | number): string {
 }
 
 function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR');
+    return new Date(dateString).toLocaleDateString('fr-FR');
 }
 
 interface QuotesTableProps {
     items: Quote[];
     type: 'quotes' | 'invoices';
+    onStatusChange?: (quoteId: number, status: QuoteStatusSlug) => void;
 }
 
-function QuotesTable({ items, type }: QuotesTableProps) {
+function QuotesTable({ items, type, onStatusChange }: QuotesTableProps) {
     const handleDelete = (quoteId: number, e: React.FormEvent) => {
         e.preventDefault();
         if (confirm('Voulez-vous vraiment supprimer ce devis ?')) {
@@ -58,6 +94,7 @@ function QuotesTable({ items, type }: QuotesTableProps) {
                     <th>Vélo</th>
                     <th>Total TTC</th>
                     <th>{type === 'invoices' ? 'Date de facturation' : 'Date'}</th>
+                    {type === 'quotes' && <th>Statut</th>}
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -75,6 +112,19 @@ function QuotesTable({ items, type }: QuotesTableProps) {
                                     : item.created_at
                             )}
                         </td>
+                        {type === 'quotes' && (
+                            <td>
+                                <select
+                                    value={item.status ?? 'reception'}
+                                    onChange={(e) => onStatusChange?.(item.id, e.target.value as QuoteStatusSlug)}
+                                    className={`quotes-list__status-select quotes-list__status-select--${item.status ?? 'reception'}`}
+                                >
+                                    {QUOTE_STATUSES.map(s => (
+                                        <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                                    ))}
+                                </select>
+                            </td>
+                        )}
                         <td className="quotes-list__actions">
                             <Link
                                 href={
@@ -263,12 +313,14 @@ function ClientSearchTab({ onSearch, searchQuery, results, isSearching }: Client
 }
 
 export default function QuotesTabs({
-    quotes,
+    quotes: initialQuotes,
     invoices,
     onLoadInvoices,
     invoicesLoaded,
 }: QuotesTabsProps) {
     const [activeTab, setActiveTab] = useState<TabType>('quotes');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
     const [clientSearch, setClientSearch] = useState('');
     const [clientResults, setClientResults] = useState<Map<number, Quote[]>>(new Map());
     const [isSearching, setIsSearching] = useState(false);
@@ -279,6 +331,36 @@ export default function QuotesTabs({
             onLoadInvoices();
         }
     };
+
+    const handleStatusChange = async (quoteId: number, status: QuoteStatusSlug) => {
+        try {
+            const response = await fetch(`/api/quotes/${quoteId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ status }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setQuotes(prev =>
+                    prev.map(q => q.id === quoteId ? { ...q, status: data.status } : q)
+                );
+            }
+        } catch (error) {
+            console.error('Status update error:', error);
+        }
+    };
+
+    const filteredQuotes = useMemo(() => {
+        if (statusFilter === 'all') return quotes;
+        return quotes.filter(q => q.status === statusFilter);
+    }, [quotes, statusFilter]);
 
     const handleClientSearch = async (query: string) => {
         setClientSearch(query);
@@ -293,7 +375,6 @@ export default function QuotesTabs({
             const response = await fetch(`/api/atelier/clients/search?q=${encodeURIComponent(query)}`);
             const data = await response.json();
 
-            // Group by client_id
             const grouped = new Map<number, Quote[]>();
             data.forEach((quote: Quote) => {
                 const existing = grouped.get(quote.client_id) || [];
@@ -334,7 +415,28 @@ export default function QuotesTabs({
             </div>
 
             <div className={`quotes-tab-content ${activeTab === 'quotes' ? 'quotes-tab-content--active' : ''}`}>
-                <QuotesTable items={quotes} type="quotes" />
+                <div className="quotes-status-filters">
+                    {Object.entries(STATUS_FILTER_LABELS).map(([slug, label]) => (
+                        <button
+                            key={slug}
+                            type="button"
+                            onClick={() => setStatusFilter(slug)}
+                            className={`quotes-status-filter ${statusFilter === slug ? 'quotes-status-filter--active' : ''}`}
+                        >
+                            {label}
+                            {slug !== 'all' && (
+                                <span className="quotes-status-filter__count">
+                                    {quotes.filter(q => q.status === slug).length}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+                <QuotesTable
+                    items={filteredQuotes}
+                    type="quotes"
+                    onStatusChange={handleStatusChange}
+                />
             </div>
 
             <div className={`quotes-tab-content ${activeTab === 'invoices' ? 'quotes-tab-content--active' : ''}`}>

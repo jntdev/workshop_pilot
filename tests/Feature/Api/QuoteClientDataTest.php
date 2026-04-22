@@ -218,7 +218,10 @@ class QuoteClientDataTest extends TestCase
                 'bike_description',
                 'reception_comment',
                 'valid_until',
-                'lines',
+                'totals.total_ht',
+                'totals.total_tva',
+                'totals.total_ttc',
+                'totals.margin_total_ht',
             ]);
     }
 

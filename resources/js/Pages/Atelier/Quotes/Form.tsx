@@ -2,7 +2,17 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { ClientSearch, QuoteLinesTable, QuoteTotals, ConvertModal } from '@/Components/Atelier/QuoteForm';
-import { QuoteFormPageProps, QuoteLine, QuoteTotals as QuoteTotalsType, Client } from '@/types';
+import { QuoteFormPageProps, QuoteLine, QuoteTotals as QuoteTotalsType, Client, QuoteStatusSlug } from '@/types';
+
+const QUOTE_STATUSES: { value: QuoteStatusSlug; label: string }[] = [
+    { value: 'reception', label: 'Bon de réception' },
+    { value: 'to_complete', label: 'À compléter' },
+    { value: 'to_quote', label: 'À chiffrer' },
+    { value: 'pending_validation', label: 'Attente validation' },
+    { value: 'validated', label: 'Validé' },
+    { value: 'in_progress', label: 'En cours' },
+    { value: 'done', label: 'Terminé' },
+];
 
 const getCsrfToken = (): string => {
     const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
@@ -46,6 +56,9 @@ const emptyLine = (): QuoteLine => ({
     line_total_ttc: '0',
     position: 0,
     estimated_time_minutes: null,
+    needs_order: false,
+    ordered_at: null,
+    received_at: null,
 });
 
 const emptyTotals = (): QuoteTotalsType => ({
@@ -103,6 +116,11 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     const [actualTimeMinutes, setActualTimeMinutes] = useState<number | null>(
         quote?.actual_time_minutes ?? null
     );
+
+    const [quoteStatus, setQuoteStatus] = useState<QuoteStatusSlug>(
+        (quote?.status as QuoteStatusSlug) ?? 'reception'
+    );
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
     const [isSaving, setIsSaving] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
@@ -171,9 +189,9 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         let marginTotalHt = 0;
 
         for (const line of lines) {
-            totalHt += parseFloat(line.line_total_ht) || 0;
-            totalTtc += parseFloat(line.line_total_ttc) || 0;
-            marginTotalHt += parseFloat(line.line_margin_ht) || 0;
+            totalHt += parseFloat(line.line_total_ht ?? '0') || 0;
+            totalTtc += parseFloat(line.line_total_ttc ?? '0') || 0;
+            marginTotalHt += parseFloat(line.line_margin_ht ?? '0') || 0;
         }
 
         // Appliquer la remise
@@ -222,6 +240,14 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         setLines(prev => prev.filter((_, i) => i !== index));
     };
 
+    const handleToggleNeedsOrder = (index: number) => {
+        setLines(prev => {
+            const newLines = [...prev];
+            newLines[index] = { ...newLines[index], needs_order: !newLines[index].needs_order };
+            return newLines;
+        });
+    };
+
     const handleDiscountChange = (type: 'amount' | 'percent') => {
         setDiscountType(type);
     };
@@ -235,21 +261,10 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         return lines.filter(line => line.title && line.title.trim() !== '');
     };
 
-    const handleSave = async (stayOnPage: boolean = false) => {
-        setIsSaving(true);
-        setErrors({});
-        setMessage(null);
-
+    const buildSavePayload = () => {
         const trimmedPhone = client.telephone.trim();
-        if (!trimmedPhone) {
-            setIsSaving(false);
-            setMessage('Le téléphone du client est obligatoire.');
-            return;
-        }
-
         const sanitizedClient = { ...client, telephone: trimmedPhone };
-
-        const payload = {
+        return {
             client_id: sanitizedClient.id,
             client_prenom: sanitizedClient.prenom,
             client_nom: sanitizedClient.nom,
@@ -271,38 +286,56 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             totals: totals,
             actual_time_minutes: actualTimeMinutes,
         };
+    };
+
+    const persistQuote = async (): Promise<{ ok: boolean; id?: number }> => {
+        const trimmedPhone = client.telephone.trim();
+        if (!trimmedPhone) {
+            setMessage('Le téléphone du client est obligatoire.');
+            return { ok: false };
+        }
+
+        const url = isEdit ? '/api/quotes/' + quote!.id : '/api/quotes';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method,
+            headers: apiHeaders(),
+            credentials: 'same-origin',
+            body: JSON.stringify(buildSavePayload()),
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            return { ok: true, id: result.id };
+        }
+
+        const errorData = await response.json();
+        if (errorData.errors) {
+            const formattedErrors: Record<string, string> = {};
+            Object.entries(errorData.errors).forEach(([key, value]) => {
+                formattedErrors[key] = Array.isArray(value) ? value[0] : String(value);
+            });
+            setErrors(formattedErrors);
+        } else {
+            setMessage(errorData.message || 'Une erreur est survenue.');
+        }
+        return { ok: false };
+    };
+
+    const handleSave = async (stayOnPage: boolean = false) => {
+        setIsSaving(true);
+        setErrors({});
+        setMessage(null);
 
         try {
-            const url = isEdit ? '/api/quotes/' + quote.id : '/api/quotes';
-            const method = isEdit ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
-                headers: apiHeaders(),
-                credentials: 'same-origin',
-                body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-                const result = await response.json();
+            const result = await persistQuote();
+            if (result.ok) {
                 setMessage('Devis enregistré avec succès.');
-
                 if (!stayOnPage) {
                     router.visit('/atelier/devis/' + result.id);
                 } else if (!isEdit) {
                     router.visit('/atelier/devis/' + result.id + '/modifier');
-                }
-            } else {
-                const errorData = await response.json();
-                if (errorData.errors) {
-                    // Formater les erreurs : convertir les tableaux en chaînes
-                    const formattedErrors: Record<string, string> = {};
-                    Object.entries(errorData.errors).forEach(([key, value]) => {
-                        formattedErrors[key] = Array.isArray(value) ? value[0] : String(value);
-                    });
-                    setErrors(formattedErrors);
-                } else {
-                    setMessage(errorData.message || 'Une erreur est survenue.');
                 }
             }
         } catch (error) {
@@ -313,6 +346,35 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         }
     };
 
+    const handleStatusChange = async (newStatus: QuoteStatusSlug) => {
+        if (!quote || isUpdatingStatus) return;
+        setIsUpdatingStatus(true);
+        setErrors({});
+        setMessage(null);
+
+        try {
+            const saved = await persistQuote();
+            if (!saved.ok) {
+                return;
+            }
+
+            const response = await fetch(`/api/quotes/${quote.id}/status`, {
+                method: 'PATCH',
+                headers: apiHeaders(),
+                credentials: 'same-origin',
+                body: JSON.stringify({ status: newStatus }),
+            });
+            if (response.ok) {
+                setQuoteStatus(newStatus);
+                setMessage('Statut mis à jour.');
+            }
+        } catch (error) {
+            console.error('Status update error:', error);
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
     const handleConvertToInvoice = async () => {
         if (!quote) return;
 
@@ -320,66 +382,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         setErrors({});
         setMessage(null);
 
-        // Valider le téléphone
-        const trimmedPhone = client.telephone.trim();
-        if (!trimmedPhone) {
-            setIsConverting(false);
-            setShowConvertModal(false);
-            setMessage('Le téléphone du client est obligatoire.');
-            return;
-        }
-
-        const sanitizedClient = { ...client, telephone: trimmedPhone };
-
-        // 1. D'abord sauvegarder les modifications en cours
-        const payload = {
-            client_id: sanitizedClient.id,
-            client_prenom: sanitizedClient.prenom,
-            client_nom: sanitizedClient.nom,
-            client_email: sanitizedClient.email || null,
-            client_telephone: sanitizedClient.telephone,
-            client_adresse: sanitizedClient.adresse || null,
-            client_origine_contact: sanitizedClient.origine_contact || null,
-            client_commentaires: sanitizedClient.commentaires || null,
-            client_avantage_type: sanitizedClient.avantage_type || 'aucun',
-            client_avantage_valeur: sanitizedClient.avantage_valeur || 0,
-            client_avantage_expiration: sanitizedClient.avantage_expiration || null,
-            bike_description: bikeDescription,
-            reception_comment: receptionComment,
-            remarks: remarks || null,
-            valid_until: validUntil,
-            discount_type: discountType,
-            discount_value: discountValue || null,
-            lines: getFilledLines().map((l, i) => ({ ...l, position: i })),
-            totals: totals,
-            actual_time_minutes: actualTimeMinutes,
-        };
-
         try {
-            // Sauvegarder d'abord
-            const saveResponse = await fetch('/api/quotes/' + quote.id, {
-                method: 'PUT',
-                headers: apiHeaders(),
-                credentials: 'same-origin',
-                body: JSON.stringify(payload),
-            });
-
-            if (!saveResponse.ok) {
-                const errorData = await saveResponse.json();
-                if (errorData.errors) {
-                    const formattedErrors: Record<string, string> = {};
-                    Object.entries(errorData.errors).forEach(([key, value]) => {
-                        formattedErrors[key] = Array.isArray(value) ? value[0] : String(value);
-                    });
-                    setErrors(formattedErrors);
-                } else {
-                    setMessage(errorData.message || 'Une erreur est survenue lors de la sauvegarde.');
-                }
+            const saved = await persistQuote();
+            if (!saved.ok) {
                 setShowConvertModal(false);
                 return;
             }
 
-            // 2. Ensuite convertir en facture
             const convertResponse = await fetch('/api/quotes/' + quote.id + '/convert-to-invoice', {
                 method: 'POST',
                 headers: apiHeaders(),
@@ -399,6 +408,47 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         } finally {
             setIsConverting(false);
             setShowConvertModal(false);
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        if (!quote) return;
+        setIsSaving(true);
+        setErrors({});
+        setMessage(null);
+
+        try {
+            const saved = await persistQuote();
+            if (!saved.ok) {
+                return;
+            }
+            setMessage('Devis enregistré. Téléchargement en cours...');
+            window.location.href = '/atelier/devis/' + quote.id + '/pdf';
+        } catch (error) {
+            console.error('PDF download error:', error);
+            setMessage('Une erreur est survenue.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleOpenEmailModal = async () => {
+        if (!quote) return;
+        setIsSaving(true);
+        setErrors({});
+        setMessage(null);
+
+        try {
+            const saved = await persistQuote();
+            if (!saved.ok) {
+                return;
+            }
+            setShowEmailModal(true);
+        } catch (error) {
+            console.error('Save before email error:', error);
+            setMessage('Une erreur est survenue.');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -716,6 +766,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                             lines={lines}
                             onLineChange={handleLineChange}
                             onLineUpdate={handleLineUpdate}
+                            onToggleNeedsOrder={handleToggleNeedsOrder}
                             onAddLine={handleAddLine}
                             onRemoveLine={handleRemoveLine}
                             disabled={isReadOnly}
@@ -764,16 +815,19 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                         </Link>
                         {isEdit && (
                             <>
-                                <a
-                                    href={'/atelier/devis/' + quote.id + '/pdf'}
-                                    className="quote-form__btn quote-form__btn--secondary"
-                                >
-                                    Télécharger PDF
-                                </a>
                                 <button
                                     type="button"
-                                    onClick={() => setShowEmailModal(true)}
+                                    onClick={handleDownloadPdf}
                                     className="quote-form__btn quote-form__btn--secondary"
+                                    disabled={isSaving}
+                                >
+                                    Télécharger PDF
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleOpenEmailModal}
+                                    className="quote-form__btn quote-form__btn--secondary"
+                                    disabled={isSaving}
                                 >
                                     Envoyer par email
                                 </button>
@@ -781,6 +835,21 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                         )}
                         {!isReadOnly && (
                             <>
+                                {isEdit && (
+                                    <div className="quote-form__status-dropdown">
+                                        <label className="quote-form__status-label">Statut</label>
+                                        <select
+                                            value={quoteStatus}
+                                            onChange={(e) => handleStatusChange(e.target.value as QuoteStatusSlug)}
+                                            disabled={isUpdatingStatus || isSaving}
+                                            className={`quote-form__status-select quote-form__status-select--${quoteStatus}`}
+                                        >
+                                            {QUOTE_STATUSES.map(s => (
+                                                <option key={s.value} value={s.value}>{s.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
                                 <button
                                     type="button"
                                     onClick={() => handleSave(true)}
@@ -801,6 +870,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                         type="button"
                                         onClick={() => setShowConvertModal(true)}
                                         className="quote-form__btn quote-form__btn--warning"
+                                        disabled={isSaving}
                                     >
                                         Transformer en facture
                                     </button>

@@ -278,6 +278,7 @@ class AtelierController extends Controller
             'total_tva' => $quote->total_tva,
             'total_ttc' => $quote->total_ttc,
             'margin_total_ht' => $quote->margin_total_ht,
+            'status' => $quote->status?->value,
             'invoiced_at' => $quote->invoiced_at?->toISOString(),
             'created_at' => $quote->created_at->toISOString(),
             'can_delete' => $quote->canDelete(),

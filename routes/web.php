@@ -125,6 +125,7 @@ Route::middleware(['auth'])->group(function () {
                 'total_tva' => $q->total_tva,
                 'total_ttc' => $q->total_ttc,
                 'margin_total_ht' => $q->margin_total_ht,
+                'status' => $q->status?->value,
                 'invoiced_at' => $q->invoiced_at?->toISOString(),
                 'created_at' => $q->created_at->toISOString(),
                 'can_delete' => $q->canDelete(),
@@ -181,6 +182,7 @@ Route::middleware(['auth'])->group(function () {
                 'actual_time_minutes' => $quote->actual_time_minutes,
                 'invoiced_at' => $quote->invoiced_at?->toISOString(),
                 'created_at' => $quote->created_at->toISOString(),
+                'status' => $quote->status?->value,
                 'is_invoice' => $quote->isInvoice(),
                 'can_edit' => $quote->canEdit(),
                 'can_delete' => $quote->canDelete(),
@@ -201,6 +203,9 @@ Route::middleware(['auth'])->group(function () {
                     'line_total_ttc' => $line->line_total_ttc,
                     'position' => $line->position,
                     'estimated_time_minutes' => $line->estimated_time_minutes,
+                    'needs_order' => $line->needs_order,
+                    'ordered_at' => $line->ordered_at?->toISOString(),
+                    'received_at' => $line->received_at?->toISOString(),
                 ])->toArray(),
             ],
         ]);
@@ -241,6 +246,7 @@ Route::middleware(['auth'])->group(function () {
                 'actual_time_minutes' => $quote->actual_time_minutes,
                 'invoiced_at' => $quote->invoiced_at?->toISOString(),
                 'created_at' => $quote->created_at->toISOString(),
+                'status' => $quote->status?->value,
                 'is_invoice' => $quote->isInvoice(),
                 'can_edit' => $quote->canEdit(),
                 'can_delete' => $quote->canDelete(),
@@ -261,6 +267,9 @@ Route::middleware(['auth'])->group(function () {
                     'line_total_ttc' => $line->line_total_ttc,
                     'position' => $line->position,
                     'estimated_time_minutes' => $line->estimated_time_minutes,
+                    'needs_order' => $line->needs_order,
+                    'ordered_at' => $line->ordered_at?->toISOString(),
+                    'received_at' => $line->received_at?->toISOString(),
                 ])->toArray(),
             ],
         ]);
@@ -275,6 +284,10 @@ Route::middleware(['auth'])->group(function () {
 
         return $pdfService->generateQuotePdf($quote);
     })->name('atelier.quotes.pdf');
+
+    Route::get('/atelier/pieces-a-commander', function () {
+        return Inertia::render('Atelier/OrderLines/Index');
+    })->name('atelier.order-lines.index');
 
     Route::delete('/atelier/devis/{quote}', function (\App\Models\Quote $quote) {
         if (! $quote->canDelete()) {

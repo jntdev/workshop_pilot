@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,9 @@ class QuoteLine extends Model
         'line_total_ttc',
         'position',
         'estimated_time_minutes',
+        'needs_order',
+        'ordered_at',
+        'received_at',
     ];
 
     protected function casts(): array
@@ -44,7 +48,27 @@ class QuoteLine extends Model
             'line_total_ht' => 'decimal:2',
             'line_total_ttc' => 'decimal:2',
             'estimated_time_minutes' => 'integer',
+            'needs_order' => 'boolean',
+            'ordered_at' => 'datetime',
+            'received_at' => 'datetime',
         ];
+    }
+
+    protected function supplyStatus(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                if ($this->received_at !== null) {
+                    return 'received';
+                }
+
+                if ($this->ordered_at !== null) {
+                    return 'ordered';
+                }
+
+                return 'to_order';
+            }
+        );
     }
 
     public function quote(): BelongsTo

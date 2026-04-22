@@ -6,6 +6,7 @@ interface QuoteLinesTableProps {
     lines: QuoteLine[];
     onLineChange: (index: number, field: keyof QuoteLine, value: string) => void;
     onLineUpdate: (index: number, updates: Partial<QuoteLine>) => void;
+    onToggleNeedsOrder: (index: number) => void;
     onAddLine: () => void;
     onRemoveLine: (index: number) => void;
     disabled?: boolean;
@@ -53,6 +54,7 @@ export default function QuoteLinesTable({
     lines,
     onLineChange,
     onLineUpdate,
+    onToggleNeedsOrder,
     onAddLine,
     onRemoveLine,
     disabled,
@@ -103,6 +105,7 @@ export default function QuoteLinesTable({
                 <div className="quote-lines-table__cell">Total HT</div>
                 <div className="quote-lines-table__cell">Total TTC</div>
                 <div className="quote-lines-table__cell sensitive-column" title="Temps estimé (heures)">Temps</div>
+                <div className="quote-lines-table__cell" title="À commander">Cmd.</div>
                 <div className="quote-lines-table__cell"></div>
             </div>
 
@@ -222,6 +225,24 @@ export default function QuoteLinesTable({
                             title="Temps estimé en heures"
                             disabled={disabled}
                         />
+                    </div>
+                    {/* À commander */}
+                    <div className="quote-lines-table__cell quote-lines-table__cell--center">
+                        <div className="quote-lines-table__needs-order">
+                            <input
+                                type="checkbox"
+                                checked={line.needs_order}
+                                onChange={() => onToggleNeedsOrder(index)}
+                                className="quote-lines-table__checkbox"
+                                title="Marquer comme pièce à commander"
+                                disabled={disabled}
+                            />
+                            {line.needs_order && !line.reference && (
+                                <span className="quote-lines-table__needs-order-error" title="Référence obligatoire pour les pièces à commander">
+                                    !
+                                </span>
+                            )}
+                        </div>
                     </div>
                     {/* Supprimer */}
                     <div className="quote-lines-table__cell">

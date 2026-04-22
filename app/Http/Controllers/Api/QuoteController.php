@@ -12,6 +12,7 @@ use App\Services\Quotes\QuoteCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
 class QuoteController extends Controller
 {
@@ -27,6 +28,7 @@ class QuoteController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $this->validateQuoteRequest($request);
+        $this->validateLines($validated['lines']);
 
         $client = $this->resolveClient($request, $validated);
 
@@ -38,7 +40,7 @@ class QuoteController extends Controller
             'reception_comment' => $validated['reception_comment'],
             'remarks' => $validated['remarks'] ?? null,
             'reference' => $this->generateReference(),
-            'status' => QuoteStatus::Draft,
+            'status' => QuoteStatus::Reception,
             'valid_until' => $validated['valid_until'],
             'discount_type' => $validated['discount_value'] ? $validated['discount_type'] : null,
             'discount_value' => $validated['discount_value'] ?: null,
@@ -64,6 +66,7 @@ class QuoteController extends Controller
         }
 
         $validated = $this->validateQuoteRequest($request);
+        $this->validateLines($validated['lines'], $quote);
 
         $client = $this->resolveClient($request, $validated);
 
@@ -235,6 +238,23 @@ class QuoteController extends Controller
         return response()->json($totals);
     }
 
+    public function updateStatus(Request $request, Quote $quote): JsonResponse
+    {
+        if ($quote->isInvoice()) {
+            return response()->json(['message' => 'Impossible de modifier le statut d\'une facture.'], 422);
+        }
+
+        $allowedValues = collect(QuoteStatus::quoteStatuses())->map(fn ($s) => $s->value)->join(',');
+
+        $validated = $request->validate([
+            'status' => 'required|string|in:'.$allowedValues,
+        ]);
+
+        $quote->update(['status' => $validated['status']]);
+
+        return response()->json(['status' => $quote->fresh()->status?->value]);
+    }
+
     protected function validateQuoteRequest(Request $request): array
     {
         return $request->validate([
@@ -270,6 +290,10 @@ class QuoteController extends Controller
             'lines.*.line_total_ht' => 'nullable|numeric',
             'lines.*.line_total_ttc' => 'nullable|numeric',
             'lines.*.estimated_time_minutes' => 'nullable|integer|min:0',
+            'lines.*.id' => 'nullable|integer',
+            'lines.*.needs_order' => 'boolean',
+            'lines.*.ordered_at' => 'nullable|date',
+            'lines.*.received_at' => 'nullable|date',
             'actual_time_minutes' => 'nullable|integer|min:0',
             'totals' => 'required|array',
             'totals.total_ht' => 'required|numeric',
@@ -321,12 +345,36 @@ class QuoteController extends Controller
         return false;
     }
 
+    protected function validateLines(array $lines, ?Quote $quote = null): void
+    {
+        $errors = [];
+
+        $existingIds = $quote
+            ? $quote->lines()->pluck('id')->all()
+            : [];
+
+        foreach ($lines as $index => $line) {
+            if (! empty($line['id']) && $quote && ! in_array($line['id'], $existingIds)) {
+                $errors["lines.{$index}.id"] = ["La ligne {$line['id']} n'appartient pas à ce devis."];
+            }
+
+            if (! empty($line['needs_order']) && empty($line['reference'])) {
+                $errors["lines.{$index}.reference"] = ['La référence est obligatoire pour les lignes à commander.'];
+            }
+        }
+
+        if (! empty($errors)) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
     protected function syncLines(Quote $quote, array $lines): void
     {
-        $quote->lines()->delete();
+        $incomingIds = collect($lines)->pluck('id')->filter()->values();
+
+        $quote->lines()->whereNotIn('id', $incomingIds)->delete();
 
         foreach ($lines as $index => $lineData) {
-            // Calculate line totals if not provided
             $lineTotals = isset($lineData['line_total_ht'])
                 ? [
                     'line_purchase_ht' => $lineData['line_purchase_ht'] ?? null,
@@ -342,7 +390,7 @@ class QuoteController extends Controller
                     $lineData['margin_amount_ht']
                 );
 
-            QuoteLine::create([
+            $attributes = [
                 'quote_id' => $quote->id,
                 'title' => $lineData['title'],
                 'reference' => $lineData['reference'] ?? null,
@@ -359,7 +407,16 @@ class QuoteController extends Controller
                 'line_total_ttc' => $lineTotals['line_total_ttc'],
                 'position' => $index,
                 'estimated_time_minutes' => $lineData['estimated_time_minutes'] ?? null,
-            ]);
+                'needs_order' => $lineData['needs_order'] ?? false,
+                'ordered_at' => $lineData['ordered_at'] ?? null,
+                'received_at' => $lineData['received_at'] ?? null,
+            ];
+
+            if (! empty($lineData['id'])) {
+                $quote->lines()->where('id', $lineData['id'])->update($attributes);
+            } else {
+                QuoteLine::create($attributes);
+            }
         }
     }
 
@@ -417,6 +474,7 @@ class QuoteController extends Controller
             'actual_time_minutes' => $quote->actual_time_minutes,
             'invoiced_at' => $quote->invoiced_at?->toISOString(),
             'created_at' => $quote->created_at->toISOString(),
+            'status' => $quote->status?->value,
             'is_invoice' => $quote->isInvoice(),
             'can_edit' => $quote->canEdit(),
             'can_delete' => $quote->canDelete(),
@@ -437,6 +495,9 @@ class QuoteController extends Controller
                 'line_total_ttc' => $line->line_total_ttc,
                 'position' => $line->position,
                 'estimated_time_minutes' => $line->estimated_time_minutes,
+                'needs_order' => $line->needs_order,
+                'ordered_at' => $line->ordered_at?->toISOString(),
+                'received_at' => $line->received_at?->toISOString(),
             ])->toArray(),
         ];
     }
