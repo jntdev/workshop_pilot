@@ -408,8 +408,8 @@ class QuoteController extends Controller
                 'position' => $index,
                 'estimated_time_minutes' => $lineData['estimated_time_minutes'] ?? null,
                 'needs_order' => $lineData['needs_order'] ?? false,
-                'ordered_at' => $lineData['ordered_at'] ?? null,
-                'received_at' => $lineData['received_at'] ?? null,
+                'ordered_at' => isset($lineData['ordered_at']) ? \Carbon\Carbon::parse($lineData['ordered_at']) : null,
+                'received_at' => isset($lineData['received_at']) ? \Carbon\Carbon::parse($lineData['received_at']) : null,
             ];
 
             if (! empty($lineData['id'])) {
