@@ -15,6 +15,7 @@ import SettingsPanel from '@/Components/Location/SettingsPanel';
 import LocationSyncOverlay from '@/Components/Location/LocationSyncOverlay';
 import AgendaDriftBanner from '@/Components/Location/AgendaDriftBanner';
 import ReservationSearch from '@/Components/Location/ReservationSearch';
+import AcomptesPanel from '@/Components/Location/AcomptesPanel';
 import { useReservationDraft } from '@/hooks/useReservationDraft';
 import { useAgendaStore } from '@/hooks/useAgendaStore';
 import { useAgendaVersionWatcher } from '@/hooks/useAgendaVersionWatcher';
@@ -94,6 +95,9 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
 
     // État pour le mode du panneau latéral
     const [sidePanelMode, setSidePanelMode] = useState<SidePanelMode>('closed');
+
+    // Panneau acomptes (indépendant du panneau latéral principal)
+    const [acomptesOpen, setAcomptesOpen] = useState(false);
 
     // État pour le planning journalier
     const [planningDate, setPlanningDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -324,28 +328,34 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                // Fermer d'abord la bannière vélo si elle est ouverte
                 if (selectedBike) {
                     setSelectedBike(null);
                     return;
                 }
-                // Sinon fermer le panneau latéral
+                // En mode dual, ESC ferme uniquement le formulaire de détail
+                if (acomptesOpen && sidePanelMode === 'reservation') {
+                    setViewingReservationId(null);
+                    setEditingReservation(null);
+                    if (draft.isActive) { actions.cancelSelection(); }
+                    setSidePanelMode('closed');
+                    return;
+                }
                 if (sidePanelMode === 'planning') {
                     setSidePanelMode('closed');
                 } else if (sidePanelMode === 'reservation') {
                     setViewingReservationId(null);
                     setEditingReservation(null);
-                    if (draft.isActive) {
-                        actions.cancelSelection();
-                    }
+                    if (draft.isActive) { actions.cancelSelection(); }
                     setSidePanelMode('closed');
+                } else if (acomptesOpen) {
+                    setAcomptesOpen(false);
                 }
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [sidePanelMode, draft.isActive, actions, selectedBike]);
+    }, [sidePanelMode, acomptesOpen, draft.isActive, actions, selectedBike]);
 
     // Charger les données du planning pour une date
     const loadPlanningData = useCallback(async (date: string) => {
@@ -655,7 +665,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
             {/* Drift detection banner */}
             <AgendaDriftBanner isVisible={hasDrift} onDismiss={dismissDrift} />
 
-            <div id="location_calendar" className={`location ${sidePanelMode !== 'closed' ? 'location--panel-open' : ''} ${sidePanelMode === 'planning' ? 'location--panel-planning' : ''}`}>
+            <div id="location_calendar" className={`location ${sidePanelMode !== 'closed' ? 'location--panel-open' : ''} ${sidePanelMode === 'planning' ? 'location--panel-planning' : ''} ${acomptesOpen ? 'location--acomptes-open' : ''} ${acomptesOpen && sidePanelMode === 'reservation' ? 'location--dual-panel' : ''}`}>
                 {/* Sync overlay during loading */}
                 <LocationSyncOverlay isVisible={isAgendaLoading || isDriftRefreshing} />
 
@@ -665,6 +675,26 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                             Disponibilités {year}
                         </h1>
                         <div className="location__header-actions">
+                            <button
+                                type="button"
+                                className={`location__btn ${acomptesOpen ? 'location__btn--active' : 'location__btn--outline'}`}
+                                onClick={() => {
+                                    if (acomptesOpen) {
+                                        setAcomptesOpen(false);
+                                        if (sidePanelMode === 'reservation') {
+                                            setSidePanelMode('closed');
+                                            setViewingReservationId(null);
+                                            setEditingReservation(null);
+                                            actions.cancelSelection();
+                                        }
+                                    } else {
+                                        setAcomptesOpen(true);
+                                        setSidePanelMode('closed');
+                                    }
+                                }}
+                            >
+                                Acomptes
+                            </button>
                             <button
                                 type="button"
                                 className={`location__btn ${sidePanelMode === 'settings' ? 'location__btn--active' : 'location__btn--outline'}`}
@@ -855,6 +885,64 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                     </div>
                 </div>
 
+                {/* Panneau acomptes (persistant, indépendant) */}
+                <div className={`location__acomptes-panel ${acomptesOpen ? 'location__acomptes-panel--open' : ''}`}>
+                    {acomptesOpen && (
+                        <AcomptesPanel
+                            reservations={reservations}
+                            onClose={() => {
+                                setAcomptesOpen(false);
+                                if (sidePanelMode === 'reservation') {
+                                    setSidePanelMode('closed');
+                                    setViewingReservationId(null);
+                                    setEditingReservation(null);
+                                    if (draft.isActive) { actions.cancelSelection(); }
+                                }
+                            }}
+                            onReservationClick={(id) => {
+                                const reservation = reservationsById.get(id);
+                                if (reservation) {
+                                    setViewingReservationId(id);
+                                    setEditingReservation(reservation);
+                                    actions.loadReservation(reservation);
+                                    setSidePanelMode('reservation');
+
+                                    const rowIndex = days.findIndex((day) => day.date === reservation.date_reservation);
+                                    if (rowIndex >= 0 && rowVirtualizerRef.current) {
+                                        rowVirtualizerRef.current.scrollToIndex(rowIndex, {
+                                            align: 'start',
+                                            behavior: 'smooth',
+                                        });
+                                    }
+
+                                    const firstBikeId = reservation.selection?.[0]?.bike_id;
+                                    if (firstBikeId && tableContainerRef.current) {
+                                        // Attendre la fin de la transition CSS des panneaux (~300ms)
+                                        setTimeout(() => {
+                                            const container = tableContainerRef.current;
+                                            if (!container) return;
+                                            const colHeader = container.querySelector<HTMLElement>(
+                                                `[data-bike-id="${firstBikeId}"]`
+                                            );
+                                            if (colHeader) {
+                                                const containerRect = container.getBoundingClientRect();
+                                                const colRect = colHeader.getBoundingClientRect();
+                                                const scrollLeft =
+                                                    container.scrollLeft +
+                                                    colRect.left -
+                                                    containerRect.left -
+                                                    containerRect.width / 2 +
+                                                    colRect.width / 2;
+                                                container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
+                                            }
+                                        }, 320);
+                                    }
+                                }
+                            }}
+                        />
+                    )}
+                </div>
+
                 {/* Panneau latéral contextuel */}
                 <div className={`location__side-panel ${sidePanelMode !== 'closed' ? 'location__side-panel--open' : ''}`}>
                     {sidePanelMode === 'reservation' && (
@@ -913,6 +1001,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                             onUpdate={() => router.reload()}
                         />
                     )}
+
                 </div>
             </div>
         </MainLayout>

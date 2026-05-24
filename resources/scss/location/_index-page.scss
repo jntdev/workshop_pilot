@@ -99,6 +99,7 @@ body:has(#location_calendar) {
 // Largeurs des panneaux
 $side-panel-width-reservation: max(33vw, 550px);
 $side-panel-width-planning: 700px;
+$acomptes-panel-width: 340px;
 
 .location {
   display: flex;
@@ -167,6 +168,37 @@ $side-panel-width-planning: 700px;
   &--panel-planning {
     .location__side-panel {
       width: $side-panel-width-planning;
+    }
+  }
+
+  // Panneau acomptes persistant
+  &__acomptes-panel {
+    width: 0;
+    height: calc(100vh - 84px);
+    max-height: calc(100vh - 84px);
+    overflow: hidden;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    transition: width 0.3s ease;
+
+    &--open {
+      width: $acomptes-panel-width;
+      border-left: 1px solid $color-border-light;
+    }
+
+    @media (max-width: 1279px) {
+      width: 100% !important;
+      height: auto;
+      max-height: none;
+      border-left: none;
+      border-top: 1px solid $color-border-light;
+    }
+  }
+
+  // Mode dual : acomptes + formulaire ouverts simultanément
+  &--dual-panel {
+    .location__side-panel {
+      width: max(28vw, 460px);
     }
   }
 
