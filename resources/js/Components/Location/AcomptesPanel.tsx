@@ -18,7 +18,7 @@ const STATUT_LABELS: Record<ReservationStatut, string> = {
     annule: 'Annulé',
 };
 
-const STATUT_OPTIONS: ReservationStatut[] = ['reserve', 'en_attente_acompte', 'en_cours', 'paye'];
+const STATUT_OPTIONS: ReservationStatut[] = ['reserve', 'en_attente_acompte', 'en_cours', 'paye', 'annule'];
 
 const formatDateFr = (dateStr: string): string => {
     const date = new Date(dateStr);
@@ -50,6 +50,7 @@ function AcompteCard({ reservation, onReservationClick }: AcompteCardProps) {
         e.stopPropagation();
         setError(null);
         setIsSaving(true);
+        setIsLeaving(true);
 
         const payload: Record<string, unknown> = {};
         if (localStatut !== reservation.statut) {
@@ -63,14 +64,13 @@ function AcompteCard({ reservation, onReservationClick }: AcompteCardProps) {
         setIsSaving(false);
 
         if (!result.success) {
+            setIsLeaving(false);
             const firstError = result.validationErrors
                 ? Object.values(result.validationErrors)[0]?.[0]
                 : result.message;
             setError(firstError ?? 'Erreur');
             return;
         }
-
-        setIsLeaving(true);
     };
 
     const handleDiscard = (e: React.MouseEvent) => {
@@ -136,9 +136,6 @@ function AcompteCard({ reservation, onReservationClick }: AcompteCardProps) {
                     {STATUT_OPTIONS.map((s) => (
                         <option key={s} value={s}>{STATUT_LABELS[s]}</option>
                     ))}
-                    {reservation.statut === 'annule' && (
-                        <option value="annule">{STATUT_LABELS.annule}</option>
-                    )}
                 </select>
             </div>
 
