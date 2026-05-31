@@ -371,45 +371,29 @@
                 </div>
             </div>
         </div>
-
-        <div class="section" style="margin-top: 20px;">
-            <h2 class="section-title">Prestations à prévoir</h2>
-            <div class="diagnostic-area">
-                <div class="diagnostic-lines">
-                    @for($i = 0; $i < 8; $i++)
-                        <div class="diagnostic-line"></div>
-                    @endfor
-                </div>
-            </div>
-        </div>
-
-        @if($quote->remarks)
-            <div class="section" style="margin-top: 20px;">
-                <h2 class="section-title">Remarques</h2>
-                <div class="remarks-content">{{ $quote->remarks }}</div>
-            </div>
-        @endif
     @else
         <div class="section">
             <h2 class="section-title">Prestations</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Intitulé</th>
-                        <th>Qté</th>
-                        <th>PV HT</th>
-                        <th>TVA %</th>
-                        <th>PV TTC</th>
+                        <th style="width: 45%; max-width: 45%;">Intitulé</th>
+                        <th style="width: 9%;">Prix HT</th>
+                        <th style="width: 9%;">TVA</th>
+                        <th style="width: 9%;">Prix TTC</th>
+                        <th style="width: 5%;">Qté</th>
+                        <th style="width: 10%;">Total TTC</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($quote->lines as $line)
                         <tr>
                             <td>{{ $line->title }}</td>
-                            <td>{{ number_format((float)$line->quantity, 2, ',', ' ') }}</td>
                             <td>{{ number_format((float)$line->sale_price_ht, 2, ',', ' ') }} €</td>
                             <td>{{ number_format((float)$line->tva_rate, 0, ',', ' ') }} %</td>
                             <td>{{ number_format((float)$line->sale_price_ttc, 2, ',', ' ') }} €</td>
+                            <td>{{ number_format((float)$line->quantity, 0, ',', ' ') }}</td>
+                            <td>{{ number_format((float)$line->line_total_ttc, 2, ',', ' ') }} €</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -444,6 +428,7 @@
         </div>
     @endif
 
+    @if(!$quote->lines->isEmpty())
     <div class="legal-mentions">
         @if($quote->isInvoice())
             <p><strong>Conditions de règlement :</strong> {{ config('company.payment_terms_text') }}. Date d'échéance : {{ $quote->invoiced_at->addDays((int)config('company.payment_terms'))->format('d/m/Y') }}</p>
@@ -460,5 +445,6 @@
             <p>SIRET : {{ config('company.siret') }} - N° TVA : {{ config('company.tva_number') }} - {{ config('company.rcs') }} - Capital social : {{ config('company.capital') }} €</p>
         </div>
     </div>
+    @endif
 </body>
 </html>

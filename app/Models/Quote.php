@@ -38,6 +38,8 @@ class Quote extends Model
         'margin_total_ht',
         'total_estimated_time_minutes',
         'actual_time_minutes',
+        'is_archived',
+        'email_note',
     ];
 
     protected function casts(): array
@@ -54,7 +56,28 @@ class Quote extends Model
             'margin_total_ht' => 'decimal:2',
             'total_estimated_time_minutes' => 'integer',
             'actual_time_minutes' => 'integer',
+            'is_archived' => 'boolean',
         ];
+    }
+
+    public function scopeArchived(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('is_archived', true);
+    }
+
+    public function scopeNotArchived(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('is_archived', false);
+    }
+
+    public function archive(): void
+    {
+        $this->update(['is_archived' => true]);
+    }
+
+    public function unarchive(): void
+    {
+        $this->update(['is_archived' => false]);
     }
 
     // Méthodes pour le nouveau workflow simplifié (7.1)

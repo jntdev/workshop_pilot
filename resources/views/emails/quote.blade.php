@@ -70,6 +70,11 @@
                 <p>
                     Veuillez trouver ci-joint le devis pour le <strong>{{ $quote->bike_description }}</strong> que vous nous avez déposé à l'atelier.
                 </p>
+                @if($quote->email_note)
+                    <p style="background:#f8f9fa;border-left:3px solid #2196F3;padding:12px 16px;border-radius:0 4px 4px 0;margin:16px 0;">
+                        {!! nl2br(e($quote->email_note)) !!}
+                    </p>
+                @endif
             @endif
 
             @php

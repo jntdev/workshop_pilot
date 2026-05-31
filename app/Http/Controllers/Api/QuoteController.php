@@ -39,6 +39,7 @@ class QuoteController extends Controller
             'bike_description' => $validated['bike_description'],
             'reception_comment' => $validated['reception_comment'],
             'remarks' => $validated['remarks'] ?? null,
+            'email_note' => $validated['email_note'] ?? null,
             'reference' => $this->generateReference(),
             'status' => QuoteStatus::Reception,
             'valid_until' => $validated['valid_until'],
@@ -77,6 +78,7 @@ class QuoteController extends Controller
             'bike_description' => $validated['bike_description'],
             'reception_comment' => $validated['reception_comment'],
             'remarks' => $validated['remarks'] ?? null,
+            'email_note' => $validated['email_note'] ?? null,
             'valid_until' => $validated['valid_until'],
             'discount_type' => $validated['discount_value'] ? $validated['discount_type'] : null,
             'discount_value' => $validated['discount_value'] ?: null,
@@ -255,6 +257,17 @@ class QuoteController extends Controller
         return response()->json(['status' => $quote->fresh()->status?->value]);
     }
 
+    public function toggleArchive(Quote $quote): JsonResponse
+    {
+        if ($quote->is_archived) {
+            $quote->unarchive();
+        } else {
+            $quote->archive();
+        }
+
+        return response()->json(['is_archived' => $quote->fresh()->is_archived]);
+    }
+
     protected function validateQuoteRequest(Request $request): array
     {
         return $request->validate([
@@ -272,6 +285,7 @@ class QuoteController extends Controller
             'bike_description' => 'required|string|max:255',
             'reception_comment' => 'required|string',
             'remarks' => 'nullable|string',
+            'email_note' => 'nullable|string',
             'valid_until' => 'required|date',
             'discount_type' => 'nullable|in:amount,percent',
             'discount_value' => 'nullable|numeric|min:0',
@@ -463,6 +477,7 @@ class QuoteController extends Controller
             'bike_description' => $quote->bike_description,
             'reception_comment' => $quote->reception_comment,
             'remarks' => $quote->remarks,
+            'email_note' => $quote->email_note,
             'valid_until' => $quote->valid_until->format('Y-m-d'),
             'discount_type' => $quote->discount_type,
             'discount_value' => $quote->discount_value,

@@ -4,12 +4,13 @@ import { Quote, QuoteStatusSlug } from '@/types';
 
 interface QuotesTabsProps {
     quotes: Quote[];
+    archivedQuotes: Quote[];
     invoices: Quote[];
     onLoadInvoices: () => void;
     invoicesLoaded: boolean;
 }
 
-type TabType = 'quotes' | 'invoices' | 'clients';
+type TabType = 'quotes' | 'invoices' | 'clients' | 'archives';
 
 const STATUS_LABELS: Record<QuoteStatusSlug, string> = {
     reception: 'Bon de réception',
@@ -61,11 +62,12 @@ function formatDate(dateString: string): string {
 
 interface QuotesTableProps {
     items: Quote[];
-    type: 'quotes' | 'invoices';
+    type: 'quotes' | 'invoices' | 'archives';
     onStatusChange?: (quoteId: number, status: QuoteStatusSlug) => void;
+    onArchiveToggle?: (quoteId: number) => void;
 }
 
-function QuotesTable({ items, type, onStatusChange }: QuotesTableProps) {
+function QuotesTable({ items, type, onStatusChange, onArchiveToggle }: QuotesTableProps) {
     const handleDelete = (quoteId: number, e: React.FormEvent) => {
         e.preventDefault();
         if (confirm('Voulez-vous vraiment supprimer ce devis ?')) {
@@ -79,7 +81,9 @@ function QuotesTable({ items, type, onStatusChange }: QuotesTableProps) {
                 <p>
                     {type === 'quotes'
                         ? 'Aucun devis pour le moment.'
-                        : 'Aucune facture pour cette période.'}
+                        : type === 'invoices'
+                        ? 'Aucune facture pour cette période.'
+                        : 'Aucun document archivé.'}
                 </p>
             </div>
         );
@@ -95,6 +99,7 @@ function QuotesTable({ items, type, onStatusChange }: QuotesTableProps) {
                     <th>Total TTC</th>
                     <th>{type === 'invoices' ? 'Date de facturation' : 'Date'}</th>
                     {type === 'quotes' && <th>Statut</th>}
+                    {type === 'archives' && <th>Type</th>}
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -125,10 +130,19 @@ function QuotesTable({ items, type, onStatusChange }: QuotesTableProps) {
                                 </select>
                             </td>
                         )}
+                        {type === 'archives' && (
+                            <td>
+                                {item.is_invoice ? (
+                                    <span className="quotes-list__status quotes-list__status--invoice">Facture</span>
+                                ) : (
+                                    <span className="quotes-list__status quotes-list__status--quote">Devis</span>
+                                )}
+                            </td>
+                        )}
                         <td className="quotes-list__actions">
                             <Link
                                 href={
-                                    type === 'invoices'
+                                    item.is_invoice
                                         ? `/atelier/devis/${item.id}`
                                         : `/atelier/devis/${item.id}/modifier`
                                 }
@@ -136,6 +150,24 @@ function QuotesTable({ items, type, onStatusChange }: QuotesTableProps) {
                             >
                                 Consulter
                             </Link>
+                            {type === 'quotes' && (
+                                <button
+                                    type="button"
+                                    className="quotes-list__link quotes-list__link--muted"
+                                    onClick={() => onArchiveToggle?.(item.id)}
+                                >
+                                    Archiver
+                                </button>
+                            )}
+                            {type === 'archives' && (
+                                <button
+                                    type="button"
+                                    className="quotes-list__link quotes-list__link--muted"
+                                    onClick={() => onArchiveToggle?.(item.id)}
+                                >
+                                    Désarchiver
+                                </button>
+                            )}
                             {type === 'quotes' && item.can_delete && (
                                 <form
                                     onSubmit={(e) => handleDelete(item.id, e)}
@@ -314,6 +346,7 @@ function ClientSearchTab({ onSearch, searchQuery, results, isSearching }: Client
 
 export default function QuotesTabs({
     quotes: initialQuotes,
+    archivedQuotes: initialArchivedQuotes,
     invoices,
     onLoadInvoices,
     invoicesLoaded,
@@ -321,6 +354,7 @@ export default function QuotesTabs({
     const [activeTab, setActiveTab] = useState<TabType>('quotes');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
+    const [archivedQuotes, setArchivedQuotes] = useState<Quote[]>(initialArchivedQuotes);
     const [clientSearch, setClientSearch] = useState('');
     const [clientResults, setClientResults] = useState<Map<number, Quote[]>>(new Map());
     const [isSearching, setIsSearching] = useState(false);
@@ -354,6 +388,42 @@ export default function QuotesTabs({
             }
         } catch (error) {
             console.error('Status update error:', error);
+        }
+    };
+
+    const handleArchiveToggle = async (quoteId: number) => {
+        try {
+            const response = await fetch(`/api/quotes/${quoteId}/archive`, {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+
+            if (data.is_archived) {
+                const quote = quotes.find(q => q.id === quoteId);
+                if (quote) {
+                    setQuotes(prev => prev.filter(q => q.id !== quoteId));
+                    setArchivedQuotes(prev => [{ ...quote, is_archived: true }, ...prev]);
+                }
+            } else {
+                const quote = archivedQuotes.find(q => q.id === quoteId);
+                if (quote) {
+                    setArchivedQuotes(prev => prev.filter(q => q.id !== quoteId));
+                    if (!quote.is_invoice) {
+                        setQuotes(prev => [{ ...quote, is_archived: false }, ...prev]);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Archive toggle error:', error);
         }
     };
 
@@ -412,6 +482,16 @@ export default function QuotesTabs({
                 >
                     Clients
                 </button>
+                <button
+                    type="button"
+                    onClick={() => handleTabChange('archives')}
+                    className={`quotes-tab ${activeTab === 'archives' ? 'quotes-tab--active' : ''}`}
+                >
+                    Archives
+                    {archivedQuotes.length > 0 && (
+                        <span className="quotes-tab__count">{archivedQuotes.length}</span>
+                    )}
+                </button>
             </div>
 
             <div className={`quotes-tab-content ${activeTab === 'quotes' ? 'quotes-tab-content--active' : ''}`}>
@@ -436,6 +516,7 @@ export default function QuotesTabs({
                     items={filteredQuotes}
                     type="quotes"
                     onStatusChange={handleStatusChange}
+                    onArchiveToggle={handleArchiveToggle}
                 />
             </div>
 
@@ -449,6 +530,14 @@ export default function QuotesTabs({
                     searchQuery={clientSearch}
                     results={clientResults}
                     isSearching={isSearching}
+                />
+            </div>
+
+            <div className={`quotes-tab-content ${activeTab === 'archives' ? 'quotes-tab-content--active' : ''}`}>
+                <QuotesTable
+                    items={archivedQuotes}
+                    type="archives"
+                    onArchiveToggle={handleArchiveToggle}
                 />
             </div>
         </div>

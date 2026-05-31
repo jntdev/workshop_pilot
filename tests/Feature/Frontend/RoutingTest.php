@@ -19,7 +19,7 @@ class RoutingTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('Dashboard')
+            ->component('Location/Index')
         );
     }
 

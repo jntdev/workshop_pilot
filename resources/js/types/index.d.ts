@@ -90,6 +90,7 @@ export interface QuoteDetail {
     bike_description: string | null;
     reception_comment: string | null;
     remarks: string | null;
+    email_note: string | null;
     valid_until: string;
     discount_type: 'amount' | 'percent' | null;
     discount_value: string | null;
@@ -104,6 +105,7 @@ export interface QuoteDetail {
     is_invoice: boolean;
     can_edit: boolean;
     can_delete: boolean;
+    is_archived: boolean;
     status: QuoteStatusSlug | null;
     lines: QuoteLine[];
 }
@@ -133,6 +135,7 @@ export interface Quote {
     created_at: string;
     can_delete: boolean;
     is_invoice: boolean;
+    is_archived: boolean;
 }
 
 export interface KpiStats {
@@ -149,6 +152,7 @@ export interface AtelierPageProps extends PageProps {
     selectedMonth: number;
     availableYears: number[];
     quotes: Quote[];
+    archivedQuotes: Quote[];
     invoices: Quote[];
 }
 

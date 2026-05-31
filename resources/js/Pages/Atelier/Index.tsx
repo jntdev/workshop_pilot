@@ -14,6 +14,7 @@ export default function AtelierIndex({
     selectedMonth,
     availableYears,
     quotes,
+    archivedQuotes,
     invoices: initialInvoices,
 }: Props) {
     const [currentYear, setCurrentYear] = useState(selectedYear);
@@ -137,6 +138,7 @@ export default function AtelierIndex({
                 <div className="atelier-index__quotes">
                     <QuotesTabs
                         quotes={quotes}
+                        archivedQuotes={archivedQuotes}
                         invoices={invoices}
                         onLoadInvoices={handleLoadInvoices}
                         invoicesLoaded={invoicesLoaded}

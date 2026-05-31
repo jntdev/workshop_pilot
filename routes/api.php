@@ -43,6 +43,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/quotes/{quote}', [QuoteController::class, 'update']);
     Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy']);
     Route::patch('/quotes/{quote}/status', [QuoteController::class, 'updateStatus']);
+    Route::patch('/quotes/{quote}/archive', [QuoteController::class, 'toggleArchive']);
     Route::post('/quotes/{quote}/convert-to-invoice', [QuoteController::class, 'convertToInvoice']);
     Route::patch('/quotes/{quote}/actual-time', [QuoteController::class, 'updateActualTime']);
     Route::post('/quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);

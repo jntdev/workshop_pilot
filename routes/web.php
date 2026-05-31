@@ -104,33 +104,43 @@ Route::middleware(['auth'])->group(function () {
             ];
         };
 
+        $mapQuote = fn ($q) => [
+            'id' => $q->id,
+            'reference' => $q->reference,
+            'client_id' => $q->client_id,
+            'client' => [
+                'id' => $q->client->id,
+                'prenom' => $q->client->prenom,
+                'nom' => $q->client->nom,
+                'email' => $q->client->email,
+                'telephone' => $q->client->telephone,
+                'adresse' => $q->client->adresse,
+            ],
+            'bike_description' => $q->bike_description,
+            'total_ht' => $q->total_ht,
+            'total_tva' => $q->total_tva,
+            'total_ttc' => $q->total_ttc,
+            'margin_total_ht' => $q->margin_total_ht,
+            'status' => $q->status?->value,
+            'invoiced_at' => $q->invoiced_at?->toISOString(),
+            'created_at' => $q->created_at->toISOString(),
+            'can_delete' => $q->canDelete(),
+            'is_invoice' => $q->isInvoice(),
+            'is_archived' => $q->is_archived,
+        ];
+
         $quotes = \App\Models\Quote::with('client')
             ->whereNull('invoiced_at')
+            ->notArchived()
             ->latest()
             ->get()
-            ->map(fn ($q) => [
-                'id' => $q->id,
-                'reference' => $q->reference,
-                'client_id' => $q->client_id,
-                'client' => [
-                    'id' => $q->client->id,
-                    'prenom' => $q->client->prenom,
-                    'nom' => $q->client->nom,
-                    'email' => $q->client->email,
-                    'telephone' => $q->client->telephone,
-                    'adresse' => $q->client->adresse,
-                ],
-                'bike_description' => $q->bike_description,
-                'total_ht' => $q->total_ht,
-                'total_tva' => $q->total_tva,
-                'total_ttc' => $q->total_ttc,
-                'margin_total_ht' => $q->margin_total_ht,
-                'status' => $q->status?->value,
-                'invoiced_at' => $q->invoiced_at?->toISOString(),
-                'created_at' => $q->created_at->toISOString(),
-                'can_delete' => $q->canDelete(),
-                'is_invoice' => $q->isInvoice(),
-            ]);
+            ->map($mapQuote);
+
+        $archivedQuotes = \App\Models\Quote::with('client')
+            ->archived()
+            ->latest()
+            ->get()
+            ->map($mapQuote);
 
         return Inertia::render('Atelier/Index', [
             'stats' => $getStats($year, $month),
@@ -139,6 +149,7 @@ Route::middleware(['auth'])->group(function () {
             'selectedMonth' => $month,
             'availableYears' => $availableYears,
             'quotes' => $quotes,
+            'archivedQuotes' => $archivedQuotes,
             'invoices' => [],
         ]);
     })->name('atelier.index');
@@ -275,14 +286,16 @@ Route::middleware(['auth'])->group(function () {
         ]);
     })->name('atelier.quotes.edit');
 
-    Route::get('/atelier/devis/{quote}/pdf', function (\App\Models\Quote $quote, \App\Services\PdfService $pdfService) {
+    Route::get('/atelier/devis/{quote}/pdf', function (\App\Models\Quote $quote, \App\Services\PdfService $pdfService, \Illuminate\Http\Request $request) {
         $quote->load('client', 'lines');
 
+        $inline = $request->boolean('print');
+
         if ($quote->isInvoice()) {
-            return $pdfService->generateInvoicePdf($quote);
+            return $pdfService->generateInvoicePdf($quote, $inline);
         }
 
-        return $pdfService->generateQuotePdf($quote);
+        return $pdfService->generateQuotePdf($quote, $inline);
     })->name('atelier.quotes.pdf');
 
     Route::get('/atelier/pieces-a-commander', function () {

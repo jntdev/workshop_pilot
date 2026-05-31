@@ -164,6 +164,9 @@
 }
 
 .quotes-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 12px 24px;
   background: none;
   border: none;
@@ -181,6 +184,20 @@
   &--active {
     color: $color-primary-blue;
     border-bottom-color: $color-primary-blue;
+  }
+
+  &__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: #e9ecef;
+    color: #6c757d;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 999px;
   }
 }
 
@@ -220,6 +237,19 @@
 
   &--danger {
     color: $color-danger-red;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &--muted {
+    color: #6c757d;
     background: none;
     border: none;
     cursor: pointer;

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\MonthlyKpi;
 use App\Models\Quote;
+use App\Models\ReservationPayment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,7 +33,7 @@ class RebuildMonthlyKpisCommandTest extends TestCase
         Quote::factory()->atelier()->create([
             'total_ht' => 2000.00,
             'margin_total_ht' => 600.00,
-            'invoiced_at' => now()->subMonth()->startOfMonth(),
+            'invoiced_at' => now()->startOfMonth()->subMonth(),
         ]);
 
         $this->artisan('kpis:rebuild-monthly', ['--metier' => 'atelier'])
@@ -51,8 +52,8 @@ class RebuildMonthlyKpisCommandTest extends TestCase
 
         $this->assertDatabaseHas('monthly_kpis', [
             'metier' => 'atelier',
-            'year' => now()->subMonth()->year,
-            'month' => now()->subMonth()->month,
+            'year' => now()->startOfMonth()->subMonth()->year,
+            'month' => now()->startOfMonth()->subMonth()->month,
             'invoice_count' => 1,
             'revenue_ht' => 2000.00,
             'margin_ht' => 600.00,
@@ -120,10 +121,9 @@ class RebuildMonthlyKpisCommandTest extends TestCase
             'invoiced_at' => now(),
         ]);
 
-        Quote::factory()->location()->create([
-            'total_ht' => 500.00,
-            'margin_total_ht' => 150.00,
-            'invoiced_at' => now(),
+        ReservationPayment::factory()->create([
+            'amount' => 500.00,
+            'paid_at' => now(),
         ]);
 
         $this->artisan('kpis:rebuild-monthly', ['--all' => true])

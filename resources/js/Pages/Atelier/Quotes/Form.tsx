@@ -92,6 +92,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     const [bikeDescription, setBikeDescription] = useState(quote?.bike_description ?? '');
     const [receptionComment, setReceptionComment] = useState(quote?.reception_comment ?? '');
     const [remarks, setRemarks] = useState(quote?.remarks ?? '');
+    const [emailNote, setEmailNote] = useState(quote?.email_note ?? '');
     const [validUntil, setValidUntil] = useState(
         quote?.valid_until ?? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     );
@@ -279,6 +280,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             bike_description: bikeDescription,
             reception_comment: receptionComment,
             remarks: remarks || null,
+            email_note: emailNote || null,
             valid_until: validUntil,
             discount_type: discountType,
             discount_value: discountValue || null,
@@ -787,6 +789,21 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     placeholder="Ex: Chaîne à prévoir, pneu arrière usé, câble de frein à commander..."
                                     readOnly={isReadOnly}
                                 />
+                                {!isReadOnly && (
+                                    <div className="quote-form__email-note">
+                                        <h3 className="quote-form__subsection-title">
+                                            Message email
+                                            <span className="quote-form__email-note-hint">Visible uniquement dans l'email envoyé au client</span>
+                                        </h3>
+                                        <textarea
+                                            value={emailNote}
+                                            onChange={(e) => setEmailNote(e.target.value)}
+                                            className="quote-form__input quote-form__remarks-input"
+                                            rows={4}
+                                            placeholder="Ex: Votre vélo est prêt, prévoir un délai de 3 jours pour les pièces..."
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className="quote-form__totals-wrapper">
                                 <QuoteTotals
@@ -823,6 +840,14 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                 >
                                     Télécharger PDF
                                 </button>
+                                <a
+                                    href={`/atelier/devis/${quote.id}/pdf?print=1`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="quote-form__btn quote-form__btn--secondary"
+                                >
+                                    Imprimer
+                                </a>
                                 <button
                                     type="button"
                                     onClick={handleOpenEmailModal}

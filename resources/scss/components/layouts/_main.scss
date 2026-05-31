@@ -233,10 +233,10 @@
   // puis redéfinir la grille complète
   .quote-lines-table__header,
   .quote-lines-table__row {
-    // Original: Intitulé, Réf, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, ×
-    // Comptoir (8 colonnes visibles): Intitulé, Réf, TVA%, PV TTC, Qté, Total HT, Total TTC, ×
-    // On garde 13 colonnes mais on met à 0 les colonnes sensibles (3, 7, 8, 9, 12)
-    grid-template-columns: 1.8fr 0.5fr 0 0.5fr 0.7fr 0.6fr 0 0 0 0.7fr 0.7fr 0 45px !important;
+    // Original: Intitulé, Réf, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, Cmd., ×
+    // Comptoir (8 colonnes visibles): Intitulé, Réf, TVA%, PV TTC, Qté, Total HT, Total TTC, Cmd., ×
+    // Colonnes sensibles à 0 : col3 (PA HT), col7 (Total PA), col8 (Marge€), col9 (Marge%), col12 (Temps)
+    grid-template-columns: 1.8fr 0.5fr 0 0.5fr 0.7fr 0.6fr 0 0 0 0.7fr 0.7fr 0 45px 45px !important;
 
     // Masquer le contenu des cellules sensibles
     .quote-lines-table__cell.sensitive-column {
@@ -249,7 +249,7 @@
     }
 
     @media (max-width: 768px) {
-      grid-template-columns: 1.4fr 0.5fr 0 0.5fr 0.5fr 0.5fr 0 0 0 0.6fr 0.6fr 0 35px !important;
+      grid-template-columns: 1.4fr 0.5fr 0 0.5fr 0.5fr 0.5fr 0 0 0 0.6fr 0.6fr 0 35px 35px !important;
     }
   }
 
