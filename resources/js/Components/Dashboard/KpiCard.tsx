@@ -1,22 +1,28 @@
-export interface KpiRowProps {
-    title: string;
-    href: string;
+export interface MetierKpi {
+    metier: string;
     revenue: number;
     margin: number | null;
-    averageBasket: number | null;
+    average_basket: number | null;
+    invoice_count: number;
     trend: number | null;
-    hasData: boolean;
-    marginUnavailable?: boolean;
+    has_data: boolean;
 }
 
-function formatCurrency(value: number): string {
+export interface RangeKpi {
+    metier: string;
+    revenue: number;
+    margin: number | null;
+    has_data: boolean;
+}
+
+export function formatCurrency(value: number): string {
     return new Intl.NumberFormat('fr-FR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     }).format(value) + ' €';
 }
 
-function formatPercent(value: number): string {
+export function formatPercent(value: number): string {
     const sign = value >= 0 ? '+' : '';
     return sign + new Intl.NumberFormat('fr-FR', {
         minimumFractionDigits: 1,
@@ -24,59 +30,87 @@ function formatPercent(value: number): string {
     }).format(value) + '%';
 }
 
-export default function KpiRow({
-    title,
-    href,
-    revenue,
-    margin,
-    averageBasket,
-    trend,
-    hasData,
-    marginUnavailable,
-}: KpiRowProps) {
-    if (!hasData) {
+function formatShare(value: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(value) + '%';
+}
+
+interface KpiCellProps {
+    kpi: MetierKpi;
+    metric: 'revenue' | 'margin';
+    marginUnavailable?: boolean;
+    total?: number;
+}
+
+export function KpiCell({ kpi, metric, marginUnavailable, total }: KpiCellProps) {
+    if (!kpi.has_data) {
+        return <div className="kpi-cell kpi-cell--empty">—</div>;
+    }
+
+    const rawValue = metric === 'revenue' ? kpi.revenue : kpi.margin;
+    const hasValue = rawValue !== null && rawValue !== 0;
+    const share = total && total > 0 && rawValue ? (rawValue / total) * 100 : null;
+
+    if (metric === 'revenue') {
         return (
-            <a href={href} className="kpi-row kpi-row--empty">
-                <div className="kpi-row__title">{title}</div>
-                <div className="kpi-row__empty">Pas de données ce mois-ci</div>
-                <div className="kpi-row__link">→</div>
-            </a>
+            <div className="kpi-cell">
+                <span className="kpi-cell__value">{formatCurrency(kpi.revenue)}</span>
+                {share !== null && <span className="kpi-cell__share">{formatShare(share)}</span>}
+                {kpi.trend !== null && (
+                    <span className={`kpi-cell__trend ${kpi.trend >= 0 ? 'kpi-cell__trend--up' : 'kpi-cell__trend--down'}`}>
+                        {formatPercent(kpi.trend)}
+                    </span>
+                )}
+            </div>
         );
     }
 
     return (
-        <a href={href} className="kpi-row">
-            <div className="kpi-row__title">{title}</div>
-
-            <div className="kpi-row__kpi">
-                <span className="kpi-row__label">CA</span>
-                <span className="kpi-row__value">{formatCurrency(revenue)}</span>
-                {trend !== null && (
-                    <span className={`kpi-row__trend ${trend >= 0 ? 'kpi-row__trend--up' : 'kpi-row__trend--down'}`}>
-                        {formatPercent(trend)}
-                    </span>
-                )}
-            </div>
-
-            <div className="kpi-row__kpi">
-                <span className="kpi-row__label">Marge</span>
-                {margin !== null && margin !== 0 ? (
-                    <span className="kpi-row__value">{formatCurrency(margin)}</span>
-                ) : (
-                    <span className="kpi-row__value kpi-row__value--placeholder">
-                        {marginUnavailable ? 'À venir' : '—'}
-                    </span>
-                )}
-            </div>
-
-            <div className="kpi-row__kpi">
-                <span className="kpi-row__label">Panier</span>
-                <span className="kpi-row__value">
-                    {averageBasket !== null ? formatCurrency(averageBasket) : '—'}
+        <div className="kpi-cell">
+            {hasValue ? (
+                <>
+                    <span className="kpi-cell__value">{formatCurrency(rawValue!)}</span>
+                    {share !== null && <span className="kpi-cell__share">{formatShare(share)}</span>}
+                </>
+            ) : (
+                <span className="kpi-cell__value kpi-cell__value--placeholder">
+                    {marginUnavailable ? 'À venir' : '—'}
                 </span>
-            </div>
+            )}
+        </div>
+    );
+}
 
-            <div className="kpi-row__link">→</div>
-        </a>
+interface RangeCellProps {
+    kpi: RangeKpi;
+    metric: 'revenue' | 'margin';
+    marginUnavailable?: boolean;
+    total?: number;
+}
+
+export function RangeCell({ kpi, metric, marginUnavailable, total }: RangeCellProps) {
+    if (!kpi.has_data) {
+        return <div className="kpi-cell kpi-cell--empty">—</div>;
+    }
+
+    const rawValue = metric === 'revenue' ? kpi.revenue : kpi.margin;
+    const hasValue = rawValue !== null && rawValue !== 0;
+    const share = total && total > 0 && rawValue ? (rawValue / total) * 100 : null;
+
+    return (
+        <div className="kpi-cell">
+            {hasValue ? (
+                <>
+                    <span className="kpi-cell__value">{formatCurrency(rawValue!)}</span>
+                    {share !== null && <span className="kpi-cell__share">{formatShare(share)}</span>}
+                </>
+            ) : (
+                <span className="kpi-cell__value kpi-cell__value--placeholder">
+                    {marginUnavailable ? 'À venir' : '—'}
+                </span>
+            )}
+        </div>
     );
 }

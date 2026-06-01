@@ -444,18 +444,45 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', $locationHandler(true))->name('home');
     Route::get('/location', $locationHandler(false))->name('location.index');
 
-    Route::get('/dashboard', function () {
-        $year = now()->year;
-        $month = now()->month;
+    Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+        $year = (int) $request->query('year', now()->year);
+        $month = (int) $request->query('month', now()->month);
+        $year = max(2020, min(now()->year, $year));
+        $month = max(1, min(12, $month));
 
-        // Charger les KPIs du mois courant pour les 3 métiers
+        $seasonStartYear = (int) $request->query('season_start_year', now()->year);
+        $seasonStartMonth = (int) $request->query('season_start_month', 4);
+        $seasonEndYear = (int) $request->query('season_end_year', now()->year);
+        $seasonEndMonth = (int) $request->query('season_end_month', now()->month);
+        $seasonStartYear = max(2020, min(now()->year, $seasonStartYear));
+        $seasonStartMonth = max(1, min(12, $seasonStartMonth));
+        $seasonEndYear = max(2020, min(now()->year, $seasonEndYear));
+        $seasonEndMonth = max(1, min(12, $seasonEndMonth));
+
+        $yearlyStartYear = (int) $request->query('yearly_start_year', now()->year);
+        $yearlyStartMonth = (int) $request->query('yearly_start_month', 1);
+        $yearlyEndYear = (int) $request->query('yearly_end_year', now()->year);
+        $yearlyEndMonth = (int) $request->query('yearly_end_month', now()->month);
+        $yearlyStartYear = max(2020, min(now()->year, $yearlyStartYear));
+        $yearlyStartMonth = max(1, min(12, $yearlyStartMonth));
+        $yearlyEndYear = max(2020, min(now()->year, $yearlyEndYear));
+        $yearlyEndMonth = max(1, min(12, $yearlyEndMonth));
+
+        // Exercice fiscal : mai N → avril N+1
+        // Si on est entre mai et décembre : exercice en cours démarre en mai de cette année
+        // Si on est entre janvier et avril : exercice en cours a démarré en mai de l'année précédente
+        $exerciceStartYear = now()->month >= 5 ? now()->year : now()->year - 1;
+        $exerciceStartMonth = 5;
+        $exerciceEndYear = $exerciceStartYear + 1;
+        $exerciceEndMonth = 4;
+
+        // Mois courant
         $kpis = \App\Models\MonthlyKpi::whereIn('metier', ['vente', 'atelier', 'location'])
             ->where('year', $year)
             ->where('month', $month)
             ->get()
             ->keyBy('metier');
 
-        // Charger les KPIs N-1 pour comparaison
         $kpisLastYear = \App\Models\MonthlyKpi::whereIn('metier', ['vente', 'atelier', 'location'])
             ->where('year', $year - 1)
             ->where('month', $month)
@@ -488,6 +515,36 @@ Route::middleware(['auth'])->group(function () {
             ];
         };
 
+        $aggregateKpisForRange = function (int $startYear, int $startMonth, int $endYear, int $endMonth) {
+            return \App\Models\MonthlyKpi::whereIn('metier', ['vente', 'atelier', 'location'])
+                ->whereRaw('(year * 100 + month) >= ?', [$startYear * 100 + $startMonth])
+                ->whereRaw('(year * 100 + month) <= ?', [$endYear * 100 + $endMonth])
+                ->get()
+                ->groupBy(fn ($k) => is_string($k->metier) ? $k->metier : $k->metier->value);
+        };
+
+        $formatRangeKpi = function (string $metier, $grouped) {
+            $rows = $grouped->get($metier);
+            if (! $rows || $rows->isEmpty()) {
+                return ['metier' => $metier, 'revenue' => 0, 'margin' => null, 'has_data' => false];
+            }
+
+            return [
+                'metier' => $metier,
+                'revenue' => (float) $rows->sum('revenue_ht'),
+                'margin' => $rows->sum('margin_ht') > 0 ? (float) $rows->sum('margin_ht') : null,
+                'has_data' => true,
+            ];
+        };
+
+        $seasonGrouped = $aggregateKpisForRange($seasonStartYear, $seasonStartMonth, $seasonEndYear, $seasonEndMonth);
+        $yearlyGrouped = $aggregateKpisForRange($yearlyStartYear, $yearlyStartMonth, $yearlyEndYear, $yearlyEndMonth);
+        $exerciceGrouped = $aggregateKpisForRange($exerciceStartYear, $exerciceStartMonth, $exerciceEndYear, $exerciceEndMonth);
+
+        $formatSeasonKpi = fn (string $metier) => $formatRangeKpi($metier, $seasonGrouped);
+        $formatYearlyKpi = fn (string $metier) => $formatRangeKpi($metier, $yearlyGrouped);
+        $formatExerciceKpi = fn (string $metier) => $formatRangeKpi($metier, $exerciceGrouped);
+
         return Inertia::render('Dashboard', [
             'kpis' => [
                 'vente' => $formatKpi('vente'),
@@ -497,7 +554,40 @@ Route::middleware(['auth'])->group(function () {
             'period' => [
                 'year' => $year,
                 'month' => $month,
-                'label' => now()->translatedFormat('F Y'),
+                'label' => \Carbon\Carbon::create($year, $month)->translatedFormat('F Y'),
+            ],
+            'season_kpis' => [
+                'vente' => $formatSeasonKpi('vente'),
+                'atelier' => $formatSeasonKpi('atelier'),
+                'location' => $formatSeasonKpi('location'),
+            ],
+            'season' => [
+                'start_year' => $seasonStartYear,
+                'start_month' => $seasonStartMonth,
+                'end_year' => $seasonEndYear,
+                'end_month' => $seasonEndMonth,
+            ],
+            'yearly_kpis' => [
+                'vente' => $formatYearlyKpi('vente'),
+                'atelier' => $formatYearlyKpi('atelier'),
+                'location' => $formatYearlyKpi('location'),
+            ],
+            'yearly' => [
+                'start_year' => $yearlyStartYear,
+                'start_month' => $yearlyStartMonth,
+                'end_year' => $yearlyEndYear,
+                'end_month' => $yearlyEndMonth,
+            ],
+            'exercice_kpis' => [
+                'vente' => $formatExerciceKpi('vente'),
+                'atelier' => $formatExerciceKpi('atelier'),
+                'location' => $formatExerciceKpi('location'),
+            ],
+            'exercice' => [
+                'start_year' => $exerciceStartYear,
+                'start_month' => $exerciceStartMonth,
+                'end_year' => $exerciceEndYear,
+                'end_month' => $exerciceEndMonth,
             ],
         ]);
     })->name('dashboard');
