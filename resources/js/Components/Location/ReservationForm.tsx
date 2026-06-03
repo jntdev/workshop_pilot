@@ -35,6 +35,7 @@ const initialFormData: ReservationFormData = {
     client_id: null,
     date_contact: new Date().toISOString().slice(0, 16),
     date_reservation: '',
+    date_recuperation: null as string | null,
     date_retour: '',
     livraison_necessaire: false,
     adresse_livraison: '',
@@ -101,6 +102,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
             client_id: editingReservation.client_id,
             date_contact: editingReservation.date_contact || new Date().toISOString().slice(0, 16),
             date_reservation: editingReservation.date_reservation,
+            date_recuperation: editingReservation.date_recuperation ?? null,
             date_retour: editingReservation.date_retour,
             livraison_necessaire: editingReservation.livraison_necessaire,
             adresse_livraison: editingReservation.adresse_livraison || '',
@@ -255,6 +257,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                     client_nom: clientNom,
                     montant_acompte: parseFloat(formData.acompte_montant),
                     date_reservation: formData.date_reservation,
+                    date_recuperation: formData.date_recuperation || null,
                     date_retour: formData.date_retour,
                 }),
             });
@@ -596,6 +599,15 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                             className={errors.date_reservation ? 'reservation-form__input--error' : ''}
                         />
                         {errors.date_reservation && <span className="reservation-form__error">{errors.date_reservation}</span>}
+                    </div>
+                    <div className="reservation-form__field">
+                        <label>Récupéré le <span className="reservation-form__label-hint">(si veille)</span></label>
+                        <input
+                            type="date"
+                            value={formData.date_recuperation ?? ''}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, date_recuperation: e.target.value || null }))}
+                            max={formData.date_reservation || undefined}
+                        />
                     </div>
                     <div className="reservation-form__field">
                         <label>Fin de location *</label>

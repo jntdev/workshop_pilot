@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Bike extends Model
 {
@@ -39,6 +40,11 @@ class Bike extends Model
     public function size(): BelongsTo
     {
         return $this->belongsTo(BikeSize::class, 'bike_size_id');
+    }
+
+    public function maintenanceLogs(): HasMany
+    {
+        return $this->hasMany(BikeMaintenanceLog::class)->orderByDesc('date')->orderByDesc('id');
     }
 
     /**

@@ -58,6 +58,9 @@ export default function ClientsIndex({ clients: initialClients }: Props) {
                             placeholder="Rechercher un client..."
                             className="clients-list__search-input"
                         />
+                        <a href="/clients/export-vcf" className="btn btn-secondary" download>
+                            Exporter contacts (.vcf)
+                        </a>
                         <Link href="/clients/nouveau" className="btn btn-primary">
                             + Créer nouveau client
                         </Link>

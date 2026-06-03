@@ -98,7 +98,7 @@ body:has(#location_calendar) {
 
 // Largeurs des panneaux
 $side-panel-width-reservation: max(33vw, 550px);
-$side-panel-width-planning: 700px;
+$side-panel-width-planning: 100%;
 $acomptes-panel-width: 340px;
 
 .location {
@@ -164,10 +164,21 @@ $acomptes-panel-width: 340px;
     }
   }
 
-  // Quand le panneau planning est ouvert (plus large)
+  // Quand le panneau planning est ouvert (overlay pleine largeur)
   &--panel-planning {
+    position: relative;
+
     .location__side-panel {
-      width: $side-panel-width-planning;
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100%;
+      z-index: 10;
+    }
+
+    .location__table-panel {
+      filter: blur(1px);
+      pointer-events: none;
     }
   }
 

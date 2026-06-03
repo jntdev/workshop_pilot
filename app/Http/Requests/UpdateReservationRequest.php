@@ -20,6 +20,7 @@ class UpdateReservationRequest extends FormRequest
             // Dates
             'date_contact' => ['sometimes', 'date'],
             'date_reservation' => ['sometimes', 'date'],
+            'date_recuperation' => ['nullable', 'date', 'before_or_equal:date_reservation'],
             'date_retour' => ['sometimes', 'date', 'after_or_equal:date_reservation'],
 
             // Logistique livraison

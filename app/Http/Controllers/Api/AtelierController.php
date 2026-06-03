@@ -280,6 +280,7 @@ class AtelierController extends Controller
             'margin_total_ht' => $quote->margin_total_ht,
             'status' => $quote->status?->value,
             'invoiced_at' => $quote->invoiced_at?->toISOString(),
+            'paid_at' => $quote->paid_at?->format('Y-m-d'),
             'created_at' => $quote->created_at->toISOString(),
             'can_delete' => $quote->canDelete(),
             'is_invoice' => $quote->isInvoice(),

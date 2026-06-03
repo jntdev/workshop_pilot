@@ -135,6 +135,19 @@ class QuoteController extends Controller
         return response()->json($this->formatQuote($quote));
     }
 
+    public function updatePaidAt(Request $request, Quote $quote): JsonResponse
+    {
+        $validated = $request->validate([
+            'paid_at' => 'nullable|date',
+        ]);
+
+        $quote->update([
+            'paid_at' => $validated['paid_at'] ? \Carbon\Carbon::parse($validated['paid_at']) : null,
+        ]);
+
+        return response()->json(['paid_at' => $quote->fresh()->paid_at?->format('Y-m-d')]);
+    }
+
     public function sendEmail(Request $request, Quote $quote): JsonResponse
     {
         $validated = $request->validate([
@@ -488,6 +501,7 @@ class QuoteController extends Controller
             'total_estimated_time_minutes' => $quote->total_estimated_time_minutes,
             'actual_time_minutes' => $quote->actual_time_minutes,
             'invoiced_at' => $quote->invoiced_at?->toISOString(),
+            'paid_at' => $quote->paid_at?->format('Y-m-d'),
             'created_at' => $quote->created_at->toISOString(),
             'status' => $quote->status?->value,
             'is_invoice' => $quote->isInvoice(),

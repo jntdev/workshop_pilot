@@ -27,6 +27,7 @@
 @use 'location/settings-panel';
 @use 'location/acomptes-panel';
 @use 'bikes/index-page' as bikes-page;
+@use 'bikes/show-page' as bikes-show-page;
 
 // Messagerie
 @use 'messaging/button';

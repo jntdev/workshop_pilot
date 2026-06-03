@@ -43,6 +43,7 @@ class StoreReservationRequest extends FormRequest
             // Dates
             'date_contact' => ['required', 'date'],
             'date_reservation' => ['required', 'date'],
+            'date_recuperation' => ['nullable', 'date', 'before_or_equal:date_reservation'],
             'date_retour' => ['required', 'date', 'after_or_equal:date_reservation'],
 
             // Logistique livraison

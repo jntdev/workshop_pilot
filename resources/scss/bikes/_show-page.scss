@@ -1,0 +1,336 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.bike-show {
+  max-width: 1200px;
+  margin: 0 auto;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    margin-bottom: $spacing-xl;
+    flex-wrap: wrap;
+  }
+
+  &__back {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      color: $color-neutral-dark;
+    }
+  }
+
+  &__identity {
+    flex: 1;
+  }
+
+  &__name {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+    margin: 0;
+  }
+
+  &__meta {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+  }
+
+  &__status {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    padding: $spacing-xs $spacing-sm;
+    border-radius: $radius-sm;
+
+    &--ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    &--hs {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  }
+
+  &__notes {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+    font-style: italic;
+    margin-bottom: $spacing-xl;
+    padding: $spacing-sm $spacing-md;
+    background: $color-bg-light;
+    border-radius: $radius-md;
+    border-left: 3px solid $color-border-medium;
+  }
+
+  &__section {
+    margin-bottom: $spacing-2xl;
+  }
+
+  &__section-title {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: $spacing-md;
+  }
+
+  &__count {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    background: $color-neutral-light;
+    color: $color-neutral-medium;
+    padding: 0.125rem $spacing-xs;
+    border-radius: 999px;
+  }
+
+  &__empty {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+    font-style: italic;
+  }
+}
+
+.mlog-form {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+  padding: $spacing-md;
+  background: $color-bg-light;
+  border-radius: $radius-md;
+  border: 1px solid $color-border-light;
+  min-width: 0;
+
+  input,
+  select {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    background: $color-bg-white;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-blue;
+    }
+  }
+
+  &__date { width: 130px; }
+  &__desc { flex: 1; min-width: 180px; }
+  &__ref { width: 120px; }
+  &__cost { width: 90px; }
+  &__duration { width: 90px; }
+  &__status { width: 110px; }
+
+  &__order-label {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    color: $color-neutral-dark;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    gap: $spacing-xs;
+  }
+
+  &__btn {
+    padding: $spacing-xs $spacing-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-sm;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &--primary {
+      background: $color-primary-blue;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: darken($color-primary-blue, 8%);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    &--secondary {
+      background: $color-neutral-light;
+      color: $color-neutral-dark;
+
+      &:hover {
+        background: darken($color-neutral-light, 8%);
+      }
+    }
+  }
+}
+
+.mlog-table {
+  border: 1px solid $color-border-light;
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  &__header,
+  &__footer {
+    display: grid;
+    grid-template-columns: 90px 1fr 90px 80px 180px;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: $color-bg-light;
+    border-bottom: 1px solid $color-border-light;
+  }
+
+  &__footer {
+    border-top: 1px solid $color-border-light;
+    border-bottom: none;
+    color: $color-neutral-dark;
+  }
+}
+
+.mlog-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 90px 80px 180px;
+  align-items: center;
+  padding: $spacing-sm $spacing-md;
+  border-bottom: 1px solid $color-border-light;
+  background: $color-bg-white;
+  transition: background $transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $color-bg-light;
+  }
+
+  &--done {
+    .mlog-row__desc {
+      color: $color-neutral-medium;
+      text-decoration: line-through;
+    }
+  }
+
+  &__date {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+    white-space: nowrap;
+  }
+
+  &__desc-wrap {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    flex-wrap: wrap;
+    padding-right: $spacing-sm;
+  }
+
+  &__desc {
+    font-size: $font-size-sm;
+    color: $color-neutral-dark;
+  }
+
+  &__ref {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-medium;
+    background: $color-neutral-light;
+    padding: 0.1rem $spacing-xs;
+    border-radius: $radius-sm;
+  }
+
+  &__supply {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    padding: 0.1rem $spacing-xs;
+    border-radius: $radius-sm;
+
+    &--to-order {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    &--ordered {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    &--received {
+      background: #dcfce7;
+      color: #166534;
+    }
+  }
+
+  &__cost,
+  &__duration {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-neutral-dark;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  &__toggle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid $color-border-medium;
+    background: $color-bg-white;
+    font-size: $font-size-xs;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $color-neutral-medium;
+    transition: all $transition-fast;
+
+    &:hover {
+      border-color: $color-success-green;
+      color: $color-success-green;
+    }
+  }
+
+  &__action {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-primary-blue;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &--danger {
+      color: $color-danger-red;
+    }
+  }
+}

@@ -149,6 +149,7 @@ class LocationController extends Controller
             ] : null,
             'date_contact' => $r->date_contact?->format('Y-m-d\TH:i'),
             'date_reservation' => $r->date_reservation->format('Y-m-d'),
+            'date_recuperation' => $r->date_recuperation?->format('Y-m-d'),
             'date_retour' => $r->date_retour->format('Y-m-d'),
             'livraison_necessaire' => $r->livraison_necessaire,
             'adresse_livraison' => $r->adresse_livraison,
@@ -189,10 +190,16 @@ class LocationController extends Controller
         $date = $request->input('date', now()->format('Y-m-d'));
         $targetDate = Carbon::parse($date)->startOfDay();
 
-        // Départs : réservations dont date_reservation = jour sélectionné
+        // Départs : date_recuperation si renseignée, sinon date_reservation
         $departures = Reservation::with(['client', 'items.bikeType'])
             ->where('statut', '!=', 'annule')
-            ->whereDate('date_reservation', $targetDate)
+            ->where(function ($q) use ($targetDate) {
+                $q->whereDate('date_recuperation', $targetDate)
+                    ->orWhere(function ($q2) use ($targetDate) {
+                        $q2->whereNull('date_recuperation')
+                            ->whereDate('date_reservation', $targetDate);
+                    });
+            })
             ->orderBy('livraison_necessaire', 'desc')
             ->orderBy('creneau_livraison')
             ->get()
@@ -229,6 +236,7 @@ class LocationController extends Controller
                 'adresse' => $r->client->adresse,
             ] : null,
             'date_reservation' => $r->date_reservation->format('Y-m-d'),
+            'date_recuperation' => $r->date_recuperation?->format('Y-m-d'),
             'date_retour' => $r->date_retour->format('Y-m-d'),
             'livraison_necessaire' => $r->livraison_necessaire,
             'adresse_livraison' => $r->adresse_livraison,

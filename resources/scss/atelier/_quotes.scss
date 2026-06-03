@@ -857,6 +857,22 @@
     &--done              { background: lighten($color-success-green, 42%); border-color: $color-success-green; color: darken($color-success-green, 20%); }
 }
 
+// Champ date paiement inline dans la liste des factures
+.quotes-list__paid-at-input {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.82rem;
+    border: 1px solid $color-border-medium;
+    border-radius: 6px;
+    background: $color-bg-white;
+    color: $color-neutral-dark;
+    cursor: pointer;
+
+    &:focus {
+        outline: none;
+        border-color: $color-primary-blue;
+    }
+}
+
 // Atelier Index
 .atelier-index {
     &__actions {

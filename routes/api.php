@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AtelierController;
 use App\Http\Controllers\Api\BikeCategoryController;
 use App\Http\Controllers\Api\BikeController;
+use App\Http\Controllers\Api\BikeMaintenanceLogController;
 use App\Http\Controllers\Api\BikeSizeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\LocationController;
@@ -46,6 +47,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::patch('/quotes/{quote}/archive', [QuoteController::class, 'toggleArchive']);
     Route::post('/quotes/{quote}/convert-to-invoice', [QuoteController::class, 'convertToInvoice']);
     Route::patch('/quotes/{quote}/actual-time', [QuoteController::class, 'updateActualTime']);
+    Route::patch('/quotes/{quote}/paid-at', [QuoteController::class, 'updatePaidAt']);
     Route::post('/quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);
     Route::post('/quotes/calculate-line', [QuoteController::class, 'calculateLine']);
     Route::post('/quotes/calculate-totals', [QuoteController::class, 'calculateTotals']);
@@ -70,6 +72,11 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/bikes/{id}', [BikeController::class, 'update']);
     Route::delete('/bikes/{id}', [BikeController::class, 'destroy']);
     Route::post('/bikes/reorder', [BikeController::class, 'reorder']);
+    Route::get('/bikes/maintenance/order-lines', [BikeMaintenanceLogController::class, 'orderLines']);
+    Route::patch('/bikes/maintenance/{log}/order-status', [BikeMaintenanceLogController::class, 'updateOrderStatus']);
+    Route::post('/bikes/{bike}/maintenance', [BikeMaintenanceLogController::class, 'store']);
+    Route::put('/bikes/{bike}/maintenance/{log}', [BikeMaintenanceLogController::class, 'update']);
+    Route::delete('/bikes/{bike}/maintenance/{log}', [BikeMaintenanceLogController::class, 'destroy']);
 
     // Bike Categories API routes
     Route::get('/bike-categories', [BikeCategoryController::class, 'index']);

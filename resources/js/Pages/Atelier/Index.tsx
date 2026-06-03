@@ -24,51 +24,57 @@ export default function AtelierIndex({
     const [invoices, setInvoices] = useState<Quote[]>(initialInvoices);
     const [invoicesLoaded, setInvoicesLoaded] = useState(false);
     const [isRebuilding, setIsRebuilding] = useState(false);
+    const [activeTab, setActiveTab] = useState<'quotes' | 'invoices' | 'clients' | 'archives'>('quotes');
 
-    const handleYearChange = useCallback(async (year: number) => {
-        setCurrentYear(year);
-        // Reload stats from server
+    const loadInvoices = useCallback(async (year: number, month: number) => {
         try {
-            const response = await fetch(`/api/atelier/stats?year=${year}&month=${currentMonth}`);
-            const data = await response.json();
-            setCurrentStats(data.stats);
-            setCurrentComparisonStats(data.comparisonStats);
-            // Reset invoices when filter changes
-            setInvoicesLoaded(false);
-            setInvoices([]);
-        } catch (error) {
-            console.error('Failed to load stats:', error);
-        }
-    }, [currentMonth]);
-
-    const handleMonthChange = useCallback(async (month: number) => {
-        setCurrentMonth(month);
-        // Reload stats from server
-        try {
-            const response = await fetch(`/api/atelier/stats?year=${currentYear}&month=${month}`);
-            const data = await response.json();
-            setCurrentStats(data.stats);
-            setCurrentComparisonStats(data.comparisonStats);
-            // Reset invoices when filter changes
-            setInvoicesLoaded(false);
-            setInvoices([]);
-        } catch (error) {
-            console.error('Failed to load stats:', error);
-        }
-    }, [currentYear]);
-
-    const handleLoadInvoices = useCallback(async () => {
-        if (invoicesLoaded) return;
-
-        try {
-            const response = await fetch(`/api/atelier/invoices?year=${currentYear}&month=${currentMonth}`);
+            const response = await fetch(`/api/atelier/invoices?year=${year}&month=${month}`);
             const data = await response.json();
             setInvoices(data);
             setInvoicesLoaded(true);
         } catch (error) {
             console.error('Failed to load invoices:', error);
         }
-    }, [currentYear, currentMonth, invoicesLoaded]);
+    }, []);
+
+    const handleYearChange = useCallback(async (year: number) => {
+        setCurrentYear(year);
+        try {
+            const response = await fetch(`/api/atelier/stats?year=${year}&month=${currentMonth}`);
+            const data = await response.json();
+            setCurrentStats(data.stats);
+            setCurrentComparisonStats(data.comparisonStats);
+            setInvoicesLoaded(false);
+            setInvoices([]);
+            if (activeTab === 'invoices') {
+                await loadInvoices(year, currentMonth);
+            }
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
+    }, [currentMonth, activeTab, loadInvoices]);
+
+    const handleMonthChange = useCallback(async (month: number) => {
+        setCurrentMonth(month);
+        try {
+            const response = await fetch(`/api/atelier/stats?year=${currentYear}&month=${month}`);
+            const data = await response.json();
+            setCurrentStats(data.stats);
+            setCurrentComparisonStats(data.comparisonStats);
+            setInvoicesLoaded(false);
+            setInvoices([]);
+            if (activeTab === 'invoices') {
+                await loadInvoices(currentYear, month);
+            }
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
+    }, [currentYear, activeTab, loadInvoices]);
+
+    const handleLoadInvoices = useCallback(async () => {
+        if (invoicesLoaded) return;
+        await loadInvoices(currentYear, currentMonth);
+    }, [currentYear, currentMonth, invoicesLoaded, loadInvoices]);
 
     const handleRebuildStats = useCallback(async () => {
         setIsRebuilding(true);
@@ -142,6 +148,8 @@ export default function AtelierIndex({
                         invoices={invoices}
                         onLoadInvoices={handleLoadInvoices}
                         invoicesLoaded={invoicesLoaded}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
                     />
                 </div>
             </div>

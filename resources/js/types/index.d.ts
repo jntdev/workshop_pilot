@@ -101,6 +101,7 @@ export interface QuoteDetail {
     total_estimated_time_minutes: number | null;
     actual_time_minutes: number | null;
     invoiced_at: string | null;
+    paid_at: string | null;
     created_at: string;
     is_invoice: boolean;
     can_edit: boolean;
@@ -132,6 +133,7 @@ export interface Quote {
     margin_total_ht: string;
     status: QuoteStatusSlug | null;
     invoiced_at: string | null;
+    paid_at: string | null;
     created_at: string;
     can_delete: boolean;
     is_invoice: boolean;
@@ -223,6 +225,7 @@ export interface LoadedReservation {
     client: Client | null;
     date_contact: string | null;
     date_reservation: string;
+    date_recuperation: string | null;
     date_retour: string;
     livraison_necessaire: boolean;
     adresse_livraison: string | null;
@@ -327,6 +330,7 @@ export interface Reservation {
     client?: Client;
     date_contact: string;
     date_reservation: string;
+    date_recuperation: string | null;
     date_retour: string;
     livraison_necessaire: boolean;
     adresse_livraison: string | null;
@@ -353,6 +357,7 @@ export interface ReservationFormData {
     client_id: number | null;
     date_contact: string;
     date_reservation: string;
+    date_recuperation: string | null;
     date_retour: string;
     livraison_necessaire: boolean;
     adresse_livraison: string;

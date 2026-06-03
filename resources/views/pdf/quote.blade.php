@@ -136,6 +136,12 @@
             background-color: #f5f5f5;
             border-top: 2px solid #333;
         }
+        .totals-table .totals-row--dates td {
+            font-size: 11px;
+            color: #555;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 4px;
+        }
         .meta {
             clear: both;
             margin-top: 30px;
@@ -423,6 +429,16 @@
                         <td class="totals-label">Total TTC</td>
                         <td class="totals-value">{{ number_format((float)$quote->total_ttc, 2, ',', ' ') }} €</td>
                     </tr>
+                    @if($quote->isInvoice())
+                    <tr class="totals-row--dates">
+                        <td class="totals-label">Facturé le</td>
+                        <td class="totals-value">{{ $quote->invoiced_at->format('d/m/Y') }}</td>
+                    </tr>
+                    <tr class="totals-row--dates">
+                        <td class="totals-label">Payé le</td>
+                        <td class="totals-value">{{ $quote->paid_at ? $quote->paid_at->format('d/m/Y') : '—' }}</td>
+                    </tr>
+                    @endif
                 </table>
             </div>
         </div>

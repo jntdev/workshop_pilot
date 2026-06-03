@@ -14,6 +14,7 @@ export interface PlanningReservation {
         adresse: string | null;
     } | null;
     date_reservation: string;
+    date_recuperation: string | null;
     date_retour: string;
     livraison_necessaire: boolean;
     adresse_livraison: string | null;
@@ -174,20 +175,17 @@ function ReservationCard({ reservation, type, onReservationClick }: ReservationC
     );
 }
 
-interface ColumnProps {
+interface SubColumnProps {
     title: string;
+    subtitle: string;
     reservations: PlanningReservation[];
     type: 'departure' | 'return';
     onReservationClick: (reservationId: number) => void;
 }
 
-function Column({ title, reservations, type, onReservationClick }: ColumnProps) {
-    const deliveries = reservations.filter((r) =>
-        type === 'departure' ? r.livraison_necessaire : r.recuperation_necessaire
-    );
-    const pickups = reservations.filter((r) =>
-        type === 'departure' ? !r.livraison_necessaire : !r.recuperation_necessaire
-    );
+function SubColumn({ title, subtitle, reservations, type, onReservationClick }: SubColumnProps) {
+    const evening = reservations.filter(r => r.date_recuperation !== null);
+    const normal = reservations.filter(r => r.date_recuperation === null);
 
     return (
         <div className="planning-column">
@@ -195,45 +193,27 @@ function Column({ title, reservations, type, onReservationClick }: ColumnProps) 
                 {title}
                 <span className="planning-column__count">{reservations.length}</span>
             </h3>
-
+            <div className="planning-column__subtitle">{subtitle}</div>
             {reservations.length === 0 ? (
-                <div className="planning-column__empty">
-                    Aucun {type === 'departure' ? 'départ' : 'retour'}
-                </div>
+                <div className="planning-column__empty">Aucun</div>
             ) : (
                 <>
-                    {deliveries.length > 0 && (
-                        <div className="planning-section">
-                            <h4 className="planning-section__title">
-                                {type === 'departure' ? 'Livraisons' : 'Récupérations'}
-                            </h4>
-                            <div className="planning-section__cards">
-                                {deliveries.map((r) => (
-                                    <ReservationCard
-                                        key={r.id}
-                                        reservation={r}
-                                        type={type}
-                                        onReservationClick={onReservationClick}
-                                    />
-                                ))}
-                            </div>
+                    {normal.length > 0 && (
+                        <div className="planning-section__cards">
+                            {normal.map((r) => (
+                                <ReservationCard key={r.id} reservation={r} type={type} onReservationClick={onReservationClick} />
+                            ))}
                         </div>
                     )}
-
-                    {pickups.length > 0 && (
-                        <div className="planning-section">
-                            <h4 className="planning-section__title">Sur place</h4>
+                    {evening.length > 0 && (
+                        <>
+                            <div className="planning-column__evening-divider">Veille · après 18h</div>
                             <div className="planning-section__cards">
-                                {pickups.map((r) => (
-                                    <ReservationCard
-                                        key={r.id}
-                                        reservation={r}
-                                        type={type}
-                                        onReservationClick={onReservationClick}
-                                    />
+                                {evening.map((r) => (
+                                    <ReservationCard key={r.id} reservation={r} type={type} onReservationClick={onReservationClick} />
                                 ))}
                             </div>
-                        </div>
+                        </>
                     )}
                 </>
             )}
@@ -269,6 +249,14 @@ export default function PlanningPanel({
                 <div className="planning-panel__summary">
                     {departures.length} départ{departures.length !== 1 ? 's' : ''} · {returns.length} retour{returns.length !== 1 ? 's' : ''}
                 </div>
+                <a
+                    href={`/location/fiche-departs?date=${date}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="planning-panel__print-btn"
+                >
+                    Fiche départs
+                </a>
             </div>
 
             <div className="planning-panel__nav">
@@ -303,15 +291,31 @@ export default function PlanningPanel({
             </div>
 
             <div className="planning-panel__content">
-                <Column
+                <SubColumn
                     title="Départs"
-                    reservations={departures}
+                    subtitle="Livraison"
+                    reservations={departures.filter(r => r.livraison_necessaire)}
                     type="departure"
                     onReservationClick={onReservationClick}
                 />
-                <Column
+                <SubColumn
+                    title="Départs"
+                    subtitle="Atelier"
+                    reservations={departures.filter(r => !r.livraison_necessaire)}
+                    type="departure"
+                    onReservationClick={onReservationClick}
+                />
+                <SubColumn
                     title="Retours"
-                    reservations={returns}
+                    subtitle="Récupération"
+                    reservations={returns.filter(r => r.recuperation_necessaire)}
+                    type="return"
+                    onReservationClick={onReservationClick}
+                />
+                <SubColumn
+                    title="Retours"
+                    subtitle="Atelier"
+                    reservations={returns.filter(r => !r.recuperation_necessaire)}
                     type="return"
                     onReservationClick={onReservationClick}
                 />

@@ -15,6 +15,7 @@ class Reservation extends Model
         'client_id',
         'date_contact',
         'date_reservation',
+        'date_recuperation',
         'date_retour',
         'livraison_necessaire',
         'adresse_livraison',
@@ -41,6 +42,7 @@ class Reservation extends Model
         return [
             'date_contact' => 'datetime',
             'date_reservation' => 'date',
+            'date_recuperation' => 'date',
             'date_retour' => 'date',
             'livraison_necessaire' => 'boolean',
             'recuperation_necessaire' => 'boolean',

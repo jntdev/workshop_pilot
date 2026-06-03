@@ -1,7 +1,20 @@
 import { Head } from '@inertiajs/react';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import MainLayout from '@/Layouts/MainLayout';
 import type { BikeCategoryRef, BikeSizeRef } from '@/types';
+
+interface OrderLine {
+    id: number;
+    bike_id: number;
+    bike_name: string;
+    bike_type: string;
+    description: string;
+    reference: string | null;
+    cost: number | null;
+    supply_status: 'to_order' | 'ordered' | 'received';
+    ordered_at: string | null;
+    received_at: string | null;
+}
 
 interface Bike {
     id: number;
@@ -16,6 +29,7 @@ interface Bike {
     status: 'OK' | 'HS';
     notes: string | null;
     sort_order: number;
+    pending_maintenance_count: number;
 }
 
 interface PageProps {
@@ -60,6 +74,35 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
         notes: '',
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [orderLines, setOrderLines] = useState<OrderLine[]>([]);
+    const [pendingOrderIds, setPendingOrderIds] = useState<Set<number>>(new Set());
+
+    const CSRF = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    useEffect(() => {
+        fetch('/api/bikes/maintenance/order-lines', { headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(setOrderLines)
+            .catch(() => {});
+    }, []);
+
+    const updateOrderStatus = useCallback(async (id: number, action: 'mark_as_ordered' | 'mark_as_received' | 'unmark') => {
+        if (pendingOrderIds.has(id)) { return; }
+        setPendingOrderIds(prev => new Set(prev).add(id));
+        try {
+            const response = await fetch(`/api/bikes/maintenance/${id}/order-status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF() },
+                body: JSON.stringify({ [action]: true }),
+            });
+            if (response.ok) {
+                const updated = await response.json();
+                setOrderLines(prev => prev.map(l => l.id === id ? { ...l, ...updated } : l).filter(l => l.supply_status !== 'received'));
+            }
+        } finally {
+            setPendingOrderIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+        }
+    }, [pendingOrderIds]);
 
     const selectedCategory = useMemo(
         () => categories.find(c => c.id === formData.bike_category_id),
@@ -254,37 +297,27 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
             <div className="bike-card__main">
                 <span className="bike-card__label">{bike.name}</span>
                 {bike.frame_type && (
-                    <span className="bike-card__type">
-                        {getFrameLabel(bike.frame_type)}
+                    <span className="bike-card__type">{getFrameLabel(bike.frame_type)}</span>
+                )}
+                {bike.pending_maintenance_count > 0 && (
+                    <span className="bike-card__maintenance-badge" title={`${bike.pending_maintenance_count} travail(aux) à faire`}>
+                        {bike.pending_maintenance_count}
                     </span>
                 )}
-                <button
-                    type="button"
-                    className={`bike-card__status ${bike.status === 'OK' ? 'bike-card__status--ok' : 'bike-card__status--hs'}`}
-                    onClick={() => handleToggleStatus(bike)}
-                    title="Cliquer pour changer le statut"
-                >
-                    {bike.status}
-                </button>
             </div>
-            {bike.notes && (
-                <p className="bike-card__notes">{bike.notes}</p>
-            )}
+            {bike.notes && <p className="bike-card__notes">{bike.notes}</p>}
+            <button
+                type="button"
+                className={`bike-card__status ${bike.status === 'OK' ? 'bike-card__status--ok' : 'bike-card__status--hs'}`}
+                onClick={() => handleToggleStatus(bike)}
+                title="Cliquer pour changer le statut"
+            >
+                {bike.status}
+            </button>
             <div className="bike-card__actions">
-                <button
-                    type="button"
-                    className="bike-card__action"
-                    onClick={() => handleEdit(bike)}
-                >
-                    Modifier
-                </button>
-                <button
-                    type="button"
-                    className="bike-card__action bike-card__action--danger"
-                    onClick={() => handleDelete(bike.id)}
-                >
-                    Supprimer
-                </button>
+                <a href={`/bikes/${bike.id}`} className="bike-card__action">Fiche</a>
+                <button type="button" className="bike-card__action" onClick={() => handleEdit(bike)}>Modifier</button>
+                <button type="button" className="bike-card__action bike-card__action--danger" onClick={() => handleDelete(bike.id)}>Supprimer</button>
             </div>
         </div>
     );
@@ -310,7 +343,7 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                     </button>
                 </div>
 
-                <div className="bikes-page__content">
+                <div className="bikes-page__content bikes-page__content--with-panel">
                     <div className="bikes-page__list">
                         {categories.map(category => {
                             const categoryBikes = bikes.filter(b => b.bike_category_id === category.id);
@@ -361,6 +394,43 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                                 >
                                     Ajouter le premier velo
                                 </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Panneau pièces à commander */}
+                    <div className="bikes-page__order-panel">
+                        <h2 className="bikes-page__order-title">Pièces à commander <span className="bikes-page__stat">{orderLines.length}</span></h2>
+                        {orderLines.length === 0 ? (
+                            <p className="bikes-page__order-empty">Aucune pièce à commander.</p>
+                        ) : (
+                            <div className="order-lines">
+                                {orderLines.map(line => (
+                                    <div key={line.id} className="order-line">
+                                        <div className="order-line__bike">
+                                            <a href={`/bikes/${line.bike_id}`} className="order-line__bike-name">{line.bike_name}</a>
+                                            <span className="order-line__bike-type">{line.bike_type}</span>
+                                        </div>
+                                        <div className="order-line__desc">
+                                            <span>{line.description}</span>
+                                            {line.reference && <span className="order-line__ref">{line.reference}</span>}
+                                        </div>
+                                        <span className={`order-line__badge order-line__badge--${line.supply_status === 'to_order' ? 'to-order' : 'ordered'}`}>
+                                            {line.supply_status === 'to_order' ? 'À commander' : 'Commandée'}
+                                        </span>
+                                        <div className="order-line__actions">
+                                            {line.supply_status === 'to_order' && (
+                                                <button type="button" disabled={pendingOrderIds.has(line.id)} onClick={() => updateOrderStatus(line.id, 'mark_as_ordered')} className="order-line__btn">Commandée</button>
+                                            )}
+                                            {line.supply_status === 'ordered' && (
+                                                <>
+                                                    <button type="button" disabled={pendingOrderIds.has(line.id)} onClick={() => updateOrderStatus(line.id, 'mark_as_received')} className="order-line__btn order-line__btn--success">Reçue</button>
+                                                    <button type="button" disabled={pendingOrderIds.has(line.id)} onClick={() => updateOrderStatus(line.id, 'unmark')} className="order-line__btn order-line__btn--ghost">Annuler</button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

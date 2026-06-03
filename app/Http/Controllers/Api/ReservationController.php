@@ -303,7 +303,7 @@ class ReservationController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => 'Erreur lors de l\'envoi : ' . $e->getMessage(),
+                'error' => 'Erreur lors de l\'envoi : '.$e->getMessage(),
             ], 500);
         }
 
@@ -330,6 +330,7 @@ class ReservationController extends Controller
             ] : null,
             'date_contact' => $reservation->date_contact?->format('Y-m-d H:i:s'),
             'date_reservation' => $reservation->date_reservation?->format('Y-m-d'),
+            'date_recuperation' => $reservation->date_recuperation?->format('Y-m-d'),
             'date_retour' => $reservation->date_retour?->format('Y-m-d'),
             'livraison_necessaire' => $reservation->livraison_necessaire,
             'adresse_livraison' => $reservation->adresse_livraison,

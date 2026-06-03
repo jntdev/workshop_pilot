@@ -49,6 +49,35 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('Clients/Form');
     })->name('clients.create');
 
+    Route::get('/clients/export-vcf', function () {
+        $clients = \App\Models\Client::orderBy('nom')->orderBy('prenom')->get();
+
+        $vcf = $clients->map(function (\App\Models\Client $client) {
+            $lines = ['BEGIN:VCARD', 'VERSION:3.0'];
+            $lines[] = 'UID:workshop-client-'.$client->id;
+            $fullName = trim($client->prenom.' '.$client->nom);
+            $lines[] = 'FN:'.$fullName;
+            $lines[] = 'N:'.$client->nom.';'.$client->prenom.';;;';
+            if ($client->telephone) {
+                $lines[] = 'TEL;TYPE=CELL:'.$client->telephone;
+            }
+            if ($client->email) {
+                $lines[] = 'EMAIL;TYPE=INTERNET:'.$client->email;
+            }
+            if ($client->adresse) {
+                $lines[] = 'ADR;TYPE=HOME:;;'.str_replace("\n", ' ', $client->adresse).';;;;';
+            }
+            $lines[] = 'END:VCARD';
+
+            return implode("\r\n", $lines);
+        })->implode("\r\n\r\n");
+
+        return response($vcf, 200, [
+            'Content-Type' => 'text/vcard; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="clients-atelier.vcf"',
+        ]);
+    })->name('clients.export-vcf');
+
     Route::get('/clients/{id}', function ($id) {
         $client = \App\Models\Client::findOrFail($id);
 
@@ -444,6 +473,38 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', $locationHandler(true))->name('home');
     Route::get('/location', $locationHandler(false))->name('location.index');
 
+    Route::get('/location/fiche-departs', function (\Illuminate\Http\Request $request) {
+        $date = $request->query('date', now()->format('Y-m-d'));
+        $targetDate = \Carbon\Carbon::parse($date)->startOfDay();
+
+        $departures = \App\Models\Reservation::with(['client', 'items.bikeType'])
+            ->where('statut', '!=', 'annule')
+            ->where(function ($q) use ($targetDate) {
+                $q->whereDate('date_recuperation', $targetDate)
+                    ->orWhere(function ($q2) use ($targetDate) {
+                        $q2->whereNull('date_recuperation')
+                            ->whereDate('date_reservation', $targetDate);
+                    });
+            })
+            ->orderBy('livraison_necessaire', 'desc')
+            ->orderBy('creneau_livraison')
+            ->get();
+
+        // Charger les noms des vélos individuels depuis la selection
+        $allBikeIds = $departures->flatMap(function ($r) {
+            return collect($r->selection ?? [])->pluck('bike_id')
+                ->map(fn ($id) => (int) str_replace('bike_', '', $id));
+        })->unique()->filter()->values();
+
+        $bikes = \App\Models\Bike::whereIn('id', $allBikeIds)->get()->keyBy('id');
+
+        return view('print.fiche-departs', [
+            'date' => $targetDate,
+            'departures' => $departures,
+            'bikes' => $bikes,
+        ]);
+    })->name('location.fiche-departs');
+
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         $year = (int) $request->query('year', now()->year);
         $month = (int) $request->query('month', now()->month);
@@ -593,6 +654,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     Route::get('/bikes', [\App\Http\Controllers\BikeController::class, 'index'])->name('bikes.index');
+    Route::get('/bikes/{bike}', [\App\Http\Controllers\BikeController::class, 'show'])->name('bikes.show');
 
     Route::get('/messages', function () {
         return Inertia::render('Messages');

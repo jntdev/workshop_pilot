@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Quote, QuoteStatusSlug } from '@/types';
+
+type TabType = 'quotes' | 'invoices' | 'clients' | 'archives';
 
 interface QuotesTabsProps {
     quotes: Quote[];
@@ -8,9 +10,9 @@ interface QuotesTabsProps {
     invoices: Quote[];
     onLoadInvoices: () => void;
     invoicesLoaded: boolean;
+    activeTab: TabType;
+    onTabChange: (tab: TabType) => void;
 }
-
-type TabType = 'quotes' | 'invoices' | 'clients' | 'archives';
 
 const STATUS_LABELS: Record<QuoteStatusSlug, string> = {
     reception: 'Bon de réception',
@@ -68,12 +70,27 @@ interface QuotesTableProps {
 }
 
 function QuotesTable({ items, type, onStatusChange, onArchiveToggle }: QuotesTableProps) {
+    const [paidAtMap, setPaidAtMap] = useState<Record<number, string>>({});
+
     const handleDelete = (quoteId: number, e: React.FormEvent) => {
         e.preventDefault();
         if (confirm('Voulez-vous vraiment supprimer ce devis ?')) {
             router.delete(`/atelier/devis/${quoteId}`);
         }
     };
+
+    const handlePaidAtChange = useCallback(async (quoteId: number, value: string) => {
+        setPaidAtMap(prev => ({ ...prev, [quoteId]: value }));
+        await fetch(`/api/quotes/${quoteId}/paid-at`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-XSRF-TOKEN': getCsrfToken(),
+            },
+            body: JSON.stringify({ paid_at: value || null }),
+        });
+    }, []);
 
     if (items.length === 0) {
         return (
@@ -98,6 +115,7 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle }: QuotesTab
                     <th>Vélo</th>
                     <th>Total TTC</th>
                     <th>{type === 'invoices' ? 'Date de facturation' : 'Date'}</th>
+                    {type === 'invoices' && <th>Payé le</th>}
                     {type === 'quotes' && <th>Statut</th>}
                     {type === 'archives' && <th>Type</th>}
                     <th>Actions</th>
@@ -117,6 +135,16 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle }: QuotesTab
                                     : item.created_at
                             )}
                         </td>
+                        {type === 'invoices' && (
+                            <td>
+                                <input
+                                    type="date"
+                                    defaultValue={item.paid_at ?? ''}
+                                    onChange={(e) => handlePaidAtChange(item.id, e.target.value)}
+                                    className="quotes-list__paid-at-input"
+                                />
+                            </td>
+                        )}
                         {type === 'quotes' && (
                             <td>
                                 <select
@@ -350,8 +378,9 @@ export default function QuotesTabs({
     invoices,
     onLoadInvoices,
     invoicesLoaded,
+    activeTab,
+    onTabChange,
 }: QuotesTabsProps) {
-    const [activeTab, setActiveTab] = useState<TabType>('quotes');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
     const [archivedQuotes, setArchivedQuotes] = useState<Quote[]>(initialArchivedQuotes);
@@ -360,7 +389,7 @@ export default function QuotesTabs({
     const [isSearching, setIsSearching] = useState(false);
 
     const handleTabChange = (tab: TabType) => {
-        setActiveTab(tab);
+        onTabChange(tab);
         if (tab === 'invoices' && !invoicesLoaded) {
             onLoadInvoices();
         }

@@ -193,6 +193,12 @@
       color: $color-neutral-dark;
     }
 
+    .reservation-form__label-hint {
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: $color-neutral-medium;
+    }
+
     input,
     textarea,
     select {
