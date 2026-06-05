@@ -69,11 +69,13 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Bikes API routes
     Route::get('/bikes', [BikeController::class, 'index']);
     Route::post('/bikes', [BikeController::class, 'store']);
-    Route::put('/bikes/{id}', [BikeController::class, 'update']);
-    Route::delete('/bikes/{id}', [BikeController::class, 'destroy']);
+    Route::get('/bike-models', [BikeController::class, 'indexModels']);
+    Route::post('/bike-models', [BikeController::class, 'storeModel']);
     Route::post('/bikes/reorder', [BikeController::class, 'reorder']);
     Route::get('/bikes/maintenance/order-lines', [BikeMaintenanceLogController::class, 'orderLines']);
     Route::patch('/bikes/maintenance/{log}/order-status', [BikeMaintenanceLogController::class, 'updateOrderStatus']);
+    Route::put('/bikes/{id}', [BikeController::class, 'update']);
+    Route::delete('/bikes/{id}', [BikeController::class, 'destroy']);
     Route::post('/bikes/{bike}/maintenance', [BikeMaintenanceLogController::class, 'store']);
     Route::put('/bikes/{bike}/maintenance/{log}', [BikeMaintenanceLogController::class, 'update']);
     Route::delete('/bikes/{bike}/maintenance/{log}', [BikeMaintenanceLogController::class, 'destroy']);
@@ -81,6 +83,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Bike Categories API routes
     Route::get('/bike-categories', [BikeCategoryController::class, 'index']);
     Route::post('/bike-categories', [BikeCategoryController::class, 'store']);
+    Route::post('/bike-categories/reorder', [BikeCategoryController::class, 'reorder']);
     Route::put('/bike-categories/{id}', [BikeCategoryController::class, 'update']);
     Route::delete('/bike-categories/{id}', [BikeCategoryController::class, 'destroy']);
 

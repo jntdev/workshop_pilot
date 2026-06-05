@@ -53,6 +53,7 @@ const BATTERY_TYPES = [
     { value: 'rack', label: 'Rack' },
     { value: 'gourde', label: 'Gourde' },
     { value: 'rail', label: 'Rail' },
+    { value: 'intégrée', label: 'Intégrée' },
 ] as const;
 
 export default function BikesIndex({ bikes: initialBikes, categories, sizes }: PageProps) {
@@ -67,13 +68,16 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
         bike_category_id: defaultCategoryId,
         bike_size_id: defaultSizeId as number | null,
         frame_type: 'b' as 'b' | 'h' | null,
-        model: '500' as '500' | '625' | 'autre' | null,
-        battery_type: 'rack' as 'rack' | 'gourde' | 'rail' | null,
+        model: '500' as string | null,
+        battery_type: 'rack' as 'rack' | 'gourde' | 'rail' | 'intégrée' | null,
         name: '',
         status: 'OK' as 'OK' | 'HS',
         notes: '',
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [bikeModels, setBikeModels] = useState<string[]>([]);
+    const [newModelInput, setNewModelInput] = useState('');
+    const [isAddingModel, setIsAddingModel] = useState(false);
     const [orderLines, setOrderLines] = useState<OrderLine[]>([]);
     const [pendingOrderIds, setPendingOrderIds] = useState<Set<number>>(new Set());
 
@@ -84,7 +88,27 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
             .then(r => r.json())
             .then(setOrderLines)
             .catch(() => {});
+        fetch('/api/bike-models', { headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(setBikeModels)
+            .catch(() => {});
     }, []);
+
+    const handleAddModel = useCallback(async () => {
+        const name = newModelInput.trim();
+        if (!name) { return; }
+        const response = await fetch('/api/bike-models', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF() },
+            body: JSON.stringify({ name }),
+        });
+        if (response.ok) {
+            setBikeModels(prev => [...prev, name].sort());
+            setFormData(prev => ({ ...prev, model: name }));
+            setNewModelInput('');
+            setIsAddingModel(false);
+        }
+    }, [newModelInput]);
 
     const updateOrderStatus = useCallback(async (id: number, action: 'mark_as_ordered' | 'mark_as_received' | 'unmark') => {
         if (pendingOrderIds.has(id)) { return; }
@@ -123,6 +147,8 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
         });
         setEditingBike(null);
         setIsCreating(false);
+        setIsAddingModel(false);
+        setNewModelInput('');
     }, [defaultCategoryId, defaultSizeId, categories]);
 
     const handleCreate = useCallback(() => {
@@ -436,7 +462,8 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                     </div>
 
                     {(isCreating || editingBike) && (
-                        <div className="bikes-page__form-panel">
+                        <div className="bikes-modal__backdrop" onClick={resetForm}>
+                        <div className="bikes-modal" onClick={e => e.stopPropagation()}>
                             <form onSubmit={handleSubmit} className="bike-form">
                                 <h3 className="bike-form__title">
                                     {editingBike ? `Modifier ${editingBike.name}` : 'Nouveau velo'}
@@ -515,15 +542,35 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
 
                                     <div className="bike-form__field">
                                         <label htmlFor="model">Modele</label>
-                                        <select
-                                            id="model"
-                                            value={formData.model || '500'}
-                                            onChange={e => setFormData(prev => ({ ...prev, model: e.target.value as '500' | '625' | 'autre' }))}
-                                        >
-                                            {MODELS.map(m => (
-                                                <option key={m.value} value={m.value}>{m.label}</option>
-                                            ))}
-                                        </select>
+                                        {isAddingModel ? (
+                                            <div className="bike-form__model-input">
+                                                <input
+                                                    type="text"
+                                                    value={newModelInput}
+                                                    onChange={e => setNewModelInput(e.target.value)}
+                                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddModel(); } if (e.key === 'Escape') { setIsAddingModel(false); } }}
+                                                    placeholder="Nom du modèle..."
+                                                    autoFocus
+                                                />
+                                                <button type="button" onClick={handleAddModel} className="bike-form__model-btn">✓</button>
+                                                <button type="button" onClick={() => setIsAddingModel(false)} className="bike-form__model-btn bike-form__model-btn--cancel">✕</button>
+                                            </div>
+                                        ) : (
+                                            <div className="bike-form__model-input">
+                                                <select
+                                                    id="model"
+                                                    value={formData.model || ''}
+                                                    onChange={e => setFormData(prev => ({ ...prev, model: e.target.value || null }))}
+                                                    style={{ flex: 1 }}
+                                                >
+                                                    <option value="">— Aucun —</option>
+                                                    {bikeModels.map(m => (
+                                                        <option key={m} value={m}>{m}</option>
+                                                    ))}
+                                                </select>
+                                                <button type="button" onClick={() => setIsAddingModel(true)} className="bike-form__model-btn" title="Nouveau modèle">+</button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -534,7 +581,7 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                                             <select
                                                 id="battery_type"
                                                 value={formData.battery_type || 'rack'}
-                                                onChange={e => setFormData(prev => ({ ...prev, battery_type: e.target.value as 'rack' | 'gourde' | 'rail' }))}
+                                                onChange={e => setFormData(prev => ({ ...prev, battery_type: e.target.value as 'rack' | 'gourde' | 'rail' | 'intégrée' }))}
                                             >
                                                 {BATTERY_TYPES.map(bt => (
                                                     <option key={bt.value} value={bt.value}>{bt.label}</option>
@@ -586,6 +633,7 @@ export default function BikesIndex({ bikes: initialBikes, categories, sizes }: P
                                     </button>
                                 </div>
                             </form>
+                        </div>
                         </div>
                     )}
                 </div>

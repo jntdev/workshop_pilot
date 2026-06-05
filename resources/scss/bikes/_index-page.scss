@@ -108,7 +108,31 @@
     border-radius: 8px;
     padding: 1rem;
   }
+}
 
+.bikes-modal {
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  background: $color-bg-white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.bikes-page {
   &__order-panel {
     position: sticky;
     top: 1rem;
@@ -484,5 +508,56 @@
     justify-content: flex-end;
     padding-top: 1rem;
     border-top: 1px solid $color-border-light;
+  }
+
+  &__model-input {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+
+    input, select {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      border: 1px solid $color-border-medium;
+      border-radius: 6px;
+      background: $color-bg-white;
+      box-sizing: border-box;
+
+      &:focus {
+        outline: none;
+        border-color: $color-primary-blue;
+        box-shadow: 0 0 0 2px rgba($color-primary-blue, 0.15);
+      }
+    }
+  }
+
+  &__model-btn {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: 1px solid $color-border-medium;
+    border-radius: 6px;
+    background: $color-bg-white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: $color-neutral-light;
+      border-color: $color-neutral-dark;
+    }
+
+    &--cancel {
+      color: $color-danger-red;
+
+      &:hover {
+        border-color: $color-danger-red;
+        background: #fee2e2;
+      }
+    }
   }
 }

@@ -82,4 +82,21 @@ class BikeCategoryController extends Controller
 
         return response()->json(['message' => 'Catégorie supprimée']);
     }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'categories' => 'required|array',
+            'categories.*.id' => 'required|exists:bike_categories,id',
+            'categories.*.sort_order' => 'required|integer|min:0',
+        ]);
+
+        foreach ($validated['categories'] as $item) {
+            BikeCategory::where('id', $item['id'])->update(['sort_order' => $item['sort_order']]);
+        }
+
+        $this->agendaVersioner->bump();
+
+        return response()->json(['message' => 'Ordre mis à jour']);
+    }
 }

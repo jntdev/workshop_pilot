@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Bike;
 use App\Models\BikeCategory;
+use App\Models\BikeModel;
 use App\Services\Agenda\AgendaVersioner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class BikeController extends Controller
             'bike_size_id' => $sizeRule,
             'frame_type' => $frameRule,
             'model' => 'nullable|string|max:50',
-            'battery_type' => 'nullable|in:rack,gourde,rail',
+            'battery_type' => 'nullable|in:rack,gourde,rail,intégrée',
             'name' => 'required|string|max:100',
             'status' => 'required|in:OK,HS',
             'notes' => 'nullable|string',
@@ -87,7 +88,7 @@ class BikeController extends Controller
             'bike_size_id' => 'nullable|exists:bike_sizes,id',
             'frame_type' => 'nullable|in:b,h',
             'model' => 'nullable|string|max:50',
-            'battery_type' => 'nullable|in:rack,gourde,rail',
+            'battery_type' => 'nullable|in:rack,gourde,rail,intégrée',
             'name' => 'sometimes|string|max:100',
             'status' => 'sometimes|in:OK,HS',
             'notes' => 'nullable|string',
@@ -123,6 +124,22 @@ class BikeController extends Controller
         $this->agendaVersioner->bump();
 
         return response()->json(['message' => 'Vélo supprimé']);
+    }
+
+    public function indexModels(): JsonResponse
+    {
+        return response()->json(BikeModel::orderBy('name')->pluck('name'));
+    }
+
+    public function storeModel(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:50', 'unique:bike_models,name'],
+        ]);
+
+        $model = BikeModel::create($validated);
+
+        return response()->json($model->name, 201);
     }
 
     public function reorder(Request $request): JsonResponse

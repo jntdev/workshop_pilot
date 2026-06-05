@@ -25,6 +25,26 @@ export default function SettingsPanel({ categories, sizes, onClose, onUpdate }: 
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+    const moveCategory = useCallback(async (id: number, direction: 'up' | 'down') => {
+        const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+        const idx = sorted.findIndex(c => c.id === id);
+        const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (swapIdx < 0 || swapIdx >= sorted.length) { return; }
+
+        const updated = sorted.map((c, i) => {
+            if (i === idx) { return { id: c.id, sort_order: sorted[swapIdx].sort_order }; }
+            if (i === swapIdx) { return { id: c.id, sort_order: sorted[idx].sort_order }; }
+            return { id: c.id, sort_order: c.sort_order };
+        });
+
+        await fetch('/api/bike-categories/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({ categories: updated }),
+        });
+        onUpdate();
+    }, [categories, csrfToken, onUpdate]);
+
     const toggleSection = (section: 'categories' | 'sizes') => {
         setExpandedSection(expandedSection === section ? null : section);
         setEditingItem(null);
@@ -250,6 +270,8 @@ export default function SettingsPanel({ categories, sizes, onClose, onUpdate }: 
                                                     )}
                                                 </div>
                                                 <div className="settings-panel__item-actions">
+                                                    <button type="button" className="settings-panel__action settings-panel__action--move" onClick={() => moveCategory(cat.id, 'up')} title="Monter">↑</button>
+                                                    <button type="button" className="settings-panel__action settings-panel__action--move" onClick={() => moveCategory(cat.id, 'down')} title="Descendre">↓</button>
                                                     <button
                                                         type="button"
                                                         className="settings-panel__action"

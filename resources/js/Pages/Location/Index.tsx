@@ -482,7 +482,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                 id: bike.column_id,
                 header: () => (
                     <div
-                        className={`location-table__header-bike location-table__header-bike--frame-${bike.frame_type} ${bike.status === 'HS' ? 'location-table__header-bike--hs' : 'location-table__header-bike--ok'} ${separatorClass} ${selectedBike?.id === bike.id ? 'location-table__header-bike--selected' : ''}`}
+                        className={`location-table__header-bike ${bike.frame_type ? `location-table__header-bike--frame-${bike.frame_type}` : ''} ${bike.status === 'HS' ? 'location-table__header-bike--hs' : 'location-table__header-bike--ok'} ${separatorClass} ${selectedBike?.id === bike.id ? 'location-table__header-bike--selected' : ''}`}
                         title={`${bike.category?.name} ${bike.size?.name} ${bike.frame_type === 'b' ? 'cadre bas' : 'cadre haut'}`}
                         data-bike-id={bike.column_id}
                         data-status={bike.status}
