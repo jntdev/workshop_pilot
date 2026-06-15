@@ -13,6 +13,7 @@ class QuoteLine extends Model
 
     protected $fillable = [
         'quote_id',
+        'article_id',
         'title',
         'reference',
         'quantity',
@@ -74,5 +75,10 @@ class QuoteLine extends Model
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class);
+    }
+
+    public function article(): BelongsTo
+    {
+        return $this->belongsTo(Article::class);
     }
 }

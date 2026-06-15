@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { QuoteLine } from '@/types';
+import type { Article } from '@/types';
 import Input from '@/Components/ui/Input';
+import ArticleAutocomplete from '@/Components/Stock/ArticleAutocomplete';
+import CataloguePickerModal from '@/Components/Stock/CataloguePickerModal';
 
 interface QuoteLinesTableProps {
     lines: QuoteLine[];
@@ -59,8 +62,30 @@ export default function QuoteLinesTable({
     onRemoveLine,
     disabled,
 }: QuoteLinesTableProps) {
+    const [pickerForLine, setPickerForLine] = useState<number | null>(null);
+
     const handleFieldChange = (index: number, field: keyof QuoteLine, value: string) => {
         onLineChange(index, field, value);
+    };
+
+    const handleArticleSelect = (index: number, article: Article) => {
+        const salePriceTtc = (article.sale_price_ht * (1 + article.tva_rate / 100) / 100).toFixed(2);
+        const purchasePriceHt = (article.purchase_price_ht / 100).toFixed(2);
+        const updates = calculateLineLocally(salePriceTtc, lines[index].quantity || '1', String(article.tva_rate), purchasePriceHt);
+        onLineUpdate(index, {
+            ...updates,
+            article_id: article.id,
+            reference: article.reference,
+            title: lines[index].title || article.designation,
+            purchase_price_ht: purchasePriceHt,
+            sale_price_ttc: salePriceTtc,
+            tva_rate: String(article.tva_rate),
+        });
+        setPickerForLine(null);
+    };
+
+    const handleArticleDetach = (index: number) => {
+        onLineUpdate(index, { article_id: null });
     };
 
     // Recalcule la ligne quand PV TTC, Quantité ou PA HT change
@@ -94,7 +119,7 @@ export default function QuoteLinesTable({
         <div className="quote-lines-table">
             <div className="quote-lines-table__header">
                 <div className="quote-lines-table__cell">Intitulé</div>
-                <div className="quote-lines-table__cell">Réf.</div>
+                <div className="quote-lines-table__cell">Réf. / Catalogue</div>
                 <div className="quote-lines-table__cell sensitive-column">PA HT</div>
                 <div className="quote-lines-table__cell">TVA %</div>
                 <div className="quote-lines-table__cell">PV TTC</div>
@@ -129,17 +154,30 @@ export default function QuoteLinesTable({
                             disabled={disabled}
                         />
                     </div>
-                    {/* Réf. */}
-                    <div className="quote-lines-table__cell">
-                        <Input
-                            type="text"
-                            value={line.reference || ''}
-                            onChange={(e) => handleFieldChange(index, 'reference', e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input quote-lines-table__input--narrow"
-                            placeholder="Réf"
-                            disabled={disabled}
-                        />
+                    {/* Réf. / Catalogue */}
+                    <div className="quote-lines-table__cell quote-lines-table__cell--catalogue">
+                        {disabled ? (
+                            <span className="quote-lines-table__ref-text">{line.reference || ''}</span>
+                        ) : (
+                            <>
+                                <ArticleAutocomplete
+                                    value={line.reference || ''}
+                                    articleId={line.article_id ?? null}
+                                    onChange={v => handleFieldChange(index, 'reference', v)}
+                                    onSelect={article => handleArticleSelect(index, article)}
+                                    onDetach={() => handleArticleDetach(index)}
+                                    placeholder="Réf ou catalogue..."
+                                />
+                                <button
+                                    type="button"
+                                    className="quote-lines-table__catalogue-btn"
+                                    onClick={() => setPickerForLine(index)}
+                                    title="Ouvrir le catalogue"
+                                >
+                                    📋
+                                </button>
+                            </>
+                        )}
                     </div>
                     {/* PA HT */}
                     <div className="quote-lines-table__cell sensitive-column">
@@ -269,6 +307,13 @@ export default function QuoteLinesTable({
                 >
                     + Ajouter une ligne
                 </button>
+            )}
+
+            {pickerForLine !== null && (
+                <CataloguePickerModal
+                    onSelect={article => handleArticleSelect(pickerForLine, article)}
+                    onClose={() => setPickerForLine(null)}
+                />
             )}
         </div>
     );

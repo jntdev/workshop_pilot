@@ -43,6 +43,7 @@ interface ClientFormData {
 const emptyLine = (): QuoteLine => ({
     title: '',
     reference: null,
+    article_id: null,
     quantity: '1',
     purchase_price_ht: '0',
     sale_price_ht: '0',

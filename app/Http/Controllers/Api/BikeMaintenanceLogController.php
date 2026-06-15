@@ -69,6 +69,7 @@ class BikeMaintenanceLogController extends Controller
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:500'],
+            'article_id' => ['nullable', 'integer', 'exists:articles,id'],
             'reference' => ['nullable', 'string', 'max:100'],
             'cost' => ['nullable', 'integer', 'min:0'],
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
@@ -88,6 +89,7 @@ class BikeMaintenanceLogController extends Controller
         $validated = $request->validate([
             'date' => ['sometimes', 'date'],
             'description' => ['sometimes', 'string', 'max:500'],
+            'article_id' => ['nullable', 'integer', 'exists:articles,id'],
             'reference' => ['nullable', 'string', 'max:100'],
             'cost' => ['nullable', 'integer', 'min:0'],
             'duration_minutes' => ['nullable', 'integer', 'min:1'],

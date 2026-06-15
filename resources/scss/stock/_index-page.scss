@@ -1,0 +1,51 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.stock-page {
+  max-width: 1400px;
+  margin: 0 auto;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-lg;
+  }
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+    margin: 0;
+  }
+
+  &__new-btn {
+    padding: $spacing-xs $spacing-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    background: $color-primary-blue;
+    color: white;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+
+    &:hover {
+      background: darken($color-primary-blue, 8%);
+    }
+  }
+
+  &__body {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: $spacing-xl;
+  }
+
+  &__sidebar {
+    min-width: 0;
+  }
+
+  &__main {
+    min-width: 0;
+  }
+}

@@ -54,6 +54,7 @@ export interface ClientFormPageProps extends PageProps {
 
 export interface QuoteLine {
     id?: number;
+    article_id?: number | null;
     title: string;
     reference: string | null;
     quantity: string;
@@ -497,6 +498,54 @@ export interface MessagingState {
     unreadByCategory: UnreadByCategory;
     isLoading: boolean;
     isPanelOpen: boolean;
+}
+
+// Catalogue & Stock
+export interface ArticleCategory {
+    id: number;
+    name: string;
+    sort_order: number;
+    subcategories: ArticleSubcategory[];
+}
+
+export interface ArticleSubcategory {
+    id: number;
+    article_category_id: number;
+    name: string;
+    sort_order: number;
+    category?: ArticleCategory;
+}
+
+export interface Article {
+    id: number;
+    article_subcategory_id: number | null;
+    reference: string;
+    designation: string;
+    purchase_price_ht: number;
+    sale_price_ht: number;
+    tva_rate: number;
+    unit: string;
+    supplier: string | null;
+    notes: string | null;
+    sort_order: number;
+    stock_quantity: number;
+    subcategory?: ArticleSubcategory | null;
+    category?: ArticleCategory | null;
+}
+
+export type StockMovementType = 'manual_in' | 'manual_out' | 'quote_consumption' | 'maintenance_consumption';
+
+export interface StockMovement {
+    id: number;
+    quantity: number;
+    type: StockMovementType;
+    type_label: string;
+    is_manual: boolean;
+    source_type: string | null;
+    source_id: number | null;
+    unit_price_ht: number | null;
+    note: string | null;
+    created_at: string;
 }
 
 declare module '@inertiajs/react' {

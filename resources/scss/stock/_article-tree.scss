@@ -1,0 +1,194 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.article-tree {
+  background: $color-bg-white;
+  border: 1px solid $color-border-light;
+  border-radius: $radius-md;
+  padding: $spacing-sm 0;
+
+  &__add-cat {
+    display: flex;
+    gap: $spacing-xs;
+    padding: $spacing-sm $spacing-md;
+    border-top: 1px solid $color-border-light;
+    margin-top: $spacing-xs;
+
+    input {
+      flex: 1;
+      padding: $spacing-xs $spacing-sm;
+      font-size: $font-size-sm;
+      border: 1px solid $color-border-medium;
+      border-radius: $radius-sm;
+    }
+  }
+
+  &__btn-add {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    background: $color-primary-blue;
+    color: white;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+
+    &:hover {
+      background: darken($color-primary-blue, 8%);
+    }
+  }
+}
+
+.tree-cat {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-md;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background: $color-bg-light;
+    }
+  }
+
+  &__toggle {
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+    width: 12px;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    flex: 1;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__name-input {
+    flex: 1;
+    padding: 2px $spacing-xs;
+    font-size: $font-size-sm;
+    border: 1px solid $color-primary-blue;
+    border-radius: $radius-sm;
+  }
+
+  &__edit-btn,
+  &__del-btn,
+  &__save-btn,
+  &__cancel-btn {
+    font-size: $font-size-xs;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: $color-neutral-medium;
+    border-radius: $radius-sm;
+
+    &:hover {
+      background: $color-neutral-light;
+    }
+  }
+
+  &__del-btn:hover {
+    color: $color-danger-red;
+  }
+
+  &__subcategories {
+    padding-left: $spacing-md;
+  }
+
+  &__add-sub {
+    display: flex;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-md $spacing-xs $spacing-lg;
+
+    input {
+      flex: 1;
+      padding: $spacing-xs $spacing-sm;
+      font-size: $font-size-sm;
+      border: 1px solid $color-border-medium;
+      border-radius: $radius-sm;
+    }
+
+    button {
+      padding: $spacing-xs $spacing-sm;
+      font-size: $font-size-xs;
+      background: $color-primary-blue;
+      color: white;
+      border: none;
+      border-radius: $radius-sm;
+      cursor: pointer;
+    }
+  }
+}
+
+.tree-sub {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-md $spacing-xs $spacing-lg;
+  cursor: pointer;
+  border-radius: $radius-sm;
+  margin: 1px 0;
+
+  &:hover {
+    background: $color-bg-light;
+  }
+
+  &--active {
+    background: #eff6ff;
+    color: $color-primary-blue;
+
+    .tree-sub__name {
+      color: $color-primary-blue;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &__name {
+    flex: 1;
+    font-size: $font-size-sm;
+    color: $color-neutral-dark;
+  }
+
+  &__name-input {
+    flex: 1;
+    padding: 2px $spacing-xs;
+    font-size: $font-size-sm;
+    border: 1px solid $color-primary-blue;
+    border-radius: $radius-sm;
+  }
+
+  &__edit-btn,
+  &__del-btn,
+  &__save-btn,
+  &__cancel-btn {
+    font-size: $font-size-xs;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: $color-neutral-medium;
+    border-radius: $radius-sm;
+    opacity: 0;
+    transition: opacity $transition-fast;
+
+    &:hover {
+      background: $color-neutral-light;
+    }
+  }
+
+  &__del-btn:hover {
+    color: $color-danger-red;
+  }
+
+  &:hover &__edit-btn,
+  &:hover &__del-btn,
+  &:hover &__save-btn,
+  &:hover &__cancel-btn {
+    opacity: 1;
+  }
+}

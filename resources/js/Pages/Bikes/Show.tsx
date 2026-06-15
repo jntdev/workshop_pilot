@@ -1,13 +1,16 @@
 import { useState, useCallback } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import type { BikeCategoryRef, BikeSizeRef } from '@/types';
+import type { BikeCategoryRef, BikeSizeRef, Article } from '@/types';
+import ArticleAutocomplete from '@/Components/Stock/ArticleAutocomplete';
+import CataloguePickerModal from '@/Components/Stock/CataloguePickerModal';
 
 interface MaintenanceLog {
     id: number;
     date: string;
     description: string;
     reference: string | null;
+    article_id: number | null;
     cost: number | null;
     duration_minutes: number | null;
     status: 'todo' | 'done';
@@ -57,6 +60,7 @@ const emptyForm = {
     date: new Date().toISOString().slice(0, 10),
     description: '',
     reference: '',
+    article_id: null as number | null,
     cost: '',
     duration_minutes: '',
     status: 'todo' as 'todo' | 'done',
@@ -68,6 +72,7 @@ export default function BikeShow({ bike: initialBike }: PageProps) {
     const [form, setForm] = useState(emptyForm);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showCataloguePicker, setShowCataloguePicker] = useState(false);
 
     const todoLogs = logs.filter(l => l.status === 'todo');
     const doneLogs = logs.filter(l => l.status === 'done');
@@ -80,11 +85,22 @@ export default function BikeShow({ bike: initialBike }: PageProps) {
             date: log.date.slice(0, 10),
             description: log.description,
             reference: log.reference ?? '',
+            article_id: log.article_id ?? null,
             cost: log.cost !== null ? String(log.cost / 100) : '',
             duration_minutes: log.duration_minutes !== null ? String(log.duration_minutes) : '',
             status: log.status,
             needs_order: log.needs_order,
         });
+    }, []);
+
+    const handleArticleSelect = useCallback((article: Article) => {
+        setForm(p => ({
+            ...p,
+            article_id: article.id,
+            reference: article.reference,
+            cost: p.cost || String(article.sale_price_ht / 100),
+        }));
+        setShowCataloguePicker(false);
     }, []);
 
     const handleCancel = useCallback(() => {
@@ -100,6 +116,7 @@ export default function BikeShow({ bike: initialBike }: PageProps) {
             date: form.date,
             description: form.description,
             reference: form.reference || null,
+            article_id: form.article_id ?? null,
             cost: form.cost !== '' ? Math.round(parseFloat(form.cost) * 100) : null,
             duration_minutes: form.duration_minutes !== '' ? parseInt(form.duration_minutes) : null,
             status: form.status,
@@ -217,7 +234,17 @@ export default function BikeShow({ bike: initialBike }: PageProps) {
                     <form onSubmit={handleSubmit} className="mlog-form">
                         <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} required className="mlog-form__date" />
                         <input type="text" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Description des travaux" required className="mlog-form__desc" />
-                        <input type="text" value={form.reference} onChange={e => setForm(p => ({ ...p, reference: e.target.value }))} placeholder="Référence" className="mlog-form__ref" />
+                        <div className="mlog-form__ref-wrap">
+                            <ArticleAutocomplete
+                                value={form.reference}
+                                articleId={form.article_id}
+                                onChange={v => setForm(p => ({ ...p, reference: v, article_id: null }))}
+                                onSelect={handleArticleSelect}
+                                onDetach={() => setForm(p => ({ ...p, article_id: null }))}
+                                placeholder="Référence..."
+                            />
+                            <button type="button" className="mlog-form__catalogue-btn" onClick={() => setShowCataloguePicker(true)} title="Catalogue">📋</button>
+                        </div>
                         <input type="number" value={form.cost} onChange={e => setForm(p => ({ ...p, cost: e.target.value }))} placeholder="Coût (€)" min="0" step="0.01" className="mlog-form__cost" />
                         <input type="number" value={form.duration_minutes} onChange={e => setForm(p => ({ ...p, duration_minutes: e.target.value }))} placeholder="Durée (min)" min="1" className="mlog-form__duration" />
                         <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value as 'todo' | 'done' }))} className="mlog-form__status">
@@ -270,6 +297,12 @@ export default function BikeShow({ bike: initialBike }: PageProps) {
                     )}
                 </div>
             </div>
+            {showCataloguePicker && (
+                <CataloguePickerModal
+                    onSelect={handleArticleSelect}
+                    onClose={() => setShowCataloguePicker(false)}
+                />
+            )}
         </MainLayout>
     );
 }

@@ -1097,6 +1097,33 @@
     cursor: help;
 }
 
+.quote-lines-table__cell--catalogue {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.quote-lines-table__catalogue-btn {
+    padding: 4px 6px;
+    background: transparent;
+    border: 1px solid $color-border-medium;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    line-height: 1;
+    flex-shrink: 0;
+
+    &:hover {
+        background: $color-bg-light;
+    }
+}
+
+.quote-lines-table__ref-text {
+    font-size: 0.875rem;
+    color: $color-neutral-medium;
+}
+
 // Line badges
 .quote-lines-table__badge {
     display: inline-block;

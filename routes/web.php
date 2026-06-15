@@ -656,6 +656,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/bikes', [\App\Http\Controllers\BikeController::class, 'index'])->name('bikes.index');
     Route::get('/bikes/{bike}', [\App\Http\Controllers\BikeController::class, 'show'])->name('bikes.show');
 
+    Route::get('/stock', function () {
+        return Inertia::render('Stock/Index');
+    })->name('stock.index');
+
     Route::get('/messages', function () {
         return Inertia::render('Messages');
     })->name('messages.index');

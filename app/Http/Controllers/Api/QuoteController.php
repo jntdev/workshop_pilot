@@ -318,6 +318,7 @@ class QuoteController extends Controller
             'lines.*.line_total_ttc' => 'nullable|numeric',
             'lines.*.estimated_time_minutes' => 'nullable|integer|min:0',
             'lines.*.id' => 'nullable|integer',
+            'lines.*.article_id' => 'nullable|integer|exists:articles,id',
             'lines.*.needs_order' => 'boolean',
             'lines.*.ordered_at' => 'nullable|date',
             'lines.*.received_at' => 'nullable|date',
@@ -419,6 +420,7 @@ class QuoteController extends Controller
 
             $attributes = [
                 'quote_id' => $quote->id,
+                'article_id' => $lineData['article_id'] ?? null,
                 'title' => $lineData['title'],
                 'reference' => $lineData['reference'] ?? null,
                 'quantity' => $lineData['quantity'],
@@ -509,6 +511,7 @@ class QuoteController extends Controller
             'can_delete' => $quote->canDelete(),
             'lines' => $quote->lines->map(fn (QuoteLine $line) => [
                 'id' => $line->id,
+                'article_id' => $line->article_id,
                 'title' => $line->title,
                 'reference' => $line->reference,
                 'quantity' => $line->quantity,

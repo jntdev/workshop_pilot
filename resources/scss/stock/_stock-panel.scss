@@ -1,0 +1,235 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.stock-panel {
+  background: $color-bg-white;
+  border-radius: $radius-lg;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  width: 700px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: $spacing-md;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: $spacing-md $spacing-xl;
+    border-bottom: 1px solid $color-border-light;
+  }
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+    margin: 0 0 2px;
+  }
+
+  &__ref {
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+    font-family: monospace;
+  }
+
+  &__close {
+    background: transparent;
+    border: none;
+    font-size: $font-size-lg;
+    cursor: pointer;
+    color: $color-neutral-medium;
+    padding: 4px;
+    line-height: 1;
+
+    &:hover {
+      color: $color-neutral-dark;
+    }
+  }
+
+  &__current {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-md $spacing-xl;
+    background: $color-bg-light;
+    border-bottom: 1px solid $color-border-light;
+  }
+
+  &__qty-label {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+  }
+
+  &__qty {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+
+    &--positive {
+      color: $color-success-green;
+    }
+
+    &--zero {
+      color: $color-neutral-medium;
+    }
+
+    &--negative {
+      color: $color-danger-red;
+    }
+  }
+
+  &__form {
+    padding: $spacing-md $spacing-xl;
+    border-bottom: 1px solid $color-border-light;
+  }
+
+  &__form-row {
+    display: flex;
+    gap: $spacing-sm;
+    align-items: center;
+  }
+
+  &__select,
+  &__input {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    background: $color-bg-white;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-blue;
+    }
+
+    &--qty {
+      width: 70px;
+    }
+
+    &--note {
+      flex: 1;
+    }
+  }
+
+  &__select {
+    width: 100px;
+  }
+
+  &__btn {
+    padding: $spacing-xs $spacing-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-sm;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &--primary {
+      background: $color-primary-blue;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: darken($color-primary-blue, 8%);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &__form-error {
+    margin-top: $spacing-xs;
+    font-size: $font-size-xs;
+    color: $color-danger-red;
+  }
+
+  &__history {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-md $spacing-xl;
+  }
+
+  &__history-title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+    margin: 0 0 $spacing-sm;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__empty {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+    font-style: italic;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: $font-size-sm;
+
+    th {
+      padding: $spacing-xs $spacing-sm;
+      text-align: left;
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: $color-neutral-medium;
+      border-bottom: 1px solid $color-border-light;
+    }
+
+    td {
+      padding: $spacing-xs $spacing-sm;
+      border-bottom: 1px solid $color-border-light;
+      color: $color-neutral-dark;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  &__row {
+    &--in td:first-child {
+      border-left: 3px solid $color-success-green;
+    }
+
+    &--out td:first-child {
+      border-left: 3px solid $color-danger-red;
+    }
+  }
+
+  &__cell-qty {
+    font-weight: $font-weight-semibold;
+  }
+
+  &__del {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: $color-neutral-medium;
+    font-size: $font-size-xs;
+    padding: 2px 4px;
+    border-radius: $radius-sm;
+
+    &:hover {
+      color: $color-danger-red;
+      background: $color-neutral-light;
+    }
+  }
+}

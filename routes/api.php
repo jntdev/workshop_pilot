@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\ArticleCategoryController;
+use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\ArticleSubcategoryController;
 use App\Http\Controllers\Api\AtelierController;
 use App\Http\Controllers\Api\BikeCategoryController;
 use App\Http\Controllers\Api\BikeController;
@@ -13,6 +16,7 @@ use App\Http\Controllers\Api\OrderLineController;
 use App\Http\Controllers\Api\PhotoController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\UploadTokenController;
 use Illuminate\Support\Facades\Route;
 
@@ -121,4 +125,30 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Photos API routes
     Route::delete('/photos/{id}', [PhotoController::class, 'destroy']);
+
+    // Catalogue — Article Categories API routes (statics before {id})
+    Route::get('/article-categories', [ArticleCategoryController::class, 'index']);
+    Route::post('/article-categories', [ArticleCategoryController::class, 'store']);
+    Route::post('/article-categories/reorder', [ArticleCategoryController::class, 'reorder']);
+    Route::put('/article-categories/{id}', [ArticleCategoryController::class, 'update']);
+    Route::delete('/article-categories/{id}', [ArticleCategoryController::class, 'destroy']);
+
+    // Catalogue — Article Subcategories API routes
+    Route::post('/article-subcategories', [ArticleSubcategoryController::class, 'store']);
+    Route::post('/article-subcategories/reorder', [ArticleSubcategoryController::class, 'reorder']);
+    Route::put('/article-subcategories/{id}', [ArticleSubcategoryController::class, 'update']);
+    Route::delete('/article-subcategories/{id}', [ArticleSubcategoryController::class, 'destroy']);
+
+    // Catalogue — Articles API routes (search before {id})
+    Route::get('/articles/search', [ArticleController::class, 'search']);
+    Route::get('/articles', [ArticleController::class, 'index']);
+    Route::post('/articles', [ArticleController::class, 'store']);
+    Route::get('/articles/{id}', [ArticleController::class, 'show']);
+    Route::put('/articles/{id}', [ArticleController::class, 'update']);
+    Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
+
+    // Stock movements API routes
+    Route::get('/articles/{article}/stock-movements', [StockMovementController::class, 'index']);
+    Route::post('/articles/{article}/stock-movements', [StockMovementController::class, 'store']);
+    Route::delete('/stock-movements/{id}', [StockMovementController::class, 'destroy']);
 });

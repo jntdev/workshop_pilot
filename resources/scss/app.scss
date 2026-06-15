@@ -41,3 +41,12 @@
 // Photos
 @use 'photos/modal' as photos-modal;
 @use 'photos/gallery' as photos-gallery;
+
+// Stock & Catalogue
+@use 'stock/index-page' as stock-page;
+@use 'stock/article-tree';
+@use 'stock/article-list';
+@use 'stock/article-form';
+@use 'stock/stock-panel';
+@use 'stock/article-autocomplete';
+@use 'stock/catalogue-picker';

@@ -143,6 +143,28 @@
     white-space: nowrap;
   }
 
+  &__ref-wrap {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    width: 160px;
+  }
+
+  &__catalogue-btn {
+    padding: $spacing-xs;
+    background: transparent;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    font-size: $font-size-sm;
+    line-height: 1;
+    flex-shrink: 0;
+
+    &:hover {
+      background: $color-bg-light;
+    }
+  }
+
   &__actions {
     display: flex;
     gap: $spacing-xs;

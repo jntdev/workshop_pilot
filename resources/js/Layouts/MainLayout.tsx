@@ -47,6 +47,9 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
                             <Link href="/bikes" className="layout-nav__link">
                                 Velos
                             </Link>
+                            <Link href="/stock" className="layout-nav__link">
+                                Stock
+                            </Link>
 
                             <MessagingButton />
 

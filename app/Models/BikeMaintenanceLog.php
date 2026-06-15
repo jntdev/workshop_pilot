@@ -11,6 +11,7 @@ class BikeMaintenanceLog extends Model
 
     protected $fillable = [
         'bike_id',
+        'article_id',
         'date',
         'description',
         'reference',
@@ -37,6 +38,11 @@ class BikeMaintenanceLog extends Model
     public function bike(): BelongsTo
     {
         return $this->belongsTo(Bike::class);
+    }
+
+    public function article(): BelongsTo
+    {
+        return $this->belongsTo(Article::class);
     }
 
     public function getSupplyStatusAttribute(): string
