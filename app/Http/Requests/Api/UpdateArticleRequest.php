@@ -17,6 +17,7 @@ class UpdateArticleRequest extends FormRequest
 
         return [
             'article_subcategory_id' => ['nullable', 'integer', 'exists:article_subcategories,id'],
+            'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'reference' => ['sometimes', 'string', 'max:100', "unique:articles,reference,{$id}"],
             'designation' => ['sometimes', 'string', 'max:255'],
             'purchase_price_ht' => ['sometimes', 'integer', 'min:0'],

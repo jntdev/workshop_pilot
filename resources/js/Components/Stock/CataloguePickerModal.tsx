@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Article, ArticleCategory } from '@/types';
+import type { Article, ArticleCategory, Brand } from '@/types';
 
 interface Props {
     onSelect: (article: Article) => void;
@@ -12,7 +12,9 @@ function formatPrice(cents: number): string {
 
 export default function CataloguePickerModal({ onSelect, onClose }: Props) {
     const [categories, setCategories] = useState<ArticleCategory[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
     const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
+    const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -28,9 +30,12 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                     setExpandedIds(new Set([data.categories[0].id]));
                 }
             });
+        fetch('/api/brands', { headers: { Accept: 'application/json' } })
+            .then(r => r.json())
+            .then(data => setBrands(data.brands ?? []));
     }, []);
 
-    const loadArticles = useCallback(async (subcategoryId: number | null, q: string) => {
+    const loadArticles = useCallback(async (subcategoryId: number | null, brandId: number | null, q: string) => {
         setIsLoading(true);
         let url = '';
         if (q.length >= 3) {
@@ -38,6 +43,7 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
         } else {
             const params = new URLSearchParams({ per_page: '50' });
             if (subcategoryId) { params.set('subcategory_id', String(subcategoryId)); }
+            if (brandId) { params.set('brand_id', String(brandId)); }
             url = `/api/articles?${params}`;
         }
         const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -48,8 +54,8 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
 
     useEffect(() => {
         if (debounceRef.current) { clearTimeout(debounceRef.current); }
-        debounceRef.current = setTimeout(() => loadArticles(selectedSubcategoryId, search), 250);
-    }, [selectedSubcategoryId, search, loadArticles]);
+        debounceRef.current = setTimeout(() => loadArticles(selectedSubcategoryId, selectedBrandId, search), 250);
+    }, [selectedSubcategoryId, selectedBrandId, search, loadArticles]);
 
     const toggleExpand = (id: number) => {
         setExpandedIds(prev => {
@@ -79,11 +85,28 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                     <nav className="catalogue-picker__nav">
                         <button
                             type="button"
-                            className={`catalogue-picker__nav-all ${selectedSubcategoryId === null && !search ? 'catalogue-picker__nav-all--active' : ''}`}
-                            onClick={() => { setSelectedSubcategoryId(null); setSearch(''); }}
+                            className={`catalogue-picker__nav-all ${selectedSubcategoryId === null && selectedBrandId === null && !search ? 'catalogue-picker__nav-all--active' : ''}`}
+                            onClick={() => { setSelectedSubcategoryId(null); setSelectedBrandId(null); setSearch(''); }}
                         >
                             Tous les articles
                         </button>
+
+                        {brands.length > 0 && (
+                            <div className="catalogue-picker__nav-section">
+                                <span className="catalogue-picker__nav-section-title">Marques</span>
+                                {brands.map(brand => (
+                                    <button
+                                        key={brand.id}
+                                        type="button"
+                                        className={`catalogue-picker__nav-sub ${selectedBrandId === brand.id ? 'catalogue-picker__nav-sub--active' : ''}`}
+                                        onClick={() => { setSelectedBrandId(brand.id); setSelectedSubcategoryId(null); setSearch(''); }}
+                                    >
+                                        {brand.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         {categories.map(cat => (
                             <div key={cat.id} className="catalogue-picker__nav-cat">
                                 <button

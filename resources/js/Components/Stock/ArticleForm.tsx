@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import type { Article, ArticleCategory } from '@/types';
+import { useState, useCallback, useEffect } from 'react';
+import type { Article, ArticleCategory, Brand } from '@/types';
 
 interface Props {
     article: Article | null;
@@ -18,8 +18,39 @@ function eurosToCents(euros: string): number {
 }
 
 export default function ArticleForm({ article, categories, csrfToken, onSaved, onClose }: Props) {
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [newBrandName, setNewBrandName] = useState('');
+    const [showNewBrand, setShowNewBrand] = useState(false);
+    const [brandError, setBrandError] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetch('/api/brands', { headers: { Accept: 'application/json' } })
+            .then(r => r.json())
+            .then(data => setBrands(data.brands ?? []));
+    }, []);
+
+    const handleCreateBrand = useCallback(async () => {
+        if (!newBrandName.trim()) { return; }
+        setBrandError(null);
+        const res = await fetch('/api/brands', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({ name: newBrandName.trim() }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+            setBrands(prev => [...prev, data.brand].sort((a, b) => a.name.localeCompare(b.name)));
+            setForm(p => ({ ...p, brand_id: String(data.brand.id) }));
+            setNewBrandName('');
+            setShowNewBrand(false);
+        } else {
+            setBrandError(data.errors?.name?.[0] ?? data.message ?? 'Erreur');
+        }
+    }, [newBrandName, csrfToken]);
+
     const [form, setForm] = useState({
         article_subcategory_id: article?.article_subcategory_id ? String(article.article_subcategory_id) : '',
+        brand_id: article?.brand_id ? String(article.brand_id) : '',
         reference: article?.reference ?? '',
         designation: article?.designation ?? '',
         purchase_price_ht: article ? centsToEuros(article.purchase_price_ht) : '',
@@ -48,6 +79,7 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
 
         const payload = {
             article_subcategory_id: form.article_subcategory_id ? Number(form.article_subcategory_id) : null,
+            brand_id: form.brand_id ? Number(form.brand_id) : null,
             reference: form.reference,
             designation: form.designation,
             purchase_price_ht: eurosToCents(form.purchase_price_ht),
@@ -108,6 +140,49 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
                                 <option key={s.id} value={s.id}>{s.categoryName} › {s.name}</option>
                             ))}
                         </select>
+                    </div>
+
+                    <div className="article-form__field">
+                        <label className="article-form__label">Marque</label>
+                        <div className="article-form__brand-row">
+                            <select
+                                className="article-form__select"
+                                value={form.brand_id}
+                                onChange={e => {
+                                    if (e.target.value === '__new__') {
+                                        setShowNewBrand(true);
+                                    } else {
+                                        set('brand_id', e.target.value);
+                                        setShowNewBrand(false);
+                                    }
+                                }}
+                            >
+                                <option value="">— Sans marque —</option>
+                                {brands.map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                                <option value="__new__">+ Ajouter une marque...</option>
+                            </select>
+                        </div>
+                        {showNewBrand && (
+                            <div className="article-form__new-brand">
+                                <input
+                                    className="article-form__input"
+                                    placeholder="Nom de la nouvelle marque"
+                                    value={newBrandName}
+                                    onChange={e => setNewBrandName(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateBrand(); } }}
+                                    autoFocus
+                                />
+                                <button type="button" className="article-form__btn article-form__btn--primary" onClick={handleCreateBrand}>
+                                    Créer
+                                </button>
+                                <button type="button" className="article-form__btn" onClick={() => { setShowNewBrand(false); setNewBrandName(''); setBrandError(null); }}>
+                                    Annuler
+                                </button>
+                                {brandError && <span className="article-form__field-error">{brandError}</span>}
+                            </div>
+                        )}
                     </div>
 
                     <div className="article-form__row">

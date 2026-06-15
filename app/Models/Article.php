@@ -14,6 +14,7 @@ class Article extends Model
 
     protected $fillable = [
         'article_subcategory_id',
+        'brand_id',
         'reference',
         'designation',
         'purchase_price_ht',
@@ -40,6 +41,11 @@ class Article extends Model
     public function subcategory(): BelongsTo
     {
         return $this->belongsTo(ArticleSubcategory::class, 'article_subcategory_id');
+    }
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
     }
 
     public function stockMovements(): HasMany

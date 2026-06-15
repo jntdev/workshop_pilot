@@ -501,6 +501,12 @@ export interface MessagingState {
 }
 
 // Catalogue & Stock
+export interface Brand {
+    id: number;
+    name: string;
+    sort_order: number;
+}
+
 export interface ArticleCategory {
     id: number;
     name: string;
@@ -519,6 +525,7 @@ export interface ArticleSubcategory {
 export interface Article {
     id: number;
     article_subcategory_id: number | null;
+    brand_id: number | null;
     reference: string;
     designation: string;
     purchase_price_ht: number;
@@ -529,6 +536,7 @@ export interface Article {
     notes: string | null;
     sort_order: number;
     stock_quantity: number;
+    brand?: Brand | null;
     subcategory?: ArticleSubcategory | null;
     category?: ArticleCategory | null;
 }

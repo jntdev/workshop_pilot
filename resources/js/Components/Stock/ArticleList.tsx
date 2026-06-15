@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Article } from '@/types';
+import type { Article, Brand } from '@/types';
 
 interface Props {
     subcategoryId: number | null;
     subcategoryLabel: string | null;
+    brandId: number | null;
     onEdit: (article: Article) => void;
     onOpenStock: (article: Article) => void;
     csrfToken: string;
@@ -13,7 +14,7 @@ function formatPrice(centimes: number): string {
     return (centimes / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }
 
-export default function ArticleList({ subcategoryId, subcategoryLabel, onEdit, onOpenStock, csrfToken }: Props) {
+export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, onEdit, onOpenStock, csrfToken }: Props) {
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +25,7 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, onEdit, o
         setIsLoading(true);
         const params = new URLSearchParams({ page: String(page) });
         if (subcategoryId) { params.set('subcategory_id', String(subcategoryId)); }
+        if (brandId) { params.set('brand_id', String(brandId)); }
         if (search) { params.set('search', search); }
 
         const res = await fetch(`/api/articles?${params}`, { headers: { Accept: 'application/json' } });
@@ -32,7 +34,7 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, onEdit, o
         setCurrentPage(data.current_page ?? 1);
         setLastPage(data.last_page ?? 1);
         setIsLoading(false);
-    }, [subcategoryId, search]);
+    }, [subcategoryId, brandId, search]);
 
     useEffect(() => {
         load(1);
@@ -78,6 +80,7 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, onEdit, o
                         <tr>
                             <th>Référence</th>
                             <th>Désignation</th>
+                            <th>Marque</th>
                             <th>Px achat</th>
                             <th>Px vente</th>
                             <th>TVA</th>
@@ -91,6 +94,7 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, onEdit, o
                             <tr key={article.id}>
                                 <td className="article-list__ref">{article.reference}</td>
                                 <td className="article-list__designation">{article.designation}</td>
+                                <td className="article-list__brand">{article.brand?.name ?? '—'}</td>
                                 <td className="article-list__price">{formatPrice(article.purchase_price_ht)}</td>
                                 <td className="article-list__price">{formatPrice(article.sale_price_ht)}</td>
                                 <td className="article-list__tva">{article.tva_rate} %</td>

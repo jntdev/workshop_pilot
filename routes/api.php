@@ -126,6 +126,12 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Photos API routes
     Route::delete('/photos/{id}', [PhotoController::class, 'destroy']);
 
+    // Catalogue — Brands API routes
+    Route::get('/brands', [\App\Http\Controllers\Api\BrandController::class, 'index']);
+    Route::post('/brands', [\App\Http\Controllers\Api\BrandController::class, 'store']);
+    Route::put('/brands/{brand}', [\App\Http\Controllers\Api\BrandController::class, 'update']);
+    Route::delete('/brands/{brand}', [\App\Http\Controllers\Api\BrandController::class, 'destroy']);
+
     // Catalogue — Article Categories API routes (statics before {id})
     Route::get('/article-categories', [ArticleCategoryController::class, 'index']);
     Route::post('/article-categories', [ArticleCategoryController::class, 'store']);

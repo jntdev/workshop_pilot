@@ -121,6 +121,20 @@
     color: $color-danger-red;
   }
 
+  &__brand-row {
+    display: flex;
+    gap: $spacing-sm;
+    align-items: center;
+  }
+
+  &__new-brand {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-top: $spacing-xs;
+    flex-wrap: wrap;
+  }
+
   &__footer {
     display: flex;
     justify-content: flex-end;

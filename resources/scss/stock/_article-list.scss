@@ -89,6 +89,12 @@
     max-width: 240px;
   }
 
+  &__brand {
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+    white-space: nowrap;
+  }
+
   &__price {
     white-space: nowrap;
     text-align: right;
