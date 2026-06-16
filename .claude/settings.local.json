@@ -83,5 +83,9 @@
       "Bash(grep -E \"\\\\.\\(php|tsx?|jsx?|scss|json\\)$\")",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('supply_status'\\)\\)\")"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "laravel-boost"
+  ],
+  "enableAllProjectMcpServers": true
 }
