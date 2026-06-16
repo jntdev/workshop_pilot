@@ -81,7 +81,17 @@
       "Bash(git fetch *)",
       "Bash(git branch *)",
       "Bash(grep -E \"\\\\.\\(php|tsx?|jsx?|scss|json\\)$\")",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('supply_status'\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('supply_status'\\)\\)\")",
+      "Bash(mkdir -p /Users/jonathanmarois/Documents/code/workshop_pilot/features/22-catalogue-stock)",
+      "Bash(git pull *)",
+      "Bash(grep -iE \"DROP|TRUNCATE|DELETE FROM \\\\`articles\\\\`|DELETE FROM \\\\`brands\\\\`|DELETE FROM \\\\`article_categories\\\\`\" -B2)",
+      "Bash(grep -B40 \"alter table \\\\`articles\\\\` drop \\\\`supplier\\\\`\")",
+      "Bash(sed -n '37280,37310p' /tmp/binlog_dump.txt)",
+      "Read(//private/tmp/**)",
+      "Bash(git merge *)"
+    ],
+    "additionalDirectories": [
+      "/Users/jonathanmarois/Documents/code/workshop_pilot/features"
     ]
   }
 }

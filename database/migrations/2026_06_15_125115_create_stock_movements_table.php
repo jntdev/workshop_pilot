@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('article_id')->constrained()->cascadeOnDelete();
             $table->integer('quantity');
             $table->enum('type', ['manual_in', 'manual_out', 'quote_consumption', 'maintenance_consumption']);
-            $table->string('source_type')->nullable();
+            $table->string('source_type', 191)->nullable();
             $table->unsignedBigInteger('source_id')->nullable();
             $table->integer('unit_price_ht')->nullable();
             $table->text('note')->nullable();
