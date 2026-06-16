@@ -15,13 +15,13 @@ class Article extends Model
     protected $fillable = [
         'article_subcategory_id',
         'brand_id',
+        'supplier_id',
         'reference',
         'designation',
         'purchase_price_ht',
         'sale_price_ht',
         'tva_rate',
         'unit',
-        'supplier',
         'notes',
         'sort_order',
     ];
@@ -46,6 +46,11 @@ class Article extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function stockMovements(): HasMany

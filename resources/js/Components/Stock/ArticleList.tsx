@@ -81,6 +81,7 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
                             <th>Référence</th>
                             <th>Désignation</th>
                             <th>Marque</th>
+                            <th>Fournisseur</th>
                             <th>Px achat</th>
                             <th>Px vente</th>
                             <th>TVA</th>
@@ -95,6 +96,7 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
                                 <td className="article-list__ref">{article.reference}</td>
                                 <td className="article-list__designation">{article.designation}</td>
                                 <td className="article-list__brand">{article.brand?.name ?? '—'}</td>
+                                <td className="article-list__supplier">{article.supplier?.name ?? '—'}</td>
                                 <td className="article-list__price">{formatPrice(article.purchase_price_ht)}</td>
                                 <td className="article-list__price">{formatPrice(article.sale_price_ht)}</td>
                                 <td className="article-list__tva">{article.tva_rate} %</td>

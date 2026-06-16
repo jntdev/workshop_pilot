@@ -25,7 +25,6 @@ class ArticleFactory extends Factory
             'sale_price_ht' => $this->faker->numberBetween(200, 8000),
             'tva_rate' => 20.00,
             'unit' => $this->faker->randomElement(['pièce', 'paire', 'kit', 'litre']),
-            'supplier' => $this->faker->optional()->company(),
             'notes' => $this->faker->optional()->sentence(),
             'sort_order' => 0,
         ];

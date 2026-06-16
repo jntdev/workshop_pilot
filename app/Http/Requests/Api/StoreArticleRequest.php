@@ -16,13 +16,13 @@ class StoreArticleRequest extends FormRequest
         return [
             'article_subcategory_id' => ['nullable', 'integer', 'exists:article_subcategories,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'reference' => ['required', 'string', 'max:100', 'unique:articles,reference'],
             'designation' => ['required', 'string', 'max:255'],
             'purchase_price_ht' => ['required', 'integer', 'min:0'],
             'sale_price_ht' => ['required', 'integer', 'min:0'],
             'tva_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'unit' => ['required', 'string', 'max:50'],
-            'supplier' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ];

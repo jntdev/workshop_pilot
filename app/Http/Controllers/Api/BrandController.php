@@ -43,7 +43,6 @@ class BrandController extends Controller
 
     public function destroy(Brand $brand): JsonResponse
     {
-        $brand->update(['brand_id' => null]);
         $brand->articles()->update(['brand_id' => null]);
         $brand->delete();
 

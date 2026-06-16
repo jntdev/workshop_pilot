@@ -507,6 +507,12 @@ export interface Brand {
     sort_order: number;
 }
 
+export interface Supplier {
+    id: number;
+    name: string;
+    sort_order: number;
+}
+
 export interface ArticleCategory {
     id: number;
     name: string;
@@ -526,17 +532,18 @@ export interface Article {
     id: number;
     article_subcategory_id: number | null;
     brand_id: number | null;
+    supplier_id: number | null;
     reference: string;
     designation: string;
     purchase_price_ht: number;
     sale_price_ht: number;
     tva_rate: number;
     unit: string;
-    supplier: string | null;
     notes: string | null;
     sort_order: number;
     stock_quantity: number;
     brand?: Brand | null;
+    supplier?: Supplier | null;
     subcategory?: ArticleSubcategory | null;
     category?: ArticleCategory | null;
 }

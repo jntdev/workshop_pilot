@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Article, ArticleCategory, Brand } from '@/types';
+import type { Article, ArticleCategory, Brand, Supplier } from '@/types';
 
 interface Props {
     article: Article | null;
@@ -23,10 +23,18 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
     const [showNewBrand, setShowNewBrand] = useState(false);
     const [brandError, setBrandError] = useState<string | null>(null);
 
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [newSupplierName, setNewSupplierName] = useState('');
+    const [showNewSupplier, setShowNewSupplier] = useState(false);
+    const [supplierError, setSupplierError] = useState<string | null>(null);
+
     useEffect(() => {
         fetch('/api/brands', { headers: { Accept: 'application/json' } })
             .then(r => r.json())
             .then(data => setBrands(data.brands ?? []));
+        fetch('/api/suppliers', { headers: { Accept: 'application/json' } })
+            .then(r => r.json())
+            .then(data => setSuppliers(data.suppliers ?? []));
     }, []);
 
     const handleCreateBrand = useCallback(async () => {
@@ -48,6 +56,25 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
         }
     }, [newBrandName, csrfToken]);
 
+    const handleCreateSupplier = useCallback(async () => {
+        if (!newSupplierName.trim()) { return; }
+        setSupplierError(null);
+        const res = await fetch('/api/suppliers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({ name: newSupplierName.trim() }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+            setSuppliers(prev => [...prev, data.supplier].sort((a, b) => a.name.localeCompare(b.name)));
+            setForm(p => ({ ...p, supplier_id: String(data.supplier.id) }));
+            setNewSupplierName('');
+            setShowNewSupplier(false);
+        } else {
+            setSupplierError(data.errors?.name?.[0] ?? data.message ?? 'Erreur');
+        }
+    }, [newSupplierName, csrfToken]);
+
     const [form, setForm] = useState({
         article_subcategory_id: article?.article_subcategory_id ? String(article.article_subcategory_id) : '',
         brand_id: article?.brand_id ? String(article.brand_id) : '',
@@ -57,7 +84,7 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
         sale_price_ht: article ? centsToEuros(article.sale_price_ht) : '',
         tva_rate: article ? String(article.tva_rate) : '20',
         unit: article?.unit ?? 'pièce',
-        supplier: article?.supplier ?? '',
+        supplier_id: article?.supplier_id ? String(article.supplier_id) : '',
         notes: article?.notes ?? '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -86,7 +113,7 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
             sale_price_ht: eurosToCents(form.sale_price_ht),
             tva_rate: parseFloat(form.tva_rate),
             unit: form.unit,
-            supplier: form.supplier || null,
+            supplier_id: form.supplier_id ? Number(form.supplier_id) : null,
             notes: form.notes || null,
         };
 
@@ -256,12 +283,45 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
 
                     <div className="article-form__field">
                         <label className="article-form__label">Fournisseur</label>
-                        <input
-                            className="article-form__input"
-                            value={form.supplier}
-                            onChange={e => set('supplier', e.target.value)}
-                            placeholder="Nom du fournisseur (optionnel)"
-                        />
+                        <div className="article-form__brand-row">
+                            <select
+                                className="article-form__select"
+                                value={form.supplier_id}
+                                onChange={e => {
+                                    if (e.target.value === '__new__') {
+                                        setShowNewSupplier(true);
+                                    } else {
+                                        set('supplier_id', e.target.value);
+                                        setShowNewSupplier(false);
+                                    }
+                                }}
+                            >
+                                <option value="">— Sans fournisseur —</option>
+                                {suppliers.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                                <option value="__new__">+ Ajouter un fournisseur...</option>
+                            </select>
+                        </div>
+                        {showNewSupplier && (
+                            <div className="article-form__new-brand">
+                                <input
+                                    className="article-form__input"
+                                    placeholder="Nom du nouveau fournisseur"
+                                    value={newSupplierName}
+                                    onChange={e => setNewSupplierName(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSupplier(); } }}
+                                    autoFocus
+                                />
+                                <button type="button" className="article-form__btn article-form__btn--primary" onClick={handleCreateSupplier}>
+                                    Créer
+                                </button>
+                                <button type="button" className="article-form__btn" onClick={() => { setShowNewSupplier(false); setNewSupplierName(''); setSupplierError(null); }}>
+                                    Annuler
+                                </button>
+                                {supplierError && <span className="article-form__field-error">{supplierError}</span>}
+                            </div>
+                        )}
                     </div>
 
                     <div className="article-form__field">

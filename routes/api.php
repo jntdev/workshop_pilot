@@ -132,6 +132,12 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/brands/{brand}', [\App\Http\Controllers\Api\BrandController::class, 'update']);
     Route::delete('/brands/{brand}', [\App\Http\Controllers\Api\BrandController::class, 'destroy']);
 
+    // Catalogue — Suppliers API routes
+    Route::get('/suppliers', [\App\Http\Controllers\Api\SupplierController::class, 'index']);
+    Route::post('/suppliers', [\App\Http\Controllers\Api\SupplierController::class, 'store']);
+    Route::put('/suppliers/{supplier}', [\App\Http\Controllers\Api\SupplierController::class, 'update']);
+    Route::delete('/suppliers/{supplier}', [\App\Http\Controllers\Api\SupplierController::class, 'destroy']);
+
     // Catalogue — Article Categories API routes (statics before {id})
     Route::get('/article-categories', [ArticleCategoryController::class, 'index']);
     Route::post('/article-categories', [ArticleCategoryController::class, 'store']);

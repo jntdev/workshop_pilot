@@ -12,9 +12,9 @@ La liaison catalogue est optionnelle. La saisie libre reste possible. On n'oblig
 
 Le catalogue pré-remplit, il ne verrouille pas. Un employé peut ajuster un prix pour un cas particulier (remise commerciale, prix négocié ponctuel). Le prix catalogue est le point de départ normalisé, pas une règle absolue.
 
-## Arbitrage 4 : Pas de fournisseur structuré en v1
+## Arbitrage 4 : Fournisseur structuré (révisé)
 
-Un champ texte libre `supplier` sur l'article suffit pour l'instant. La création d'un modèle `Supplier` est réservée au moment où l'API fournisseur sera implémentée.
+Décision initiale abandonnée : un champ texte libre `supplier` devait suffire en v1, la table `Supplier` étant réservée à une future API fournisseur. En cours de développement, le besoin de filtrer/trier par fournisseur et d'éviter les doublons de saisie (typos, variantes de nom) a justifié d'anticiper cette normalisation. `Supplier` est donc implémenté dès la v1, sur le même modèle que `Brand` : table dédiée, sélection par liste déroulante dans le formulaire article, avec création à la volée si le fournisseur n'existe pas encore.
 
 ## Arbitrage 5 : Suppression d'article non bloquante
 
