@@ -55,6 +55,12 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
         return 'article-list__stock--zero';
     };
 
+    const marginClass = (margin: number) => {
+        if (margin > 0) { return 'article-list__margin--positive'; }
+        if (margin < 0) { return 'article-list__margin--negative'; }
+        return 'article-list__margin--zero';
+    };
+
     return (
         <div className="article-list">
             <div className="article-list__toolbar">
@@ -84,6 +90,7 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
                             <th>Fournisseur</th>
                             <th>Px achat</th>
                             <th>Px vente</th>
+                            <th>Marge HT</th>
                             <th>TVA</th>
                             <th>Stock</th>
                             <th>Unité</th>
@@ -99,6 +106,9 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
                                 <td className="article-list__supplier">{article.supplier?.name ?? '—'}</td>
                                 <td className="article-list__price">{formatPrice(article.purchase_price_ht)}</td>
                                 <td className="article-list__price">{formatPrice(article.sale_price_ht)}</td>
+                                <td className={`article-list__margin ${marginClass(article.sale_price_ht - article.purchase_price_ht)}`}>
+                                    {formatPrice(article.sale_price_ht - article.purchase_price_ht)}
+                                </td>
                                 <td className="article-list__tva">{article.tva_rate} %</td>
                                 <td className={`article-list__stock ${stockClass(article.stock_quantity)}`}>
                                     {article.stock_quantity}

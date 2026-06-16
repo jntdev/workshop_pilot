@@ -124,6 +124,24 @@
     }
   }
 
+  &__margin {
+    font-weight: $font-weight-semibold;
+    text-align: right;
+    white-space: nowrap;
+
+    &--positive {
+      color: $color-success-green;
+    }
+
+    &--zero {
+      color: $color-neutral-medium;
+    }
+
+    &--negative {
+      color: $color-danger-red;
+    }
+  }
+
   &__unit {
     font-size: $font-size-xs;
     color: $color-neutral-medium;
