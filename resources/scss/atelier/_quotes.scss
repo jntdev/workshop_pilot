@@ -234,8 +234,8 @@
 
     &__header {
         display: grid;
-        // Intitulé, Réf, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, Cmd., ×
-        grid-template-columns: 1.8fr 0.5fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px 45px;
+        // Intitulé, Réf/Catalogue, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, Cmd., ×
+        grid-template-columns: 1.6fr 1.1fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         background-color: $color-bg-light;
@@ -247,8 +247,8 @@
 
     &__row {
         display: grid;
-        // Intitulé, Réf, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, Cmd., ×
-        grid-template-columns: 1.8fr 0.5fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px 45px;
+        // Intitulé, Réf/Catalogue, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, Cmd., ×
+        grid-template-columns: 1.6fr 1.1fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         border-bottom: 1px solid $color-border-light;
@@ -290,7 +290,7 @@
         }
 
         &--narrow {
-            max-width: 100px;
+            max-width: 80px;
         }
 
         &--number {
@@ -1102,6 +1102,11 @@
     align-items: center;
     gap: 4px;
     min-width: 0;
+
+    .article-autocomplete {
+        flex: 1;
+        min-width: 0;
+    }
 }
 
 .quote-lines-table__catalogue-btn {

@@ -58,12 +58,10 @@ export default function StockIndex() {
 
     const handleSelectSubcategory = (id: number | null) => {
         setSelectedSubcategoryId(id);
-        setSelectedBrandId(null);
     };
 
     const handleSelectBrand = (id: number | null) => {
         setSelectedBrandId(id);
-        setSelectedSubcategoryId(null);
     };
 
     return (
@@ -94,24 +92,28 @@ export default function StockIndex() {
 
                         {brands.length > 0 && (
                             <div className="stock-page__brand-filter">
-                                <div className="stock-page__brand-filter-title">Marques</div>
-                                <button
-                                    type="button"
-                                    className={`stock-page__brand-btn ${selectedBrandId === null && selectedSubcategoryId === null ? '' : ''}`}
-                                    onClick={() => handleSelectBrand(null)}
-                                >
-                                    Toutes les marques
-                                </button>
-                                {brands.map(brand => (
+                                <div className="stock-page__brand-filter-header">
+                                    <span className="stock-page__brand-filter-title">Marques</span>
+                                </div>
+                                <div className="stock-page__brand-list">
                                     <button
-                                        key={brand.id}
                                         type="button"
-                                        className={`stock-page__brand-btn ${selectedBrandId === brand.id ? 'stock-page__brand-btn--active' : ''}`}
-                                        onClick={() => handleSelectBrand(brand.id)}
+                                        className={`stock-page__brand-btn ${selectedBrandId === null ? 'stock-page__brand-btn--active' : ''}`}
+                                        onClick={() => handleSelectBrand(null)}
                                     >
-                                        {brand.name}
+                                        Toutes les marques
                                     </button>
-                                ))}
+                                    {brands.map(brand => (
+                                        <button
+                                            key={brand.id}
+                                            type="button"
+                                            className={`stock-page__brand-btn ${selectedBrandId === brand.id ? 'stock-page__brand-btn--active' : ''}`}
+                                            onClick={() => handleSelectBrand(brand.id)}
+                                        >
+                                            {brand.name}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </aside>
@@ -120,7 +122,7 @@ export default function StockIndex() {
                         <ArticleList
                             key={listRefreshKey}
                             subcategoryId={selectedSubcategoryId}
-                            subcategoryLabel={selectedBrand ? `Marque : ${selectedBrand.name}` : (selectedSubcategory?.name ?? null)}
+                            subcategoryLabel={[selectedSubcategory?.name, selectedBrand ? `Marque : ${selectedBrand.name}` : null].filter(Boolean).join(' · ') || null}
                             brandId={selectedBrandId}
                             onEdit={setEditingArticle}
                             onOpenStock={setStockArticle}

@@ -89,7 +89,8 @@
     max-width: 240px;
   }
 
-  &__brand {
+  &__brand,
+  &__supplier {
     font-size: $font-size-xs;
     color: $color-neutral-medium;
     white-space: nowrap;

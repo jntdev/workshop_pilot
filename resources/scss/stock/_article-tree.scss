@@ -5,190 +5,307 @@
 .article-tree {
   background: $color-bg-white;
   border: 1px solid $color-border-light;
-  border-radius: $radius-md;
-  padding: $spacing-sm 0;
+  border-radius: $radius-lg;
+  overflow: hidden;
 
-  &__add-cat {
-    display: flex;
-    gap: $spacing-xs;
-    padding: $spacing-sm $spacing-md;
-    border-top: 1px solid $color-border-light;
-    margin-top: $spacing-xs;
-
-    input {
-      flex: 1;
-      padding: $spacing-xs $spacing-sm;
-      font-size: $font-size-sm;
-      border: 1px solid $color-border-medium;
-      border-radius: $radius-sm;
-    }
-  }
-
-  &__btn-add {
-    padding: $spacing-xs $spacing-sm;
-    font-size: $font-size-sm;
-    background: $color-primary-blue;
-    color: white;
-    border: none;
-    border-radius: $radius-sm;
-    cursor: pointer;
-
-    &:hover {
-      background: darken($color-primary-blue, 8%);
-    }
-  }
-}
-
-.tree-cat {
   &__header {
     display: flex;
     align-items: center;
-    gap: $spacing-xs;
-    padding: $spacing-xs $spacing-md;
-    cursor: pointer;
-    user-select: none;
+    justify-content: space-between;
+    padding: $spacing-sm $spacing-md;
+    border-bottom: 1px solid $color-border-light;
+    background: $color-bg-light;
+  }
 
-    &:hover {
-      background: $color-bg-light;
+  &__title {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-neutral-medium;
+  }
+
+  &__error {
+    margin: $spacing-xs $spacing-md;
+    font-size: $font-size-xs;
+    color: $color-danger-red;
+  }
+
+  &__list {
+    padding: $spacing-xs 0 $spacing-sm;
+  }
+
+  // --- Catégorie ---
+  &__category {
+    & + & {
+      border-top: 1px solid $color-border-light;
     }
   }
 
-  &__toggle {
-    font-size: $font-size-xs;
-    color: $color-neutral-medium;
-    width: 12px;
-    flex-shrink: 0;
+  &__category-row {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-xs $spacing-xs $spacing-sm;
+    min-height: 36px;
+
+    &:hover {
+      .article-tree__actions {
+        opacity: 1;
+      }
+    }
   }
 
-  &__name {
+  &__expand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: $color-neutral-medium;
+    border-radius: $radius-sm;
+    transition: color $transition-fast;
+    padding: 0;
+
+    svg {
+      width: 10px;
+      height: 10px;
+      transition: transform $transition-fast;
+    }
+
+    &--open svg {
+      transform: rotate(90deg);
+    }
+
+    &:hover {
+      color: $color-neutral-dark;
+    }
+  }
+
+  &__category-name {
     flex: 1;
     font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
     color: $color-neutral-dark;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  &__name-input {
-    flex: 1;
-    padding: 2px $spacing-xs;
-    font-size: $font-size-sm;
-    border: 1px solid $color-primary-blue;
-    border-radius: $radius-sm;
-  }
-
-  &__edit-btn,
-  &__del-btn,
-  &__save-btn,
-  &__cancel-btn {
+  &__count {
     font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-medium;
+    background: $color-neutral-light;
+    border-radius: 999px;
+    padding: 1px 6px;
+    flex-shrink: 0;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity $transition-fast;
+    flex-shrink: 0;
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
     background: transparent;
     border: none;
-    cursor: pointer;
-    padding: 2px 4px;
-    color: $color-neutral-medium;
     border-radius: $radius-sm;
+    cursor: pointer;
+    color: $color-neutral-medium;
+    transition: background $transition-fast, color $transition-fast;
+
+    svg {
+      width: 13px;
+      height: 13px;
+    }
 
     &:hover {
       background: $color-neutral-light;
+      color: $color-neutral-dark;
+    }
+
+    &--danger:hover {
+      background: #fee2e2;
+      color: $color-danger-red;
     }
   }
 
-  &__del-btn:hover {
-    color: $color-danger-red;
-  }
-
+  // --- Sous-catégories ---
   &__subcategories {
-    padding-left: $spacing-md;
+    padding-bottom: $spacing-xs;
   }
 
-  &__add-sub {
+  &__subcategory-row {
     display: flex;
+    align-items: center;
     gap: $spacing-xs;
-    padding: $spacing-xs $spacing-md $spacing-xs $spacing-lg;
+    padding: 0 $spacing-xs 0 2.25rem;
+    min-height: 30px;
+    border-radius: 0;
+    transition: background $transition-fast;
 
-    input {
-      flex: 1;
-      padding: $spacing-xs $spacing-sm;
-      font-size: $font-size-sm;
-      border: 1px solid $color-border-medium;
-      border-radius: $radius-sm;
+    &:hover {
+      background: $color-bg-light;
+
+      .article-tree__actions {
+        opacity: 1;
+      }
     }
 
-    button {
-      padding: $spacing-xs $spacing-sm;
-      font-size: $font-size-xs;
-      background: $color-primary-blue;
-      color: white;
-      border: none;
-      border-radius: $radius-sm;
-      cursor: pointer;
-    }
-  }
-}
+    &--selected {
+      background: #eff6ff;
 
-.tree-sub {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  padding: $spacing-xs $spacing-md $spacing-xs $spacing-lg;
-  cursor: pointer;
-  border-radius: $radius-sm;
-  margin: 1px 0;
+      .article-tree__subcategory-name {
+        color: $color-primary-blue;
+        font-weight: $font-weight-semibold;
+      }
 
-  &:hover {
-    background: $color-bg-light;
-  }
+      &:hover {
+        background: #dbeafe;
+      }
 
-  &--active {
-    background: #eff6ff;
-    color: $color-primary-blue;
-
-    .tree-sub__name {
-      color: $color-primary-blue;
-      font-weight: $font-weight-semibold;
+      .article-tree__actions {
+        opacity: 1;
+      }
     }
   }
 
-  &__name {
+  &__subcategory-name {
     flex: 1;
     font-size: $font-size-sm;
     color: $color-neutral-dark;
-  }
-
-  &__name-input {
-    flex: 1;
-    padding: 2px $spacing-xs;
-    font-size: $font-size-sm;
-    border: 1px solid $color-primary-blue;
-    border-radius: $radius-sm;
-  }
-
-  &__edit-btn,
-  &__del-btn,
-  &__save-btn,
-  &__cancel-btn {
-    font-size: $font-size-xs;
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 2px 4px;
-    color: $color-neutral-medium;
-    border-radius: $radius-sm;
-    opacity: 0;
-    transition: opacity $transition-fast;
+    text-align: left;
+    padding: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color $transition-fast;
 
     &:hover {
-      background: $color-neutral-light;
+      color: $color-primary-blue;
     }
   }
 
-  &__del-btn:hover {
-    color: $color-danger-red;
+  // --- Bouton + sous-catégorie ---
+  &__add-sub {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-xs $spacing-xs 2.25rem;
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+    text-align: left;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $color-primary-blue;
+    }
   }
 
-  &:hover &__edit-btn,
-  &:hover &__del-btn,
-  &:hover &__save-btn,
-  &:hover &__cancel-btn {
-    opacity: 1;
+  // --- Bouton + catégorie ---
+  &__add-category {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    width: 100%;
+    padding: $spacing-xs $spacing-md;
+    background: transparent;
+    border: none;
+    border-top: 1px dashed $color-border-light;
+    cursor: pointer;
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+    text-align: left;
+    transition: color $transition-fast;
+    margin-top: $spacing-xs;
+
+    &:hover {
+      color: $color-primary-blue;
+    }
+  }
+
+  // --- Formulaires inline ---
+  &__inline-form {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    flex: 1;
+    padding: $spacing-xs 0;
+
+    &--sub {
+      padding-left: 0;
+    }
+
+    &--category {
+      padding: $spacing-xs $spacing-sm;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    padding: 4px $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-primary-blue;
+    border-radius: $radius-sm;
+    outline: none;
+    background: $color-bg-white;
+    box-shadow: 0 0 0 3px rgba($color-primary-blue, 0.1);
+  }
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: $radius-sm;
+    border: 1px solid $color-border-medium;
+    background: $color-bg-white;
+    cursor: pointer;
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+    flex-shrink: 0;
+    transition: background $transition-fast, color $transition-fast;
+
+    &:hover {
+      background: $color-neutral-light;
+      color: $color-neutral-dark;
+    }
+
+    &--primary {
+      background: $color-primary-blue;
+      border-color: $color-primary-blue;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: darken($color-primary-blue, 8%);
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
   }
 }

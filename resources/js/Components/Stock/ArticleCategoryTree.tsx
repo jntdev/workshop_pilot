@@ -134,16 +134,23 @@ export default function ArticleCategoryTree({ categories, selectedSubcategoryId,
                                 <>
                                     <button
                                         type="button"
-                                        className="article-tree__expand"
+                                        className={`article-tree__expand ${expandedIds.has(cat.id) ? 'article-tree__expand--open' : ''}`}
                                         onClick={() => toggleExpand(cat.id)}
+                                        title={expandedIds.has(cat.id) ? 'Réduire' : 'Développer'}
                                     >
-                                        {expandedIds.has(cat.id) ? '▼' : '▶'}
+                                        <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M3 2L7 5L3 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
                                     </button>
                                     <span className="article-tree__category-name">{cat.name}</span>
                                     <span className="article-tree__count">{cat.subcategories.length}</span>
                                     <div className="article-tree__actions">
-                                        <button type="button" className="article-tree__action" onClick={() => setEditing({ kind: 'edit-category', id: cat.id, name: cat.name })}>✎</button>
-                                        <button type="button" className="article-tree__action article-tree__action--danger" onClick={() => deleteCategory(cat.id)}>✕</button>
+                                        <button type="button" className="article-tree__action" title="Renommer" onClick={() => setEditing({ kind: 'edit-category', id: cat.id, name: cat.name })}>
+                                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 2.5L11.5 4.5M1 13H3L11 5L9 3L1 11V13Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                        </button>
+                                        <button type="button" className="article-tree__action article-tree__action--danger" title="Supprimer" onClick={() => deleteCategory(cat.id)}>
+                                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4H12M5 4V2H9V4M5.5 6.5V10.5M8.5 6.5V10.5M3 4L3.8 12H10.2L11 4H3Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                        </button>
                                     </div>
                                 </>
                             )}
@@ -175,8 +182,12 @@ export default function ArticleCategoryTree({ categories, selectedSubcategoryId,
                                                     {sub.name}
                                                 </button>
                                                 <div className="article-tree__actions">
-                                                    <button type="button" className="article-tree__action" onClick={() => setEditing({ kind: 'edit-subcategory', id: sub.id, categoryId: cat.id, name: sub.name })}>✎</button>
-                                                    <button type="button" className="article-tree__action article-tree__action--danger" onClick={() => deleteSubcategory(sub.id)}>✕</button>
+                                                    <button type="button" className="article-tree__action" title="Renommer" onClick={() => setEditing({ kind: 'edit-subcategory', id: sub.id, categoryId: cat.id, name: sub.name })}>
+                                                        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 2.5L11.5 4.5M1 13H3L11 5L9 3L1 11V13Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                    </button>
+                                                    <button type="button" className="article-tree__action article-tree__action--danger" title="Supprimer" onClick={() => deleteSubcategory(sub.id)}>
+                                                        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4H12M5 4V2H9V4M5.5 6.5V10.5M8.5 6.5V10.5M3 4L3.8 12H10.2L11 4H3Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                    </button>
                                                 </div>
                                             </>
                                         )}

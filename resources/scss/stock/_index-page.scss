@@ -55,38 +55,60 @@
   &__brand-filter {
     background: $color-bg-white;
     border: 1px solid $color-border-light;
-    border-radius: $radius-md;
-    padding: $spacing-sm 0;
+    border-radius: $radius-lg;
+    overflow: hidden;
+  }
+
+  &__brand-filter-header {
+    padding: $spacing-sm $spacing-md;
+    border-bottom: 1px solid $color-border-light;
+    background: $color-bg-light;
   }
 
   &__brand-filter-title {
     font-size: $font-size-xs;
     font-weight: $font-weight-semibold;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: $color-neutral-medium;
-    padding: $spacing-xs $spacing-md $spacing-xs;
+  }
+
+  &__brand-list {
+    padding: $spacing-xs 0 $spacing-sm;
   }
 
   &__brand-btn {
     display: block;
     width: 100%;
     text-align: left;
-    padding: $spacing-xs $spacing-md;
+    padding: 6px $spacing-md;
     font-size: $font-size-sm;
     background: transparent;
     border: none;
     cursor: pointer;
     color: $color-neutral-dark;
+    transition: background $transition-fast, color $transition-fast;
 
     &:hover {
       background: $color-bg-light;
+      color: $color-primary-blue;
     }
 
     &--active {
-      background: #eff6ff;
       color: $color-primary-blue;
       font-weight: $font-weight-semibold;
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 4px;
+        bottom: 4px;
+        width: 3px;
+        background: $color-primary-blue;
+        border-radius: 0 2px 2px 0;
+      }
     }
   }
 }

@@ -99,7 +99,7 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                                         key={brand.id}
                                         type="button"
                                         className={`catalogue-picker__nav-sub ${selectedBrandId === brand.id ? 'catalogue-picker__nav-sub--active' : ''}`}
-                                        onClick={() => { setSelectedBrandId(brand.id); setSelectedSubcategoryId(null); setSearch(''); }}
+                                        onClick={() => { setSelectedBrandId(brand.id); setSearch(''); }}
                                     >
                                         {brand.name}
                                     </button>
@@ -121,7 +121,7 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                                         key={sub.id}
                                         type="button"
                                         className={`catalogue-picker__nav-sub ${selectedSubcategoryId === sub.id ? 'catalogue-picker__nav-sub--active' : ''}`}
-                                        onClick={() => { setSelectedSubcategoryId(sub.id); setSearch(''); }}
+                                        onClick={() => { setSelectedSubcategoryId(sub.id === selectedSubcategoryId ? null : sub.id); setSearch(''); }}
                                     >
                                         {sub.name}
                                     </button>
