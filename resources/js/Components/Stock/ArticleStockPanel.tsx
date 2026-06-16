@@ -21,7 +21,12 @@ export default function ArticleStockPanel({ article, csrfToken, onClose, onChang
     const [movements, setMovements] = useState<StockMovement[]>([]);
     const [stockQuantity, setStockQuantity] = useState(article.stock_quantity);
     const [isLoading, setIsLoading] = useState(false);
-    const [form, setForm] = useState({ type: 'manual_in' as 'manual_in' | 'manual_out', quantity: '', unit_price_ht: '', note: '' });
+    const [form, setForm] = useState({
+        type: 'manual_in' as 'manual_in' | 'manual_out',
+        quantity: '',
+        unit_price_ht: (article.purchase_price_ht / 100).toFixed(2),
+        note: '',
+    });
     const [formError, setFormError] = useState<string | null>(null);
 
     const load = useCallback(async () => {
@@ -50,7 +55,7 @@ export default function ArticleStockPanel({ article, csrfToken, onClose, onChang
         });
 
         if (res.ok) {
-            setForm({ type: 'manual_in', quantity: '', unit_price_ht: '', note: '' });
+            setForm({ type: 'manual_in', quantity: '', unit_price_ht: (article.purchase_price_ht / 100).toFixed(2), note: '' });
             await load();
             onChanged();
         } else {
