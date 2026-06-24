@@ -182,14 +182,17 @@ export default function QuoteLinesTable({
                         draggingIndex === index ? 'quote-lines-table__row--dragging' : '',
                         dragOverIndex === index ? 'quote-lines-table__row--drag-over' : '',
                     ].join(' ').trim()}
-                    draggable={!disabled}
-                    onDragStart={() => handleDragStart(index)}
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDrop={(e) => handleDrop(e, index)}
-                    onDragEnd={handleDragEnd}
                 >
                     {/* Handle */}
-                    <div className="quote-lines-table__cell quote-lines-table__drag-handle" title="Réorganiser">
+                    <div
+                        className="quote-lines-table__cell quote-lines-table__drag-handle"
+                        title="Réorganiser"
+                        draggable={!disabled}
+                        onDragStart={() => handleDragStart(index)}
+                        onDragEnd={handleDragEnd}
+                    >
                         {!disabled && '⠿'}
                     </div>
                     {/* Intitulé */}
