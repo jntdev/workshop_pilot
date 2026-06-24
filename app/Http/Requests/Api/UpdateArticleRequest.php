@@ -22,7 +22,7 @@ class UpdateArticleRequest extends FormRequest
             'reference' => ['sometimes', 'string', 'max:100', "unique:articles,reference,{$id}"],
             'designation' => ['sometimes', 'string', 'max:255'],
             'purchase_price_ht' => ['sometimes', 'integer', 'min:0'],
-            'sale_price_ht' => ['sometimes', 'integer', 'min:0'],
+            'sale_price_ttc' => ['sometimes', 'integer', 'min:0'],
             'tva_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'unit' => ['sometimes', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],

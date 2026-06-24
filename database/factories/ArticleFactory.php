@@ -22,7 +22,7 @@ class ArticleFactory extends Factory
             'reference' => $this->faker->unique()->bothify('??-###'),
             'designation' => $this->faker->sentence(3),
             'purchase_price_ht' => $this->faker->numberBetween(100, 5000),
-            'sale_price_ht' => $this->faker->numberBetween(200, 8000),
+            'sale_price_ttc' => $this->faker->numberBetween(200, 8000),
             'tva_rate' => 20.00,
             'unit' => $this->faker->randomElement(['pièce', 'paire', 'kit', 'litre']),
             'notes' => $this->faker->optional()->sentence(),

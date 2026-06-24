@@ -69,7 +69,7 @@ export default function QuoteLinesTable({
     };
 
     const handleArticleSelect = (index: number, article: Article) => {
-        const salePriceTtc = (article.sale_price_ht * (1 + article.tva_rate / 100) / 100).toFixed(2);
+        const salePriceTtc = (article.sale_price_ttc / 100).toFixed(2);
         const purchasePriceHt = (article.purchase_price_ht / 100).toFixed(2);
         const updates = calculateLineLocally(salePriceTtc, lines[index].quantity || '1', String(article.tva_rate), purchasePriceHt);
         onLineUpdate(index, {

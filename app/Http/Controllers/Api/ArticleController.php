@@ -50,7 +50,7 @@ class ArticleController extends Controller
                 'reference' => $article->reference,
                 'designation' => $article->designation,
                 'purchase_price_ht' => $article->purchase_price_ht,
-                'sale_price_ht' => $article->sale_price_ht,
+                'sale_price_ttc' => $article->sale_price_ttc,
                 'tva_rate' => $article->tva_rate,
                 'unit' => $article->unit,
                 'stock_quantity' => $article->stock_quantity,

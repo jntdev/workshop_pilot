@@ -33,7 +33,7 @@ class ArticleTest extends TestCase
             'reference' => 'CH-700-PR',
             'designation' => 'Chambre à air 700x23-25 Presta',
             'purchase_price_ht' => 280,
-            'sale_price_ht' => 590,
+            'sale_price_ttc' => 708,
             'tva_rate' => 20.00,
             'unit' => 'pièce',
         ]);
@@ -51,7 +51,7 @@ class ArticleTest extends TestCase
             'reference' => 'CH-700-PR',
             'designation' => 'Autre désignation',
             'purchase_price_ht' => 100,
-            'sale_price_ht' => 200,
+            'sale_price_ttc' => 240,
             'tva_rate' => 20,
             'unit' => 'pièce',
         ]);

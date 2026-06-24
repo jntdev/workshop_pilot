@@ -19,7 +19,7 @@ class Article extends Model
         'reference',
         'designation',
         'purchase_price_ht',
-        'sale_price_ht',
+        'sale_price_ttc',
         'tva_rate',
         'unit',
         'notes',
@@ -32,7 +32,7 @@ class Article extends Model
     {
         return [
             'purchase_price_ht' => 'integer',
-            'sale_price_ht' => 'integer',
+            'sale_price_ttc' => 'integer',
             'tva_rate' => 'float',
             'sort_order' => 'integer',
         ];

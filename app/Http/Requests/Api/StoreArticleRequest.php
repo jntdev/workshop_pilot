@@ -20,7 +20,7 @@ class StoreArticleRequest extends FormRequest
             'reference' => ['required', 'string', 'max:100', 'unique:articles,reference'],
             'designation' => ['required', 'string', 'max:255'],
             'purchase_price_ht' => ['required', 'integer', 'min:0'],
-            'sale_price_ht' => ['required', 'integer', 'min:0'],
+            'sale_price_ttc' => ['required', 'integer', 'min:0'],
             'tva_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'unit' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
@@ -35,7 +35,7 @@ class StoreArticleRequest extends FormRequest
             'reference.unique' => 'Cette référence est déjà utilisée.',
             'designation.required' => 'La désignation est obligatoire.',
             'purchase_price_ht.required' => 'Le prix d\'achat est obligatoire.',
-            'sale_price_ht.required' => 'Le prix de vente est obligatoire.',
+            'sale_price_ttc.required' => 'Le prix de vente est obligatoire.',
             'tva_rate.required' => 'Le taux de TVA est obligatoire.',
         ];
     }

@@ -88,8 +88,8 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
                             <th>Désignation</th>
                             <th>Marque</th>
                             <th>Fournisseur</th>
-                            <th>Px achat</th>
-                            <th>Px vente</th>
+                            <th>Px achat HT</th>
+                            <th>Px vente TTC</th>
                             <th>Marge HT</th>
                             <th>TVA</th>
                             <th>Stock</th>
@@ -105,9 +105,9 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
                                 <td className="article-list__brand">{article.brand?.name ?? '—'}</td>
                                 <td className="article-list__supplier">{article.supplier?.name ?? '—'}</td>
                                 <td className="article-list__price">{formatPrice(article.purchase_price_ht)}</td>
-                                <td className="article-list__price">{formatPrice(article.sale_price_ht)}</td>
-                                <td className={`article-list__margin ${marginClass(article.sale_price_ht - article.purchase_price_ht)}`}>
-                                    {formatPrice(article.sale_price_ht - article.purchase_price_ht)}
+                                <td className="article-list__price">{formatPrice(article.sale_price_ttc)}</td>
+                                <td className={`article-list__margin ${marginClass(Math.round(article.sale_price_ttc / (1 + article.tva_rate / 100)) - article.purchase_price_ht)}`}>
+                                    {formatPrice(Math.round(article.sale_price_ttc / (1 + article.tva_rate / 100)) - article.purchase_price_ht)}
                                 </td>
                                 <td className="article-list__tva">{article.tva_rate} %</td>
                                 <td className={`article-list__stock ${stockClass(article.stock_quantity)}`}>

@@ -141,7 +141,7 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                                     <tr>
                                         <th>Référence</th>
                                         <th>Désignation</th>
-                                        <th>Px vente HT</th>
+                                        <th>Px vente TTC</th>
                                         <th>Stock</th>
                                         <th></th>
                                     </tr>
@@ -151,7 +151,7 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                                         <tr key={article.id} className="catalogue-picker__row">
                                             <td>{article.reference}</td>
                                             <td>{article.designation}</td>
-                                            <td>{formatPrice(article.sale_price_ht)}</td>
+                                            <td>{formatPrice(article.sale_price_ttc)}</td>
                                             <td className={article.stock_quantity > 0 ? 'catalogue-picker__stock--ok' : 'catalogue-picker__stock--zero'}>
                                                 {article.stock_quantity}
                                             </td>

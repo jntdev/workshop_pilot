@@ -536,7 +536,7 @@ export interface Article {
     reference: string;
     designation: string;
     purchase_price_ht: number;
-    sale_price_ht: number;
+    sale_price_ttc: number;
     tva_rate: number;
     unit: string;
     notes: string | null;

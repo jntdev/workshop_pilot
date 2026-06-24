@@ -81,7 +81,7 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
         reference: article?.reference ?? '',
         designation: article?.designation ?? '',
         purchase_price_ht: article ? centsToEuros(article.purchase_price_ht) : '',
-        sale_price_ht: article ? centsToEuros(article.sale_price_ht) : '',
+        sale_price_ttc: article ? centsToEuros(article.sale_price_ttc) : '',
         tva_rate: article ? String(article.tva_rate) : '20',
         unit: article?.unit ?? 'pièce',
         supplier_id: article?.supplier_id ? String(article.supplier_id) : '',
@@ -110,7 +110,7 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
             reference: form.reference,
             designation: form.designation,
             purchase_price_ht: eurosToCents(form.purchase_price_ht),
-            sale_price_ht: eurosToCents(form.sale_price_ht),
+            sale_price_ttc: eurosToCents(form.sale_price_ttc),
             tva_rate: parseFloat(form.tva_rate),
             unit: form.unit,
             supplier_id: form.supplier_id ? Number(form.supplier_id) : null,
@@ -250,17 +250,17 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
                             {errors.purchase_price_ht && <span className="article-form__field-error">{errors.purchase_price_ht}</span>}
                         </div>
                         <div className="article-form__field">
-                            <label className="article-form__label">Prix vente HT (€) *</label>
+                            <label className="article-form__label">Prix vente TTC (€) *</label>
                             <input
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                className={`article-form__input ${errors.sale_price_ht ? 'article-form__input--error' : ''}`}
-                                value={form.sale_price_ht}
-                                onChange={e => set('sale_price_ht', e.target.value)}
-                                placeholder="5.90"
+                                className={`article-form__input ${errors.sale_price_ttc ? 'article-form__input--error' : ''}`}
+                                value={form.sale_price_ttc}
+                                onChange={e => set('sale_price_ttc', e.target.value)}
+                                placeholder="7.08"
                             />
-                            {errors.sale_price_ht && <span className="article-form__field-error">{errors.sale_price_ht}</span>}
+                            {errors.sale_price_ttc && <span className="article-form__field-error">{errors.sale_price_ttc}</span>}
                         </div>
                         <div className="article-form__field">
                             <label className="article-form__label">TVA (%)</label>
