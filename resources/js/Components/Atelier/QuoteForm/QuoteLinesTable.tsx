@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { QuoteLine } from '@/types';
 import type { Article } from '@/types';
 import Input from '@/Components/ui/Input';
@@ -10,6 +10,7 @@ interface QuoteLinesTableProps {
     onLineChange: (index: number, field: keyof QuoteLine, value: string) => void;
     onLineUpdate: (index: number, updates: Partial<QuoteLine>) => void;
     onToggleNeedsOrder: (index: number) => void;
+    onReorder: (from: number, to: number) => void;
     onAddLine: () => void;
     onRemoveLine: (index: number) => void;
     disabled?: boolean;
@@ -58,11 +59,43 @@ export default function QuoteLinesTable({
     onLineChange,
     onLineUpdate,
     onToggleNeedsOrder,
+    onReorder,
     onAddLine,
     onRemoveLine,
     disabled,
 }: QuoteLinesTableProps) {
     const [pickerForLine, setPickerForLine] = useState<number | null>(null);
+    const dragFromRef = useRef<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+
+    const handleDragStart = (index: number) => {
+        dragFromRef.current = index;
+        setDraggingIndex(index);
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (dragFromRef.current !== null && dragFromRef.current !== index) {
+            setDragOverIndex(index);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (dragFromRef.current !== null && dragFromRef.current !== index) {
+            onReorder(dragFromRef.current, index);
+        }
+        dragFromRef.current = null;
+        setDragOverIndex(null);
+        setDraggingIndex(null);
+    };
+
+    const handleDragEnd = () => {
+        dragFromRef.current = null;
+        setDragOverIndex(null);
+        setDraggingIndex(null);
+    };
 
     const handleFieldChange = (index: number, field: keyof QuoteLine, value: string) => {
         onLineChange(index, field, value);
@@ -118,6 +151,7 @@ export default function QuoteLinesTable({
     return (
         <div className="quote-lines-table">
             <div className="quote-lines-table__header">
+                <div className="quote-lines-table__cell" />
                 <div className="quote-lines-table__cell">Intitulé</div>
                 <div className="quote-lines-table__cell">Réf. / Catalogue</div>
                 <div className="quote-lines-table__cell sensitive-column">PA HT</div>
@@ -141,7 +175,23 @@ export default function QuoteLinesTable({
             )}
 
             {lines.map((line, index) => (
-                <div className="quote-lines-table__row" key={index}>
+                <div
+                    key={index}
+                    className={[
+                        'quote-lines-table__row',
+                        draggingIndex === index ? 'quote-lines-table__row--dragging' : '',
+                        dragOverIndex === index ? 'quote-lines-table__row--drag-over' : '',
+                    ].join(' ').trim()}
+                    draggable={!disabled}
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                >
+                    {/* Handle */}
+                    <div className="quote-lines-table__cell quote-lines-table__drag-handle" title="Réorganiser">
+                        {!disabled && '⠿'}
+                    </div>
                     {/* Intitulé */}
                     <div className="quote-lines-table__cell">
                         <Input

@@ -242,6 +242,15 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         setLines(prev => prev.filter((_, i) => i !== index));
     };
 
+    const handleReorder = useCallback((from: number, to: number) => {
+        setLines(prev => {
+            const next = [...prev];
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            return next;
+        });
+    }, []);
+
     const handleToggleNeedsOrder = (index: number) => {
         setLines(prev => {
             const newLines = [...prev];
@@ -770,6 +779,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                             onLineChange={handleLineChange}
                             onLineUpdate={handleLineUpdate}
                             onToggleNeedsOrder={handleToggleNeedsOrder}
+                            onReorder={handleReorder}
                             onAddLine={handleAddLine}
                             onRemoveLine={handleRemoveLine}
                             disabled={isReadOnly}

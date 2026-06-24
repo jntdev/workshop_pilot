@@ -235,7 +235,7 @@
     &__header {
         display: grid;
         // Intitulé, Réf/Catalogue, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, Cmd., ×
-        grid-template-columns: 1.6fr 1.1fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px 45px;
+        grid-template-columns: 20px 1.6fr 1.1fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         background-color: $color-bg-light;
@@ -247,8 +247,8 @@
 
     &__row {
         display: grid;
-        // Intitulé, Réf/Catalogue, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, Cmd., ×
-        grid-template-columns: 1.6fr 1.1fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px 45px;
+        // Handle, Intitulé, Réf/Catalogue, PA HT, TVA%, PV TTC, Qté, Total PA, Marge€, Marge%, Total HT, Total TTC, Temps, Cmd., ×
+        grid-template-columns: 20px 1.6fr 1.1fr 0.7fr 0.5fr 0.7fr 0.6fr 0.7fr 0.7fr 0.6fr 0.7fr 0.7fr 0.5fr 45px 45px;
         gap: 0.5rem;
         padding: 0.75rem 0.5rem;
         border-bottom: 1px solid $color-border-light;
@@ -256,6 +256,27 @@
 
         &:hover {
             background-color: lighten($color-bg-light, 3%);
+        }
+
+        &--dragging {
+            opacity: 0.35;
+        }
+
+        &--drag-over {
+            border-top: 2px solid $color-primary-blue;
+            background-color: lighten($color-primary-blue, 42%);
+        }
+    }
+
+    &__drag-handle {
+        cursor: grab;
+        justify-content: center;
+        color: $color-neutral-light;
+        font-size: 1.1rem;
+        user-select: none;
+
+        &:active {
+            cursor: grabbing;
         }
     }
 
@@ -915,7 +936,7 @@
     .quote-lines-table {
         &__header,
         &__row {
-            grid-template-columns: 1.4fr 0.5fr 0.4fr 0.5fr 0.5fr 0.5fr 0.5fr 0.4fr 0.5fr 0.6fr 0.6fr 0.4fr 35px;
+            grid-template-columns: 16px 1.4fr 0.5fr 0.4fr 0.5fr 0.5fr 0.5fr 0.5fr 0.4fr 0.5fr 0.6fr 0.6fr 0.4fr 35px;
             gap: 0.25rem;
             font-size: 0.75rem;
         }
