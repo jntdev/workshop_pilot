@@ -39,6 +39,7 @@ export interface PlanningReservation {
             size: string;
             frame_type: string;
         } | null;
+        bikes: string[];
     }>;
 }
 
@@ -87,15 +88,13 @@ function ReservationCard({ reservation, type, onReservationClick }: ReservationC
     const isLate = type === 'return' && reservation.statut !== 'paye' && isToday(reservation.date_retour);
 
     const bikesSummary = useMemo(() => {
-        const grouped = new Map<string, number>();
-        reservation.items.forEach((item) => {
+        return reservation.items.flatMap((item) => {
+            if (item.bikes.length > 0) {
+                return item.bikes.map((name) => ({ label: name, qty: 1 }));
+            }
             const label = item.bike_type?.label || item.bike_type_id;
-            grouped.set(label, (grouped.get(label) || 0) + item.quantite);
+            return [{ label, qty: item.quantite }];
         });
-        return Array.from(grouped.entries()).map(([label, qty]) => ({
-            label,
-            qty,
-        }));
     }, [reservation.items]);
 
     return (

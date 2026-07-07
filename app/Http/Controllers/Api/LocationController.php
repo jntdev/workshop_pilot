@@ -190,6 +190,11 @@ class LocationController extends Controller
         $date = $request->input('date', now()->format('Y-m-d'));
         $targetDate = Carbon::parse($date)->startOfDay();
 
+        $bikesByType = Bike::with(['category', 'size'])
+            ->ordered()
+            ->get()
+            ->groupBy(fn (Bike $b) => $b->bike_type_id);
+
         // Départs : date_recuperation si renseignée, sinon date_reservation
         $departures = Reservation::with(['client', 'items.bikeType'])
             ->where('statut', '!=', 'annule')
@@ -203,7 +208,7 @@ class LocationController extends Controller
             ->orderBy('livraison_necessaire', 'desc')
             ->orderBy('creneau_livraison')
             ->get()
-            ->map(fn (Reservation $r) => $this->formatReservation($r));
+            ->map(fn (Reservation $r) => $this->formatReservation($r, $bikesByType));
 
         // Retours : réservations dont date_retour = jour sélectionné
         $returns = Reservation::with(['client', 'items.bikeType'])
@@ -212,7 +217,7 @@ class LocationController extends Controller
             ->orderBy('recuperation_necessaire', 'desc')
             ->orderBy('creneau_recuperation')
             ->get()
-            ->map(fn (Reservation $r) => $this->formatReservation($r));
+            ->map(fn (Reservation $r) => $this->formatReservation($r, $bikesByType));
 
         return response()->json([
             'version' => $this->agendaVersioner->current(),
@@ -221,7 +226,7 @@ class LocationController extends Controller
         ]);
     }
 
-    private function formatReservation(Reservation $r): array
+    private function formatReservation(Reservation $r, \Illuminate\Support\Collection $bikesByType): array
     {
         return [
             'id' => $r->id,
@@ -261,6 +266,7 @@ class LocationController extends Controller
                     'size' => $item->bikeType->size,
                     'frame_type' => $item->bikeType->frame_type,
                 ] : null,
+                'bikes' => $bikesByType->get($item->bike_type_id, collect())->pluck('name')->values()->all(),
             ])->toArray(),
         ];
     }
