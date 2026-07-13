@@ -113,7 +113,9 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(npx tsc *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(grep -v \"^\\\\$\")"
     ],
     "additionalDirectories": [
       "/Users/jonathanmarois/Documents/code/workshop_pilot/features"

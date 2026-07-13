@@ -29,7 +29,7 @@ export interface PlanningReservation {
     statut: ReservationStatut;
     commentaires: string | null;
     color: ReservationColorIndex;
-    selection: Array<{ bike_id: number; dates: string[]; is_hs: boolean }>;
+    selection: Array<{ bike_id: number | string; dates: string[]; is_hs: boolean }>;
 }
 
 interface PlanningPanelProps {
@@ -83,7 +83,12 @@ function ReservationCard({ reservation, type, bikes, onReservationClick }: Reser
             return null;
         }
         const names = reservation.selection
-            .map(s => bikes.find(b => b.id === s.bike_id)?.name)
+            .map(s => {
+                const numericId = typeof s.bike_id === 'string'
+                    ? parseInt(s.bike_id.replace('bike_', ''), 10)
+                    : s.bike_id;
+                return bikes.find(b => b.id === numericId)?.name;
+            })
             .filter((name): name is string => Boolean(name))
             .filter((name, i, arr) => arr.indexOf(name) === i);
         return names.length > 0 ? names : null;
