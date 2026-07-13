@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ReservationStatut, ReservationColorIndex } from '@/types';
+import type { ReservationStatut, ReservationColorIndex, BikeDefinition } from '@/types';
 
 export interface PlanningReservation {
     id: number;
@@ -29,24 +29,14 @@ export interface PlanningReservation {
     statut: ReservationStatut;
     commentaires: string | null;
     color: ReservationColorIndex;
-    items: Array<{
-        bike_type_id: string;
-        quantite: number;
-        bike_type: {
-            id: string;
-            label: string;
-            category: string;
-            size: string;
-            frame_type: string;
-        } | null;
-        bikes: string[];
-    }>;
+    selection: Array<{ bike_id: number; dates: string[]; is_hs: boolean }>;
 }
 
 interface PlanningPanelProps {
     date: string;
     departures: PlanningReservation[];
     returns: PlanningReservation[];
+    bikes: BikeDefinition[];
     onDateChange: (date: string) => void;
     onClose: () => void;
     onReservationClick: (reservationId: number) => void;
@@ -75,10 +65,11 @@ const isToday = (dateStr: string): boolean => {
 interface ReservationCardProps {
     reservation: PlanningReservation;
     type: 'departure' | 'return';
+    bikes: BikeDefinition[];
     onReservationClick: (reservationId: number) => void;
 }
 
-function ReservationCard({ reservation, type, onReservationClick }: ReservationCardProps) {
+function ReservationCard({ reservation, type, bikes, onReservationClick }: ReservationCardProps) {
     const isDeparture = type === 'departure';
     const isDelivery = isDeparture ? reservation.livraison_necessaire : reservation.recuperation_necessaire;
     const address = isDeparture ? reservation.adresse_livraison : reservation.adresse_recuperation;
@@ -87,15 +78,16 @@ function ReservationCard({ reservation, type, onReservationClick }: ReservationC
     const needsAttention = reservation.acompte_demande && !reservation.acompte_paye_le;
     const isLate = type === 'return' && reservation.statut !== 'paye' && isToday(reservation.date_retour);
 
-    const bikesSummary = useMemo(() => {
-        return reservation.items.flatMap((item) => {
-            if (item.bikes.length > 0) {
-                return item.bikes.map((name) => ({ label: name, qty: 1 }));
-            }
-            const label = item.bike_type?.label || item.bike_type_id;
-            return [{ label, qty: item.quantite }];
-        });
-    }, [reservation.items]);
+    const bikeNames = useMemo(() => {
+        if (!reservation.selection || reservation.selection.length === 0) {
+            return null;
+        }
+        const names = reservation.selection
+            .map(s => bikes.find(b => b.id === s.bike_id)?.name)
+            .filter((name): name is string => Boolean(name))
+            .filter((name, i, arr) => arr.indexOf(name) === i);
+        return names.length > 0 ? names : null;
+    }, [reservation.selection, bikes]);
 
     return (
         <div
@@ -150,12 +142,13 @@ function ReservationCard({ reservation, type, onReservationClick }: ReservationC
             </div>
 
             <div className="planning-card__bikes">
-                {bikesSummary.map(({ label, qty }) => (
-                    <span key={label} className="planning-card__bike">
-                        {qty > 1 && <span className="planning-card__bike-qty">{qty}x</span>}
-                        {label}
-                    </span>
-                ))}
+                {bikeNames ? (
+                    bikeNames.map((name) => (
+                        <span key={name} className="planning-card__bike">{name}</span>
+                    ))
+                ) : (
+                    <span className="planning-card__bike planning-card__bike--unknown">Vélos non renseignés</span>
+                )}
             </div>
 
             {isDelivery && address && (
@@ -179,10 +172,11 @@ interface SubColumnProps {
     subtitle: string;
     reservations: PlanningReservation[];
     type: 'departure' | 'return';
+    bikes: BikeDefinition[];
     onReservationClick: (reservationId: number) => void;
 }
 
-function SubColumn({ title, subtitle, reservations, type, onReservationClick }: SubColumnProps) {
+function SubColumn({ title, subtitle, reservations, type, bikes, onReservationClick }: SubColumnProps) {
     const evening = reservations.filter(r => r.date_recuperation !== null);
     const normal = reservations.filter(r => r.date_recuperation === null);
 
@@ -200,7 +194,7 @@ function SubColumn({ title, subtitle, reservations, type, onReservationClick }: 
                     {normal.length > 0 && (
                         <div className="planning-section__cards">
                             {normal.map((r) => (
-                                <ReservationCard key={r.id} reservation={r} type={type} onReservationClick={onReservationClick} />
+                                <ReservationCard key={r.id} reservation={r} type={type} bikes={bikes} onReservationClick={onReservationClick} />
                             ))}
                         </div>
                     )}
@@ -209,7 +203,7 @@ function SubColumn({ title, subtitle, reservations, type, onReservationClick }: 
                             <div className="planning-column__evening-divider">Veille · après 18h</div>
                             <div className="planning-section__cards">
                                 {evening.map((r) => (
-                                    <ReservationCard key={r.id} reservation={r} type={type} onReservationClick={onReservationClick} />
+                                    <ReservationCard key={r.id} reservation={r} type={type} bikes={bikes} onReservationClick={onReservationClick} />
                                 ))}
                             </div>
                         </>
@@ -224,6 +218,7 @@ export default function PlanningPanel({
     date,
     departures,
     returns,
+    bikes,
     onDateChange,
     onClose,
     onReservationClick,
@@ -295,6 +290,7 @@ export default function PlanningPanel({
                     subtitle="Livraison"
                     reservations={departures.filter(r => r.livraison_necessaire)}
                     type="departure"
+                    bikes={bikes}
                     onReservationClick={onReservationClick}
                 />
                 <SubColumn
@@ -302,6 +298,7 @@ export default function PlanningPanel({
                     subtitle="Atelier"
                     reservations={departures.filter(r => !r.livraison_necessaire)}
                     type="departure"
+                    bikes={bikes}
                     onReservationClick={onReservationClick}
                 />
                 <SubColumn
@@ -309,6 +306,7 @@ export default function PlanningPanel({
                     subtitle="Récupération"
                     reservations={returns.filter(r => r.recuperation_necessaire)}
                     type="return"
+                    bikes={bikes}
                     onReservationClick={onReservationClick}
                 />
                 <SubColumn
@@ -316,6 +314,7 @@ export default function PlanningPanel({
                     subtitle="Atelier"
                     reservations={returns.filter(r => !r.recuperation_necessaire)}
                     type="return"
+                    bikes={bikes}
                     onReservationClick={onReservationClick}
                 />
             </div>

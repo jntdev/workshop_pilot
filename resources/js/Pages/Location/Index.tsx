@@ -987,6 +987,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                             date={planningDate}
                             departures={planningData.departures}
                             returns={planningData.returns}
+                            bikes={activeBikes}
                             onDateChange={handlePlanningDateChange}
                             onClose={handleClosePlanning}
                             onReservationClick={handlePlanningReservationClick}

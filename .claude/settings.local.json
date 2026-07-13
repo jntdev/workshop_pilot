@@ -88,14 +88,39 @@
       "Bash(grep -B40 \"alter table \\\\`articles\\\\` drop \\\\`supplier\\\\`\")",
       "Bash(sed -n '37280,37310p' /tmp/binlog_dump.txt)",
       "Read(//private/tmp/**)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(xargs ls -la)",
+      "Bash(php artisan *)",
+      "Bash(vendor/bin/pint --dirty)",
+      "Bash(php -l app/Billing/InvoiceLegalData.php app/Billing/InvoiceLegalDataFactory.php app/Billing/InvoiceLegalSnapshotService.php)",
+      "Bash(php -l app/Billing/InvoiceLegalDataFactory.php app/Billing/InvoiceLegalSnapshotService.php)",
+      "Bash(php -l app/Billing/InvoiceLegalSnapshotService.php)",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -ppassword123 workshop_pilot)",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -ppassword123 -N -e \"SELECT CONCAT\\('DROP TABLE IF EXISTS \\\\`', table_name, '\\\\`;'\\) FROM information_schema.tables WHERE table_schema='workshop_pilot';\")",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -ppassword123 workshop_pilot -e \"SET FOREIGN_KEY_CHECKS=0; $\\(mysql -h 127.0.0.1 -P 3306 -u root -ppassword123 -N -e \"SELECT CONCAT\\('DROP TABLE IF EXISTS \\\\`', table_name, '\\\\`;'\\) FROM information_schema.tables WHERE table_schema='workshop_pilot';\" \\) SET FOREIGN_KEY_CHECKS=1;\")",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -ppassword123 workshop_pilot -e \"SHOW TABLES;\")",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -ppassword123 workshop_pilot -e \"SHOW VARIABLES LIKE 'version%';\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(echo \"Vide: $?\")",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -ppassword123 --default-character-set=utf8mb4 workshop_pilot)",
+      "Bash(php -r \"echo phpversion\\(\\);\")",
+      "Bash(php -r \"echo class_exists\\('Dompdf\\\\Dompdf'\\) ? 'dompdf ok' : 'pas dompdf';\")",
+      "Bash(php -r \"require 'vendor/autoload.php'; echo class_exists\\('Dompdf\\\\Dompdf'\\) ? 'dompdf ok' : 'pas dompdf';\")",
+      "Bash(php /private/tmp/claude-501/-Users-jonathanmarois-Documents-code-workshop-pilot/8438f76e-c8a8-455c-be49-1fa3c8a9a260/scratchpad/generate_pdf.php)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(git restore *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)"
     ],
     "additionalDirectories": [
       "/Users/jonathanmarois/Documents/code/workshop_pilot/features"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "laravel-boost"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
