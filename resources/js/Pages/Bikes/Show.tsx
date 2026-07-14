@@ -98,7 +98,7 @@ export default function BikeShow({ bike: initialBike }: PageProps) {
             ...p,
             article_id: article.id,
             reference: article.reference,
-            cost: p.cost || String(article.sale_price_ttc / 100),
+            cost: p.cost || String(article.purchase_price_ht / 100),
         }));
         setShowCataloguePicker(false);
     }, []);
