@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import ContractPanel from '@/Components/Location/ContractPanel';
 import ClientSearch from '@/Components/Atelier/QuoteForm/ClientSearch';
 import ColorPicker from '@/Components/Location/ColorPicker';
 import { useOptimisticMutation } from '@/hooks/useOptimisticMutation';
@@ -1084,6 +1085,16 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
                     />
                 </div>
             </section>
+
+            {/* Contrat de location */}
+            {draft.editingReservationId && (
+                <div className="reservation-form__section">
+                    <ContractPanel
+                        reservationId={draft.editingReservationId}
+                        clientEmail={formData.client_id ? (editingReservation?.client?.email ?? null) : null}
+                    />
+                </div>
+            )}
 
             {/* Actions */}
             {!viewingMode && (

@@ -1,0 +1,275 @@
+.contract-panel {
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    padding-top: 16px;
+    margin-top: 8px;
+
+    &__loading {
+        font-size: 12px;
+        color: #999;
+        padding: 8px 0;
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    &__title {
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #555;
+    }
+
+    &__form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    &__field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    &__label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #666;
+    }
+
+    &__input {
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.15s;
+
+        &:focus {
+            border-color: #333;
+        }
+    }
+
+    &__toggle-group {
+        display: flex;
+        gap: 6px;
+    }
+
+    &__toggle {
+        flex: 1;
+        padding: 7px 10px;
+        border: 1.5px solid #ddd;
+        border-radius: 6px;
+        background: white;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+        color: #444;
+
+        &--active {
+            border-color: #1a1a1a;
+            background: #1a1a1a;
+            color: white;
+        }
+    }
+
+    &__accessories {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    &__accessory {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #f0f0f0;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    &__accessory-label {
+        font-size: 13px;
+        color: #333;
+    }
+
+    &__counter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__counter-btn {
+        width: 26px;
+        height: 26px;
+        border: 1px solid #ddd;
+        border-radius: 50%;
+        background: white;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #333;
+        transition: background 0.1s;
+
+        &:hover:not(:disabled) {
+            background: #f0f0f0;
+        }
+
+        &:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+    }
+
+    &__counter-val {
+        font-size: 13px;
+        font-weight: 600;
+        width: 16px;
+        text-align: center;
+    }
+
+    // Buttons
+    &__btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: opacity 0.15s;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        &--primary {
+            background: #1a1a1a;
+            color: white;
+            width: 100%;
+        }
+
+        &--ghost {
+            background: none;
+            border: 1.5px solid #ddd;
+            color: #444;
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+    }
+
+    // Signed state
+    &__signed {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+    }
+
+    &__signed-icon {
+        font-size: 18px;
+        color: #16a34a;
+    }
+
+    &__signed-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #16a34a;
+    }
+
+    &__signed-meta {
+        font-size: 11px;
+        color: #666;
+    }
+
+    // QR code state
+    &__qr {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+    }
+
+    &__qr-hint {
+        font-size: 13px;
+        color: #555;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    &__qr-canvas {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    &__qr-url {
+        font-size: 10px;
+        color: #999;
+        word-break: break-all;
+        text-align: center;
+        max-width: 260px;
+    }
+
+    &__qr-waiting {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #888;
+    }
+
+    &__qr-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #f59e0b;
+        animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    // Confirmed state
+    &__confirmed {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 0;
+        text-align: center;
+    }
+
+    &__confirmed-icon {
+        font-size: 36px;
+    }
+
+    &__confirmed-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #16a34a;
+    }
+
+    &__confirmed-meta {
+        font-size: 13px;
+        color: #666;
+    }
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}

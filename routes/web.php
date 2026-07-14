@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\ContractPublicController;
 use App\Http\Controllers\MobileUploadController;
 use App\Services\Agenda\AgendaVersioner;
 use Illuminate\Support\Facades\Route;
@@ -9,6 +10,11 @@ use Inertia\Inertia;
 // Routes publiques pour l'upload mobile (sans auth)
 Route::get('/upload/{token}', [MobileUploadController::class, 'show'])->name('upload.show');
 Route::post('/api/upload/{token}', [MobileUploadController::class, 'upload'])->name('upload.upload');
+
+// Routes publiques pour le contrat de location (sans auth)
+Route::get('/location/contrat/{token}', [ContractPublicController::class, 'show'])->name('contract.show');
+Route::post('/api/location/contrat/{token}/sign', [ContractPublicController::class, 'sign'])->name('contract.sign');
+Route::get('/api/location/contrat/{token}/pdf', [ContractPublicController::class, 'pdf'])->name('contract.pdf');
 
 Route::middleware('guest')->group(function () {
     Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])

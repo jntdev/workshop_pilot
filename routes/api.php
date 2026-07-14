@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\BikeController;
 use App\Http\Controllers\Api\BikeMaintenanceLogController;
 use App\Http\Controllers\Api\BikeSizeController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MessageCategoryController;
 use App\Http\Controllers\Api\MessageController;
@@ -64,6 +65,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
     Route::post('/reservations/{id}/send-acompte-email', [ReservationController::class, 'sendAcompteEmail']);
     Route::post('/reservations/send-acompte-email', [ReservationController::class, 'sendAcompteEmailDirect']);
+    Route::post('/reservations/{reservation}/contract', [ContractController::class, 'generate']);
+    Route::get('/reservations/{reservation}/contract', [ContractController::class, 'status']);
 
     // Location API routes
     Route::get('/location/version', [LocationController::class, 'version']);
