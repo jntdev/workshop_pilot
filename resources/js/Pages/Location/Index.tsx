@@ -9,6 +9,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import MainLayout from '@/Layouts/MainLayout';
 import ReservationForm from '@/Components/Location/ReservationForm';
+import ContractPanel from '@/Components/Location/ContractPanel';
 import ColorPicker from '@/Components/Location/ColorPicker';
 import PlanningPanel, { type PlanningReservation } from '@/Components/Location/PlanningPanel';
 import SettingsPanel from '@/Components/Location/SettingsPanel';
@@ -24,7 +25,7 @@ import type { BikeDefinition, DayInfo, LocationPageProps, LoadedReservation, Res
 import { generateYearDays, formatDayHeader } from '@/utils/calendar';
 
 // Mode d'affichage du panneau latéral
-type SidePanelMode = 'closed' | 'reservation' | 'planning' | 'settings';
+type SidePanelMode = 'closed' | 'reservation' | 'planning' | 'settings' | 'contract';
 
 interface RowData extends DayInfo {
     [bikeId: string]: string | number | boolean | undefined;
@@ -95,6 +96,17 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
 
     // État pour le mode du panneau latéral
     const [sidePanelMode, setSidePanelMode] = useState<SidePanelMode>('closed');
+
+    // Détection mobile : sur petit écran, la grille annuelle est masquée au profit de la vue "Aujourd'hui"
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const mql = window.matchMedia('(max-width: 768px)');
+        setIsMobile(mql.matches);
+        const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+        mql.addEventListener('change', handleChange);
+        return () => mql.removeEventListener('change', handleChange);
+    }, []);
 
     // Panneau acomptes (indépendant du panneau latéral principal)
     const [acomptesOpen, setAcomptesOpen] = useState(false);
@@ -414,6 +426,16 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         }
     }, [reservationsById]);
 
+    // Clic sur le bouton "Contrat" d'une carte planning : ouvre directement la préparation du contrat
+    const handlePlanningContractClick = useCallback((reservationId: number) => {
+        const reservation = reservationsById.get(reservationId);
+        if (reservation) {
+            setViewingReservationId(reservationId);
+            setEditingReservation(reservation);
+            setSidePanelMode('contract');
+        }
+    }, [reservationsById]);
+
     // Ouvrir automatiquement l'agenda si demandé via props (au montage uniquement)
     useEffect(() => {
         if (openAgenda) {
@@ -425,12 +447,23 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Sur mobile, la grille annuelle est masquée : la vue "Aujourd'hui" est la seule
+    // vue de base disponible, donc on la rouvre dès que le panneau latéral se ferme.
+    useEffect(() => {
+        if (isMobile && sidePanelMode === 'closed') {
+            const today = new Date().toISOString().split('T')[0];
+            setPlanningDate(today);
+            setSidePanelMode('planning');
+            loadPlanningData(today);
+        }
+    }, [isMobile, sidePanelMode, loadPlanningData]);
+
     // Mettre à jour le sidePanelMode quand on entre en mode édition/visualisation
     useEffect(() => {
-        if (draft.isActive || viewingReservationId) {
+        if ((draft.isActive || viewingReservationId) && sidePanelMode !== 'contract') {
             setSidePanelMode('reservation');
         }
-    }, [draft.isActive, viewingReservationId]);
+    }, [draft.isActive, viewingReservationId, sidePanelMode]);
 
     // Référence pour stocker le virtualizer (sera défini plus tard)
     const rowVirtualizerRef = useRef<ReturnType<typeof useVirtualizer<HTMLDivElement>> | null>(null);
@@ -977,6 +1010,40 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                                     selectors={selectors}
                                     actions={actions}
                                     editingReservation={editingReservation}
+                                    onReservationCreatedInPlace={(reservation) => {
+                                        setViewingReservationId(reservation.id);
+                                        setEditingReservation(reservation);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {sidePanelMode === 'contract' && editingReservation && (
+                        <div className="location__form-panel">
+                            <div className="location__form-header">
+                                <h2 className="location__form-title">
+                                    Contrat — Réservation #{editingReservation.id}
+                                </h2>
+                                <div className="location__form-actions">
+                                    <button
+                                        type="button"
+                                        className="location__btn location__btn--icon"
+                                        onClick={() => {
+                                            setViewingReservationId(null);
+                                            setEditingReservation(null);
+                                            setSidePanelMode('closed');
+                                        }}
+                                        aria-label="Fermer"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="location__form-content">
+                                <ContractPanel
+                                    reservationId={editingReservation.id}
+                                    clientEmail={editingReservation.client?.email ?? null}
                                 />
                             </div>
                         </div>
@@ -991,6 +1058,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
                             onDateChange={handlePlanningDateChange}
                             onClose={handleClosePlanning}
                             onReservationClick={handlePlanningReservationClick}
+                            onContractClick={handlePlanningContractClick}
                         />
                     )}
 

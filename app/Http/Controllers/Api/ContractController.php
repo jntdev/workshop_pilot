@@ -57,6 +57,17 @@ class ContractController extends Controller
         return response()->json(['contract' => $this->formatContract($contract)]);
     }
 
+    public function preview(Reservation $reservation): Response
+    {
+        $contract = $reservation->latestContract;
+
+        if (! $contract) {
+            abort(404);
+        }
+
+        return $this->pdfService->stream($contract);
+    }
+
     public function sign(Request $request, string $token): JsonResponse
     {
         $contract = LocationContract::where('token', $token)->firstOrFail();

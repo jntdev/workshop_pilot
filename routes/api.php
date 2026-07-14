@@ -67,6 +67,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/reservations/send-acompte-email', [ReservationController::class, 'sendAcompteEmailDirect']);
     Route::post('/reservations/{reservation}/contract', [ContractController::class, 'generate']);
     Route::get('/reservations/{reservation}/contract', [ContractController::class, 'status']);
+    Route::get('/reservations/{reservation}/contract/preview', [ContractController::class, 'preview']);
 
     // Location API routes
     Route::get('/location/version', [LocationController::class, 'version']);

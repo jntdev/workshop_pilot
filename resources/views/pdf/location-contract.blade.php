@@ -45,8 +45,9 @@
         }
         .check {
             display: inline-block;
-            width: 12px;
+            min-width: 12px;
             height: 12px;
+            padding: 0 2px;
             border: 1px solid #555;
             text-align: center;
             line-height: 12px;
@@ -58,19 +59,11 @@
             background: #222;
             color: white;
         }
-        .signatures {
-            width: 100%;
-            margin-top: 20px;
-        }
-        .signatures td {
-            width: 50%;
-            vertical-align: top;
-            padding: 10px;
-        }
         .sig-block {
             border: 1px solid #ccc;
             padding: 10px;
             min-height: 80px;
+            margin-top: 20px;
         }
         .sig-block__label {
             font-weight: bold;
@@ -135,8 +128,8 @@
         @foreach($row as $key)
         @php $qty = $accessories[$key] ?? 0; @endphp
         <td>
-            <span class="check {{ $qty > 0 ? 'check--on' : '' }}">{{ $qty > 0 ? '✓' : '' }}</span>
-            {{ $allAccessories[$key] }}@if($qty > 1) ({{ $qty }})@endif
+            <span class="check {{ $qty > 0 ? 'check--on' : '' }}">{{ $qty > 1 ? $qty : ($qty > 0 ? 'X' : '') }}</span>
+            {{ $allAccessories[$key] }}
         </td>
         @endforeach
     </tr>
@@ -180,27 +173,14 @@
     pour le retour des vélos et de leurs équipements.
 </div>
 
-<table class="signatures">
-    <tr>
-        <td>
-            <div class="sig-block">
-                <span class="sig-block__label">Loueur — Les vélos d'Armor</span>
-                <div class="sig-block__name">{{ $contract->operator_name }}</div>
-                <div class="sig-block__date">{{ $contract->signed_at?->format('d/m/Y') ?? now()->format('d/m/Y') }}</div>
-            </div>
-        </td>
-        <td>
-            <div class="sig-block">
-                <span class="sig-block__label">Locataire</span>
-                <div class="sig-block__name">{{ $contract->signer_name }}</div>
-                <div class="sig-block__date">{{ $contract->signed_at?->format('d/m/Y H:i') }}</div>
-                @if($contract->signature_image)
-                    <img class="sig-image" src="{{ $contract->signature_image }}" alt="Signature">
-                @endif
-            </div>
-        </td>
-    </tr>
-</table>
+<div class="sig-block">
+    <span class="sig-block__label">Signature du locataire :</span>
+    <div class="sig-block__name">{{ $contract->signer_name }}</div>
+    <div class="sig-block__date">{{ $contract->signed_at?->format('d/m/Y H:i') }}</div>
+    @if($contract->signature_image)
+        <img class="sig-image" src="{{ $contract->signature_image }}" alt="Signature">
+    @endif
+</div>
 
 </body>
 </html>

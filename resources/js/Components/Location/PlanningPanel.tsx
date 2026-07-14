@@ -40,6 +40,7 @@ interface PlanningPanelProps {
     onDateChange: (date: string) => void;
     onClose: () => void;
     onReservationClick: (reservationId: number) => void;
+    onContractClick: (reservationId: number) => void;
 }
 
 const formatDateFr = (dateStr: string): string => {
@@ -67,9 +68,10 @@ interface ReservationCardProps {
     type: 'departure' | 'return';
     bikes: BikeDefinition[];
     onReservationClick: (reservationId: number) => void;
+    onContractClick: (reservationId: number) => void;
 }
 
-function ReservationCard({ reservation, type, bikes, onReservationClick }: ReservationCardProps) {
+function ReservationCard({ reservation, type, bikes, onReservationClick, onContractClick }: ReservationCardProps) {
     const isDeparture = type === 'departure';
     const isDelivery = isDeparture ? reservation.livraison_necessaire : reservation.recuperation_necessaire;
     const address = isDeparture ? reservation.adresse_livraison : reservation.adresse_recuperation;
@@ -168,6 +170,19 @@ function ReservationCard({ reservation, type, bikes, onReservationClick }: Reser
                     {reservation.commentaires}
                 </div>
             )}
+
+            <div className="planning-card__actions">
+                <button
+                    type="button"
+                    className="planning-card__action"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onContractClick(reservation.id);
+                    }}
+                >
+                    Contrat
+                </button>
+            </div>
         </div>
     );
 }
@@ -179,9 +194,10 @@ interface SubColumnProps {
     type: 'departure' | 'return';
     bikes: BikeDefinition[];
     onReservationClick: (reservationId: number) => void;
+    onContractClick: (reservationId: number) => void;
 }
 
-function SubColumn({ title, subtitle, reservations, type, bikes, onReservationClick }: SubColumnProps) {
+function SubColumn({ title, subtitle, reservations, type, bikes, onReservationClick, onContractClick }: SubColumnProps) {
     const evening = reservations.filter(r => r.date_recuperation !== null);
     const normal = reservations.filter(r => r.date_recuperation === null);
 
@@ -199,7 +215,7 @@ function SubColumn({ title, subtitle, reservations, type, bikes, onReservationCl
                     {normal.length > 0 && (
                         <div className="planning-section__cards">
                             {normal.map((r) => (
-                                <ReservationCard key={r.id} reservation={r} type={type} bikes={bikes} onReservationClick={onReservationClick} />
+                                <ReservationCard key={r.id} reservation={r} type={type} bikes={bikes} onReservationClick={onReservationClick} onContractClick={onContractClick} />
                             ))}
                         </div>
                     )}
@@ -208,7 +224,7 @@ function SubColumn({ title, subtitle, reservations, type, bikes, onReservationCl
                             <div className="planning-column__evening-divider">Veille · après 18h</div>
                             <div className="planning-section__cards">
                                 {evening.map((r) => (
-                                    <ReservationCard key={r.id} reservation={r} type={type} bikes={bikes} onReservationClick={onReservationClick} />
+                                    <ReservationCard key={r.id} reservation={r} type={type} bikes={bikes} onReservationClick={onReservationClick} onContractClick={onContractClick} />
                                 ))}
                             </div>
                         </>
@@ -227,6 +243,7 @@ export default function PlanningPanel({
     onDateChange,
     onClose,
     onReservationClick,
+    onContractClick,
 }: PlanningPanelProps) {
     const goToToday = () => {
         const today = new Date().toISOString().split('T')[0];
@@ -297,6 +314,7 @@ export default function PlanningPanel({
                     type="departure"
                     bikes={bikes}
                     onReservationClick={onReservationClick}
+                    onContractClick={onContractClick}
                 />
                 <SubColumn
                     title="Départs"
@@ -305,6 +323,7 @@ export default function PlanningPanel({
                     type="departure"
                     bikes={bikes}
                     onReservationClick={onReservationClick}
+                    onContractClick={onContractClick}
                 />
                 <SubColumn
                     title="Retours"
@@ -313,6 +332,7 @@ export default function PlanningPanel({
                     type="return"
                     bikes={bikes}
                     onReservationClick={onReservationClick}
+                    onContractClick={onContractClick}
                 />
                 <SubColumn
                     title="Retours"
@@ -321,6 +341,7 @@ export default function PlanningPanel({
                     type="return"
                     bikes={bikes}
                     onReservationClick={onReservationClick}
+                    onContractClick={onContractClick}
                 />
             </div>
         </div>

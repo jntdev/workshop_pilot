@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('signature_image')->nullable();
             $table->string('signer_name')->nullable();
             $table->string('pdf_path')->nullable();
-            $table->timestamp('expires_at');
+            $table->timestamp('expires_at')->useCurrent();
             $table->timestamps();
         });
     }

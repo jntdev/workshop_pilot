@@ -22,6 +22,7 @@ interface ReservationFormProps {
     editingReservation?: LoadedReservation | null;
     viewingMode?: boolean;
     onSuccess?: () => void;
+    onReservationCreatedInPlace?: (reservation: LoadedReservation) => void;
 }
 
 const STATUT_OPTIONS: { value: ReservationStatut; label: string }[] = [
@@ -59,7 +60,7 @@ const initialFormData: ReservationFormData = {
     payments: [],
 };
 
-export default function ReservationForm({ draft, selectors, actions, editingReservation, viewingMode = false, onSuccess }: ReservationFormProps) {
+export default function ReservationForm({ draft, selectors, actions, editingReservation, viewingMode = false, onSuccess, onReservationCreatedInPlace }: ReservationFormProps) {
     const [formData, setFormData] = useState<ReservationFormData>(initialFormData);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -316,68 +317,87 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
         );
     }, [newClientData.prenom, newClientData.nom, newClientData.telephone]);
 
+    const buildPayload = useCallback((): Record<string, unknown> => {
+        // Filtrer les paiements valides (montant > 0)
+        const validPayments = formData.payments
+            .filter((p) => p.amount > 0)
+            .map((p) => ({
+                amount: p.amount,
+                method: p.method,
+                paid_at: p.paid_at,
+                note: p.note || null,
+            }));
+
+        const payload: Record<string, unknown> = {
+            ...formData,
+            prix_total_ttc: parseFloat(formData.prix_total_ttc) || 0,
+            acompte_montant: formData.acompte_montant ? parseFloat(formData.acompte_montant) : null,
+            adresse_livraison: formData.livraison_necessaire ? formData.adresse_livraison : null,
+            contact_livraison: formData.livraison_necessaire ? formData.contact_livraison : null,
+            creneau_livraison: formData.livraison_necessaire ? formData.creneau_livraison : null,
+            adresse_recuperation: formData.recuperation_necessaire ? formData.adresse_recuperation : null,
+            contact_recuperation: formData.recuperation_necessaire ? formData.contact_recuperation : null,
+            creneau_recuperation: formData.recuperation_necessaire ? formData.creneau_recuperation : null,
+            acompte_paye_le: formData.acompte_paye_le || null,
+            paiement_final_le: formData.paiement_final_le || null,
+            raison_annulation: formData.statut === 'annule' ? formData.raison_annulation : null,
+            color: draft.color,
+            payments: validPayments,
+        };
+
+        // Si nouveau client (pas de client existant sélectionné mais formulaire valide), envoyer new_client
+        if (!formData.client_id && isNewClientValid) {
+            payload.client_id = null;
+            payload.new_client = {
+                prenom: newClientData.prenom,
+                nom: newClientData.nom,
+                telephone: newClientData.telephone,
+                email: newClientData.email || null,
+                adresse: newClientData.adresse || null,
+                origine_contact: newClientData.origine_contact || null,
+                commentaires: newClientData.commentaires || null,
+                avantage_type: newClientData.avantage_type,
+                avantage_valeur: newClientData.avantage_valeur,
+                avantage_expiration: newClientData.avantage_expiration || null,
+            };
+        } else if (formData.client_id && isNewClientValid) {
+            // Client existant sélectionné - envoyer les données pour mise à jour
+            payload.update_client = {
+                prenom: newClientData.prenom,
+                nom: newClientData.nom,
+                telephone: newClientData.telephone,
+                email: newClientData.email || null,
+                adresse: newClientData.adresse || null,
+                origine_contact: newClientData.origine_contact || null,
+                commentaires: newClientData.commentaires || null,
+            };
+        }
+
+        return payload;
+    }, [formData, isNewClientValid, newClientData, draft.color]);
+
+    const mapValidationErrors = (validationErrors: Record<string, string[]>): Record<string, string> => {
+        const newErrors: Record<string, string> = {};
+        Object.entries(validationErrors).forEach(([key, messages]) => {
+            let mappedKey = key;
+            // Mapper new_client.* et update_client.* vers client_*
+            if (key.startsWith('new_client.')) {
+                mappedKey = 'client_' + key.replace('new_client.', '');
+            } else if (key.startsWith('update_client.')) {
+                mappedKey = 'client_' + key.replace('update_client.', '');
+            }
+            newErrors[mappedKey] = messages[0];
+        });
+        return newErrors;
+    };
+
     const handleSubmit = useCallback(async () => {
         setIsSaving(true);
         setErrors({});
         setMessage(null);
 
         try {
-            // Construire le payload
-            // Filtrer les paiements valides (montant > 0)
-            const validPayments = formData.payments
-                .filter((p) => p.amount > 0)
-                .map((p) => ({
-                    amount: p.amount,
-                    method: p.method,
-                    paid_at: p.paid_at,
-                    note: p.note || null,
-                }));
-
-            const payload: Record<string, unknown> = {
-                ...formData,
-                prix_total_ttc: parseFloat(formData.prix_total_ttc) || 0,
-                acompte_montant: formData.acompte_montant ? parseFloat(formData.acompte_montant) : null,
-                adresse_livraison: formData.livraison_necessaire ? formData.adresse_livraison : null,
-                contact_livraison: formData.livraison_necessaire ? formData.contact_livraison : null,
-                creneau_livraison: formData.livraison_necessaire ? formData.creneau_livraison : null,
-                adresse_recuperation: formData.recuperation_necessaire ? formData.adresse_recuperation : null,
-                contact_recuperation: formData.recuperation_necessaire ? formData.contact_recuperation : null,
-                creneau_recuperation: formData.recuperation_necessaire ? formData.creneau_recuperation : null,
-                acompte_paye_le: formData.acompte_paye_le || null,
-                paiement_final_le: formData.paiement_final_le || null,
-                raison_annulation: formData.statut === 'annule' ? formData.raison_annulation : null,
-                color: draft.color,
-                payments: validPayments,
-            };
-
-            // Si nouveau client (pas de client existant sélectionné mais formulaire valide), envoyer new_client
-            if (!formData.client_id && isNewClientValid) {
-                payload.client_id = null;
-                payload.new_client = {
-                    prenom: newClientData.prenom,
-                    nom: newClientData.nom,
-                    telephone: newClientData.telephone,
-                    email: newClientData.email || null,
-                    adresse: newClientData.adresse || null,
-                    origine_contact: newClientData.origine_contact || null,
-                    commentaires: newClientData.commentaires || null,
-                    avantage_type: newClientData.avantage_type,
-                    avantage_valeur: newClientData.avantage_valeur,
-                    avantage_expiration: newClientData.avantage_expiration || null,
-                };
-            } else if (formData.client_id && isNewClientValid) {
-                // Client existant sélectionné - envoyer les données pour mise à jour
-                payload.update_client = {
-                    prenom: newClientData.prenom,
-                    nom: newClientData.nom,
-                    telephone: newClientData.telephone,
-                    email: newClientData.email || null,
-                    adresse: newClientData.adresse || null,
-                    origine_contact: newClientData.origine_contact || null,
-                    commentaires: newClientData.commentaires || null,
-                };
-            }
-
+            const payload = buildPayload();
             const isEditing = !!draft.editingReservationId;
 
             // Utiliser les mutations optimistes
@@ -391,19 +411,7 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
             // Gérer les erreurs de validation (422)
             if (!result.success) {
                 if (result.validationErrors) {
-                    // Mapper les erreurs champ par champ
-                    const newErrors: Record<string, string> = {};
-                    Object.entries(result.validationErrors).forEach(([key, messages]) => {
-                        let mappedKey = key;
-                        // Mapper new_client.* et update_client.* vers client_*
-                        if (key.startsWith('new_client.')) {
-                            mappedKey = 'client_' + key.replace('new_client.', '');
-                        } else if (key.startsWith('update_client.')) {
-                            mappedKey = 'client_' + key.replace('update_client.', '');
-                        }
-                        newErrors[mappedKey] = messages[0];
-                    });
-                    setErrors(newErrors);
+                    setErrors(mapValidationErrors(result.validationErrors));
                 }
                 setMessage({ type: 'error', text: result.message || 'Erreur lors de la sauvegarde' });
                 return;
@@ -433,7 +441,35 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
         } finally {
             setIsSaving(false);
         }
-    }, [formData, isNewClientValid, newClientData, onSuccess, draft.color, draft.editingReservationId, actions]);
+    }, [buildPayload, onSuccess, draft.editingReservationId, actions]);
+
+    const handlePrepareContract = useCallback(async () => {
+        setIsSaving(true);
+        setErrors({});
+        setMessage(null);
+
+        try {
+            const payload = buildPayload();
+            const result = await createReservation(payload);
+
+            if (!result.success) {
+                if (result.validationErrors) {
+                    setErrors(mapValidationErrors(result.validationErrors));
+                }
+                setMessage({ type: 'error', text: result.message || 'Erreur lors de la sauvegarde' });
+                return;
+            }
+
+            actions.loadReservation(result.data);
+            onReservationCreatedInPlace?.(result.data);
+            setMessage({ type: 'success', text: 'Réservation enregistrée, vous pouvez préparer le contrat.' });
+        } catch (error) {
+            console.error('Error saving reservation:', error);
+            setMessage({ type: 'error', text: 'Erreur lors de la création de la réservation' });
+        } finally {
+            setIsSaving(false);
+        }
+    }, [buildPayload, actions, onReservationCreatedInPlace]);
 
     const isReadyToSubmit = useMemo(() => {
         const hasClient = formData.client_id || isNewClientValid;
@@ -1087,14 +1123,23 @@ export default function ReservationForm({ draft, selectors, actions, editingRese
             </section>
 
             {/* Contrat de location */}
-            {draft.editingReservationId && (
-                <div className="reservation-form__section">
+            <div className="reservation-form__section">
+                {draft.editingReservationId ? (
                     <ContractPanel
                         reservationId={draft.editingReservationId}
                         clientEmail={formData.client_id ? (editingReservation?.client?.email ?? null) : null}
                     />
-                </div>
-            )}
+                ) : (
+                    <button
+                        type="button"
+                        className="reservation-form__btn reservation-form__btn--secondary"
+                        onClick={handlePrepareContract}
+                        disabled={isSaving || !isReadyToSubmit}
+                    >
+                        {isSaving ? 'Enregistrement…' : 'Voir le contrat'}
+                    </button>
+                )}
+            </div>
 
             {/* Actions */}
             {!viewingMode && (

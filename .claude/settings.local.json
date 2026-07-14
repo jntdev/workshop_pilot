@@ -115,7 +115,11 @@
       "Bash(npx tsc *)",
       "Bash(npm run *)",
       "Bash(php artisan tinker '--execute= *)",
-      "Bash(grep -v \"^\\\\$\")"
+      "Bash(grep -v \"^\\\\$\")",
+      "Bash(echo \"exit:$?\")",
+      "Bash(rpm -qa)",
+      "Bash(yum list *)",
+      "Bash(sudo -n true)"
     ],
     "additionalDirectories": [
       "/Users/jonathanmarois/Documents/code/workshop_pilot/features"

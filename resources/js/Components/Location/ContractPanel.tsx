@@ -143,12 +143,24 @@ export default function ContractPanel({ reservationId, clientEmail }: ContractPa
         }));
     };
 
+    const openForm = () => {
+        if (contract) {
+            setAccessories(Object.fromEntries(
+                ACCESSORIES.map(a => [a.key, contract.accessories[a.key] || 0])
+            ));
+            setCautionAmount(String(contract.caution_amount / 100));
+            setReturnTimeText(contract.return_time_text);
+            setOperatorName(contract.operator_name);
+        }
+        setStep('form');
+    };
+
     if (loading) {
         return <div className="contract-panel__loading">Chargement...</div>;
     }
 
     // Contrat existant signé
-    if (contract?.is_signed && step !== 'form') {
+    if (contract?.is_signed && step === 'status') {
         return (
             <div className="contract-panel">
                 <div className="contract-panel__signed">
@@ -170,7 +182,7 @@ export default function ContractPanel({ reservationId, clientEmail }: ContractPa
                     <button
                         type="button"
                         className="contract-panel__btn contract-panel__btn--ghost"
-                        onClick={() => setStep('form')}
+                        onClick={openForm}
                     >
                         Regénérer
                     </button>
@@ -179,49 +191,66 @@ export default function ContractPanel({ reservationId, clientEmail }: ContractPa
         );
     }
 
-    // QR code affiché, en attente de signature
+    // Modale : lecture du contrat (PDF) avec le QR code en bas
     if (step === 'qr' && contract) {
-        if (contract.is_signed) {
-            return (
-                <div className="contract-panel">
-                    <div className="contract-panel__confirmed">
-                        <div className="contract-panel__confirmed-icon">✅</div>
-                        <div className="contract-panel__confirmed-title">Contrat signé !</div>
-                        <div className="contract-panel__confirmed-meta">
-                            par {contract.signer_name}
-                        </div>
-                        <a
-                            href={`/api/location/contrat/${contract.token}/pdf`}
-                            className="contract-panel__btn contract-panel__btn--primary"
-                            target="_blank"
-                            rel="noreferrer"
-                        >
-                            Télécharger le PDF
-                        </a>
-                    </div>
-                </div>
-            );
-        }
-
         return (
-            <div className="contract-panel">
-                <div className="contract-panel__qr">
-                    <p className="contract-panel__qr-hint">
-                        Montrez cet écran à votre client pour qu'il signe le contrat sur son téléphone.
-                    </p>
-                    <canvas ref={qrCanvasRef} className="contract-panel__qr-canvas" />
-                    <div className="contract-panel__qr-url">{contractUrl}</div>
-                    <div className="contract-panel__qr-waiting">
-                        <span className="contract-panel__qr-dot" />
-                        En attente de signature…
+            <div className="contract-panel__modal-overlay">
+                <div className="contract-panel__modal">
+                    <div className="contract-panel__modal-header">
+                        <span>Lecture du contrat</span>
+                        <button
+                            type="button"
+                            className="contract-panel__modal-close"
+                            onClick={() => setStep('status')}
+                        >
+                            &times;
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        className="contract-panel__btn contract-panel__btn--ghost"
-                        onClick={() => setStep('form')}
-                    >
-                        Modifier / Regénérer
-                    </button>
+
+                    <iframe
+                        src={`/api/reservations/${reservationId}/contract/preview#toolbar=0&view=FitH`}
+                        className="contract-panel__modal-pdf"
+                        title="Aperçu du contrat"
+                    />
+
+                    <div className="contract-panel__modal-footer">
+                        {contract.is_signed ? (
+                            <div className="contract-panel__confirmed">
+                                <div className="contract-panel__confirmed-icon">✅</div>
+                                <div className="contract-panel__confirmed-title">Contrat signé !</div>
+                                <div className="contract-panel__confirmed-meta">
+                                    par {contract.signer_name}
+                                </div>
+                                <a
+                                    href={`/api/location/contrat/${contract.token}/pdf`}
+                                    className="contract-panel__btn contract-panel__btn--primary"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Télécharger le PDF
+                                </a>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="contract-panel__qr-hint">
+                                    Lisez le contrat ensemble, puis faites scanner ce QR code par votre client pour qu'il signe sur son téléphone.
+                                </p>
+                                <canvas ref={qrCanvasRef} className="contract-panel__qr-canvas" />
+                                <div className="contract-panel__qr-url">{contractUrl}</div>
+                                <div className="contract-panel__qr-waiting">
+                                    <span className="contract-panel__qr-dot" />
+                                    En attente de signature…
+                                </div>
+                                <button
+                                    type="button"
+                                    className="contract-panel__btn contract-panel__btn--ghost"
+                                    onClick={openForm}
+                                >
+                                    Modifier / Regénérer
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -326,7 +355,7 @@ export default function ContractPanel({ reservationId, clientEmail }: ContractPa
                     className="contract-panel__btn contract-panel__btn--primary"
                     disabled={generating}
                 >
-                    {generating ? 'Génération…' : 'Générer le QR code'}
+                    {generating ? 'Génération…' : 'Générer le contrat'}
                 </button>
             </form>
         </div>
