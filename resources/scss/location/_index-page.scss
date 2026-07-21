@@ -117,6 +117,12 @@ $acomptes-panel-width: 340px;
     width: 100%;
   }
 
+  // Mobile : la grille annuelle est masquée, seule la vue "Aujourd'hui" (panneau latéral) reste accessible
+  @media (max-width: 768px) {
+    height: auto;
+    max-height: none;
+  }
+
   &__table-panel {
     flex: 1;
     display: flex;
@@ -130,6 +136,10 @@ $acomptes-panel-width: 340px;
     @media (max-width: 1279px) {
       width: 100%;
       max-height: none;
+    }
+
+    @media (max-width: 768px) {
+      display: none;
     }
   }
 
@@ -154,6 +164,12 @@ $acomptes-panel-width: 340px;
       min-height: 200px;
       border-left: none;
       border-top: 1px solid $color-border-light;
+    }
+
+    @media (max-width: 768px) {
+      height: calc(100vh - 84px);
+      min-height: 0;
+      border-top: none;
     }
   }
 

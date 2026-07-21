@@ -71,6 +71,16 @@ class Reservation extends Model
         return $this->hasMany(ReservationPayment::class);
     }
 
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(LocationContract::class);
+    }
+
+    public function latestContract(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(LocationContract::class)->latestOfMany();
+    }
+
     /**
      * Total encaissé = somme des paiements + acompte (si payé).
      */
