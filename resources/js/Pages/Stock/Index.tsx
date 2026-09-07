@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { useState, useCallback, useEffect } from 'react';
 import MainLayout from '@/Layouts/MainLayout';
-import type { Article, ArticleCategory, ArticleSubcategory, Brand } from '@/types';
+import type { Article, ArticleCategory, ArticleFilterOptions, ArticleSubcategory, Brand } from '@/types';
 import ArticleCategoryTree from '@/Components/Stock/ArticleCategoryTree';
 import ArticleList from '@/Components/Stock/ArticleList';
 import ArticleForm from '@/Components/Stock/ArticleForm';
@@ -12,6 +12,9 @@ export default function StockIndex() {
     const [brands, setBrands] = useState<Brand[]>([]);
     const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
     const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
+    const [hasMovements, setHasMovements] = useState<boolean | null>(true);
+    const [filterOptions, setFilterOptions] = useState<ArticleFilterOptions | null>(null);
+    const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
     const [editingArticle, setEditingArticle] = useState<Article | null | 'new'>(null);
     const [stockArticle, setStockArticle] = useState<Article | null>(null);
     const [listRefreshKey, setListRefreshKey] = useState(0);
@@ -34,6 +37,27 @@ export default function StockIndex() {
         loadCategories();
         loadBrands();
     }, [loadCategories, loadBrands]);
+
+    useEffect(() => {
+        setSelectedAttributes({});
+
+        if (selectedSubcategoryId === null) {
+            setFilterOptions(null);
+            return;
+        }
+
+        fetch(`/api/article-subcategories/${selectedSubcategoryId}/filter-options`, { headers: { Accept: 'application/json' } })
+            .then(r => r.json())
+            .then(data => setFilterOptions(data));
+    }, [selectedSubcategoryId]);
+
+    const setAttributeFilter = (key: string, value: string) => {
+        setSelectedAttributes(prev => {
+            const next = { ...prev };
+            if (value) { next[key] = value; } else { delete next[key]; }
+            return next;
+        });
+    };
 
     const refreshList = useCallback(() => {
         setListRefreshKey(k => k + 1);
@@ -71,12 +95,32 @@ export default function StockIndex() {
             <div className="stock-page">
                 <div className="stock-page__header">
                     <h1 className="stock-page__title">Catalogue articles</h1>
+                    <div className="stock-page__header-actions">
+                        <a href="/inventaire/scan" className="stock-page__scan-btn">📷 Scanner</a>
+                        <button
+                            type="button"
+                            className="stock-page__new-btn"
+                            onClick={() => setEditingArticle('new')}
+                        >
+                            + Nouvel article
+                        </button>
+                    </div>
+                </div>
+
+                <div className="stock-page__tabs">
                     <button
                         type="button"
-                        className="stock-page__new-btn"
-                        onClick={() => setEditingArticle('new')}
+                        className={`stock-page__tab ${hasMovements === true ? 'stock-page__tab--active' : ''}`}
+                        onClick={() => setHasMovements(true)}
                     >
-                        + Nouvel article
+                        Stock atelier
+                    </button>
+                    <button
+                        type="button"
+                        className={`stock-page__tab ${hasMovements === null ? 'stock-page__tab--active' : ''}`}
+                        onClick={() => setHasMovements(null)}
+                    >
+                        Catalogue complet
                     </button>
                 </div>
 
@@ -124,6 +168,10 @@ export default function StockIndex() {
                             subcategoryId={selectedSubcategoryId}
                             subcategoryLabel={[selectedSubcategory?.name, selectedBrand ? `Marque : ${selectedBrand.name}` : null].filter(Boolean).join(' · ') || null}
                             brandId={selectedBrandId}
+                            attributes={selectedAttributes}
+                            onAttributesChange={setAttributeFilter}
+                            filterOptions={selectedSubcategoryId !== null ? filterOptions : null}
+                            hasMovements={hasMovements}
                             onEdit={setEditingArticle}
                             onOpenStock={setStockArticle}
                             csrfToken={csrfToken}

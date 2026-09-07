@@ -27,6 +27,9 @@ class ArticleFactory extends Factory
             'unit' => $this->faker->randomElement(['pièce', 'paire', 'kit', 'litre']),
             'notes' => $this->faker->optional()->sentence(),
             'sort_order' => 0,
+            'barcode' => $this->faker->optional()->ean13(),
+            'image_url' => $this->faker->optional()->imageUrl(),
+            'weight_kg' => $this->faker->optional()->randomFloat(3, 0, 5),
         ];
     }
 }

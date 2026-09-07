@@ -20,7 +20,7 @@ class StockMovementController extends Controller
             ->get()
             ->map(fn (StockMovement $m) => [
                 'id' => $m->id,
-                'quantity' => $m->quantity,
+                'quantity' => (float) $m->quantity,
                 'type' => $m->type->value,
                 'type_label' => $m->type->label(),
                 'is_manual' => $m->type->isManual(),
@@ -55,7 +55,14 @@ class StockMovementController extends Controller
         ]);
 
         return response()->json([
-            'movement' => $movement,
+            'movement' => [
+                'id' => $movement->id,
+                'quantity' => (float) $movement->quantity,
+                'type' => $movement->type->value,
+                'unit_price_ht' => $movement->unit_price_ht,
+                'note' => $movement->note,
+                'created_at' => $movement->created_at,
+            ],
             'stock_quantity' => $article->fresh()->stock_quantity,
         ], 201);
     }

@@ -50,6 +50,9 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
                             <Link href="/stock" className="layout-nav__link">
                                 Stock
                             </Link>
+                            <Link href="/vente/caisse" className="layout-nav__link">
+                                Caisse
+                            </Link>
 
                             <MessagingButton />
 

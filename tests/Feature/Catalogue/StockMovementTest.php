@@ -104,7 +104,7 @@ class StockMovementTest extends TestCase
         $article->stockMovements()->create(['quantity' => -1, 'type' => 'quote_consumption']);
         $article->stockMovements()->create(['quantity' => 5, 'type' => 'manual_in']);
 
-        $this->assertSame(11, $article->fresh()->stock_quantity);
+        $this->assertSame(11.0, $article->fresh()->stock_quantity);
     }
 
     #[Test]
@@ -118,5 +118,22 @@ class StockMovementTest extends TestCase
         ]);
 
         $response->assertUnprocessable();
+    }
+
+    #[Test]
+    public function it_adds_a_manual_in_movement_with_decimal_quantity(): void
+    {
+        $article = Article::factory()->create();
+
+        $response = $this->actingAs($this->user)->postJson("/api/articles/{$article->id}/stock-movements", [
+            'type' => 'manual_in',
+            'quantity' => 2.5,
+            'note' => 'Réception 2.5 mètres de guidoline',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('stock_quantity', 2.5)
+            ->assertJsonPath('movement.quantity', 2.5);
+        $this->assertDatabaseHas('stock_movements', ['article_id' => $article->id, 'quantity' => 2.5]);
     }
 }

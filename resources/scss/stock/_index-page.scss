@@ -10,6 +10,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
     margin-bottom: $spacing-lg;
   }
 
@@ -20,18 +22,71 @@
     margin: 0;
   }
 
-  &__new-btn {
+  &__header-actions {
+    display: flex;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+  }
+
+  &__new-btn,
+  &__scan-btn {
     padding: $spacing-xs $spacing-md;
     font-size: $font-size-sm;
     font-weight: $font-weight-medium;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  &__new-btn {
     background: $color-primary-blue;
     color: white;
     border: none;
-    border-radius: $radius-sm;
-    cursor: pointer;
 
     &:hover {
       background: darken($color-primary-blue, 8%);
+    }
+  }
+
+  &__scan-btn {
+    background: $color-bg-white;
+    color: $color-primary-blue;
+    border: 1px solid $color-primary-blue;
+
+    &:hover {
+      background: $color-bg-light;
+    }
+  }
+
+  &__tabs {
+    display: flex;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-lg;
+    border-bottom: 1px solid $color-border-light;
+  }
+
+  &__tab {
+    padding: $spacing-xs $spacing-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    color: $color-neutral-medium;
+    transition: color $transition-fast, border-color $transition-fast;
+
+    &:hover {
+      color: $color-neutral-dark;
+    }
+
+    &--active {
+      color: $color-primary-blue;
+      border-bottom-color: $color-primary-blue;
+      font-weight: $font-weight-semibold;
     }
   }
 

@@ -1,10 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Article, Brand } from '@/types';
+import type { Article, ArticleFilterOptions } from '@/types';
+import { ATTRIBUTE_LABELS, orderedAttributeEntries, formatOptionLabel } from '@/utils/articleFilters';
+import { quantityStep } from '@/utils/articleQuantity';
+import ArticleCardImage from '@/Components/Stock/ArticleCardImage';
 
 interface Props {
     subcategoryId: number | null;
     subcategoryLabel: string | null;
     brandId: number | null;
+    attributes?: Record<string, string>;
+    onAttributesChange?: (key: string, value: string) => void;
+    filterOptions?: ArticleFilterOptions | null;
+    hasMovements: boolean | null;
     onEdit: (article: Article) => void;
     onOpenStock: (article: Article) => void;
     csrfToken: string;
@@ -14,7 +21,113 @@ function formatPrice(centimes: number): string {
     return (centimes / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }
 
-export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, onEdit, onOpenStock, csrfToken }: Props) {
+interface InlineStockCellProps {
+    article: Article;
+    csrfToken: string;
+    stockClass: (qty: number) => string;
+    onChanged: () => void;
+}
+
+function InlineStockCell({ article, csrfToken, stockClass, onChanged }: InlineStockCellProps) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [value, setValue] = useState(String(article.stock_quantity));
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const startEditing = () => {
+        setValue(String(article.stock_quantity));
+        setError(null);
+        setIsEditing(true);
+    };
+
+    const cancel = () => {
+        setIsEditing(false);
+        setError(null);
+    };
+
+    const save = async () => {
+        const target = parseFloat(value);
+
+        if (Number.isNaN(target)) {
+            setError('Valeur invalide');
+            return;
+        }
+
+        const isWholeUnit = quantityStep(article.unit) === '1';
+
+        if (isWholeUnit && !Number.isInteger(target)) {
+            setError('Quantité entière requise pour cette unité');
+            return;
+        }
+
+        const delta = Math.round((target - article.stock_quantity) * 100) / 100;
+
+        if (delta === 0) {
+            setIsEditing(false);
+            return;
+        }
+
+        if (delta < 0) {
+            setError('Les sorties de stock ne sont pas encore gérées ici');
+            return;
+        }
+
+        setIsSaving(true);
+        setError(null);
+
+        const res = await fetch(`/api/articles/${article.id}/stock-movements`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            body: JSON.stringify({ type: 'manual_in', quantity: delta }),
+        });
+
+        setIsSaving(false);
+
+        if (res.ok) {
+            setIsEditing(false);
+            onChanged();
+        } else {
+            const data = await res.json();
+            setError(data.message || 'Erreur');
+        }
+    };
+
+    if (!isEditing) {
+        return (
+            <button
+                type="button"
+                className={`article-list__stock article-list__stock-edit ${stockClass(article.stock_quantity)}`}
+                onClick={startEditing}
+                title="Modifier le stock"
+            >
+                {article.stock_quantity}
+            </button>
+        );
+    }
+
+    return (
+        <div className="article-list__stock-inline">
+            <input
+                type="number"
+                step={quantityStep(article.unit)}
+                className="article-list__stock-input"
+                value={value}
+                autoFocus
+                disabled={isSaving}
+                onChange={e => setValue(e.target.value)}
+                onKeyDown={e => {
+                    if (e.key === 'Enter') { save(); }
+                    if (e.key === 'Escape') { cancel(); }
+                }}
+            />
+            <button type="button" className="article-list__stock-confirm" onClick={save} disabled={isSaving}>✓</button>
+            <button type="button" className="article-list__stock-cancel" onClick={cancel} disabled={isSaving}>✕</button>
+            {error && <span className="article-list__stock-error">{error}</span>}
+        </div>
+    );
+}
+
+export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, attributes, onAttributesChange, filterOptions, hasMovements, onEdit, onOpenStock, csrfToken }: Props) {
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +140,10 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
         if (subcategoryId) { params.set('subcategory_id', String(subcategoryId)); }
         if (brandId) { params.set('brand_id', String(brandId)); }
         if (search) { params.set('search', search); }
+        if (hasMovements !== null) { params.set('has_movements', hasMovements ? '1' : '0'); }
+        Object.entries(attributes ?? {}).forEach(([key, value]) => {
+            if (value) { params.set(`attribute[${key}]`, value); }
+        });
 
         const res = await fetch(`/api/articles?${params}`, { headers: { Accept: 'application/json' } });
         const data = await res.json();
@@ -34,7 +151,7 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
         setCurrentPage(data.current_page ?? 1);
         setLastPage(data.last_page ?? 1);
         setIsLoading(false);
-    }, [subcategoryId, brandId, search]);
+    }, [subcategoryId, brandId, search, hasMovements, attributes]);
 
     useEffect(() => {
         load(1);
@@ -76,59 +193,85 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
                 />
             </div>
 
+            {filterOptions && Object.keys(filterOptions.attributes).length > 0 && onAttributesChange && (
+                <div className="article-list__filters">
+                    {orderedAttributeEntries(filterOptions.attributes).map(([key, values]) => (
+                        <select
+                            key={key}
+                            className="article-list__filter-select"
+                            value={attributes?.[key] ?? ''}
+                            onChange={e => onAttributesChange(key, e.target.value)}
+                        >
+                            <option value="">{ATTRIBUTE_LABELS[key] ?? key}</option>
+                            {values.map(value => (
+                                <option key={value} value={value}>{formatOptionLabel(key, value)}</option>
+                            ))}
+                        </select>
+                    ))}
+                </div>
+            )}
+
             {isLoading ? (
                 <div className="article-list__loading">Chargement...</div>
             ) : articles.length === 0 ? (
-                <div className="article-list__empty">Aucun article{subcategoryLabel ? ` dans ${subcategoryLabel}` : ''}</div>
+                <div className="article-list__empty">
+                    Aucun article{subcategoryLabel ? ` dans ${subcategoryLabel}` : ''}
+                    {hasMovements === true ? ' avec des mouvements de stock' : ''}
+                </div>
             ) : (
-                <table className="article-list__table">
-                    <thead>
-                        <tr>
-                            <th>Référence</th>
-                            <th>Désignation</th>
-                            <th>Marque</th>
-                            <th>Fournisseur</th>
-                            <th>Px achat HT</th>
-                            <th>Px vente TTC</th>
-                            <th>Marge HT</th>
-                            <th>TVA</th>
-                            <th>Stock</th>
-                            <th>Unité</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {articles.map(article => (
-                            <tr key={article.id}>
-                                <td className="article-list__ref">{article.reference}</td>
-                                <td className="article-list__designation">{article.designation}</td>
-                                <td className="article-list__brand">{article.brand?.name ?? '—'}</td>
-                                <td className="article-list__supplier">{article.supplier?.name ?? '—'}</td>
-                                <td className="article-list__price">{formatPrice(article.purchase_price_ht)}</td>
-                                <td className="article-list__price">{formatPrice(article.sale_price_ttc)}</td>
-                                <td className={`article-list__margin ${marginClass(Math.round(article.sale_price_ttc / (1 + article.tva_rate / 100)) - article.purchase_price_ht)}`}>
-                                    {formatPrice(Math.round(article.sale_price_ttc / (1 + article.tva_rate / 100)) - article.purchase_price_ht)}
-                                </td>
-                                <td className="article-list__tva">{article.tva_rate} %</td>
-                                <td className={`article-list__stock ${stockClass(article.stock_quantity)}`}>
-                                    {article.stock_quantity}
-                                </td>
-                                <td className="article-list__unit">{article.unit}</td>
-                                <td className="article-list__actions">
-                                    <button type="button" className="article-list__action" onClick={() => onOpenStock(article)} title="Mouvements de stock">
-                                        📦
-                                    </button>
-                                    <button type="button" className="article-list__action" onClick={() => onEdit(article)}>
-                                        Modifier
-                                    </button>
-                                    <button type="button" className="article-list__action article-list__action--danger" onClick={() => handleDelete(article.id)}>
-                                        Supprimer
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <div className="article-list__grid">
+                    {articles.map(article => {
+                        const margin = Math.round(article.sale_price_ttc / (1 + article.tva_rate / 100)) - article.purchase_price_ht;
+
+                        return (
+                            <div key={article.id} className="article-list__card article-card">
+                                <div className="article-list__card-image-wrap">
+                                    <ArticleCardImage article={article} />
+                                </div>
+                                <div className="article-list__card-body">
+                                    <span className="article-list__card-reference">{article.reference}</span>
+                                    <span className="article-list__card-designation">{article.designation}</span>
+                                    <div className="article-list__card-meta">
+                                        <span>{article.brand?.name ?? '—'}</span>
+                                        <span>{article.supplier?.name ?? '—'}</span>
+                                    </div>
+                                    <div className="article-list__card-prices">
+                                        <span className="article-list__card-price">{formatPrice(article.sale_price_ttc)}</span>
+                                        <span className="article-list__card-price-ht">PA HT: {formatPrice(article.purchase_price_ht)}</span>
+                                    </div>
+                                    <div className="article-list__card-secondary">
+                                        <span className={marginClass(margin)}>Marge: {formatPrice(margin)}</span>
+                                        <span>TVA: {article.tva_rate} %</span>
+                                        <span>Unité: {article.unit}</span>
+                                    </div>
+                                    <div className="article-list__card-stock-row">
+                                        <span>Stock:</span>
+                                        <InlineStockCell
+                                            article={article}
+                                            csrfToken={csrfToken}
+                                            stockClass={stockClass}
+                                            onChanged={() => load(currentPage)}
+                                        />
+                                    </div>
+                                    {article.is_discontinued && (
+                                        <span className="article-list__card-badge--discontinued">Non disponible fournisseur</span>
+                                    )}
+                                    <div className="article-list__card-actions">
+                                        <button type="button" className="article-list__action" onClick={() => onOpenStock(article)} title="Mouvements de stock">
+                                            📦
+                                        </button>
+                                        <button type="button" className="article-list__action" onClick={() => onEdit(article)}>
+                                            Modifier
+                                        </button>
+                                        <button type="button" className="article-list__action article-list__action--danger" onClick={() => handleDelete(article.id)}>
+                                            Supprimer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             )}
 
             {lastPage > 1 && (

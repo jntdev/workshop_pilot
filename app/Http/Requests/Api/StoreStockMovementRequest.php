@@ -15,7 +15,7 @@ class StoreStockMovementRequest extends FormRequest
     {
         return [
             'type' => ['required', 'in:manual_in,manual_out'],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'numeric', 'min:0.01'],
             'unit_price_ht' => ['nullable', 'integer', 'min:0'],
             'note' => ['nullable', 'string'],
         ];
@@ -27,7 +27,7 @@ class StoreStockMovementRequest extends FormRequest
             'type.required' => 'Le type de mouvement est obligatoire.',
             'type.in' => 'Seules les entrées et sorties manuelles sont autorisées.',
             'quantity.required' => 'La quantité est obligatoire.',
-            'quantity.min' => 'La quantité doit être au moins 1.',
+            'quantity.min' => 'La quantité doit être au moins 0,01.',
         ];
     }
 }

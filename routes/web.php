@@ -666,6 +666,14 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('Stock/Index');
     })->name('stock.index');
 
+    Route::get('/inventaire/scan', function () {
+        return Inertia::render('Inventory/Scan');
+    })->name('inventory.scan');
+
+    Route::get('/vente/caisse', function () {
+        return Inertia::render('Vente/Caisse');
+    })->name('vente.caisse');
+
     Route::get('/messages', function () {
         return Inertia::render('Messages');
     })->name('messages.index');

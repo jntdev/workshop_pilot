@@ -1,0 +1,27 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.barcode-scanner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: $color-neutral-dark;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  &__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__error {
+    color: $color-bg-white;
+    text-align: center;
+    font-size: $font-size-sm;
+    padding: $spacing-xl;
+  }
+}

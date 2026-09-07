@@ -24,9 +24,12 @@ class Article extends Model
         'unit',
         'notes',
         'sort_order',
+        'barcode',
+        'image_url',
+        'weight_kg',
     ];
 
-    protected $appends = ['stock_quantity'];
+    protected $appends = ['stock_quantity', 'is_discontinued'];
 
     public function casts(): array
     {
@@ -34,6 +37,7 @@ class Article extends Model
             'purchase_price_ht' => 'integer',
             'sale_price_ttc' => 'integer',
             'tva_rate' => 'float',
+            'weight_kg' => 'float',
             'sort_order' => 'integer',
         ];
     }
@@ -58,9 +62,24 @@ class Article extends Model
         return $this->hasMany(StockMovement::class);
     }
 
-    public function getStockQuantityAttribute(): int
+    public function attributes(): HasMany
     {
-        return (int) $this->stockMovements()->sum('quantity');
+        return $this->hasMany(ArticleAttribute::class);
+    }
+
+    public function attributeValue(string $key): ?string
+    {
+        return $this->attributes()->where('key', $key)->value('value');
+    }
+
+    public function getStockQuantityAttribute(): float
+    {
+        return (float) $this->stockMovements()->sum('quantity');
+    }
+
+    public function getIsDiscontinuedAttribute(): bool
+    {
+        return $this->attributeValue('supplier_status') === 'discontinued';
     }
 
     public function scopeOrdered(Builder $query): Builder
@@ -70,9 +89,23 @@ class Article extends Model
 
     public function scopeSearch(Builder $query, string $term): Builder
     {
-        return $query->where(function (Builder $q) use ($term) {
-            $q->where('reference', 'like', "%{$term}%")
-                ->orWhere('designation', 'like', "%{$term}%");
-        });
+        $words = array_filter(preg_split('/\s+/', trim($term)) ?: []);
+
+        foreach ($words as $word) {
+            $query->where(function (Builder $q) use ($word) {
+                $q->where('reference', 'like', "%{$word}%")
+                    ->orWhere('designation', 'like', "%{$word}%")
+                    ->orWhere('barcode', 'like', "%{$word}%")
+                    ->orWhereHas('subcategory', fn (Builder $sub) => $sub->where('name', 'like', "%{$word}%"))
+                    ->orWhereHas('subcategory.category', fn (Builder $cat) => $cat->where('name', 'like', "%{$word}%"));
+            });
+        }
+
+        return $query;
+    }
+
+    public function scopeByBarcode(Builder $query, string $barcode): Builder
+    {
+        return $query->where('barcode', $barcode);
     }
 }

@@ -26,7 +26,7 @@ class StockMovement extends Model
     {
         return [
             'type' => StockMovementType::class,
-            'quantity' => 'integer',
+            'quantity' => 'decimal:2',
             'unit_price_ht' => 'integer',
         ];
     }

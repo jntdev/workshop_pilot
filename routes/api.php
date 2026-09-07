@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\BikeMaintenanceLogController;
 use App\Http\Controllers\Api\BikeSizeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ContractController;
+use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\MessageCategoryController;
 use App\Http\Controllers\Api\MessageController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\OrderLineController;
 use App\Http\Controllers\Api\PhotoController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\UploadTokenController;
 use Illuminate\Support\Facades\Route;
@@ -152,11 +154,13 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Catalogue — Article Subcategories API routes
     Route::post('/article-subcategories', [ArticleSubcategoryController::class, 'store']);
     Route::post('/article-subcategories/reorder', [ArticleSubcategoryController::class, 'reorder']);
+    Route::get('/article-subcategories/{id}/filter-options', [ArticleController::class, 'filterOptions']);
     Route::put('/article-subcategories/{id}', [ArticleSubcategoryController::class, 'update']);
     Route::delete('/article-subcategories/{id}', [ArticleSubcategoryController::class, 'destroy']);
 
     // Catalogue — Articles API routes (search before {id})
     Route::get('/articles/search', [ArticleController::class, 'search']);
+    Route::post('/articles/upload-photo', [ArticleController::class, 'uploadPhoto']);
     Route::get('/articles', [ArticleController::class, 'index']);
     Route::post('/articles', [ArticleController::class, 'store']);
     Route::get('/articles/{id}', [ArticleController::class, 'show']);
@@ -167,4 +171,19 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/articles/{article}/stock-movements', [StockMovementController::class, 'index']);
     Route::post('/articles/{article}/stock-movements', [StockMovementController::class, 'store']);
     Route::delete('/stock-movements/{id}', [StockMovementController::class, 'destroy']);
+
+    // Caisse — Sale API routes (lookup-article et recent avant {sale})
+    Route::get('/sales/lookup-article', [SaleController::class, 'lookupArticle']);
+    Route::get('/sales/recent', [SaleController::class, 'recent']);
+    Route::post('/sales', [SaleController::class, 'store']);
+    Route::get('/sales/{sale}', [SaleController::class, 'show']);
+    Route::post('/sales/{sale}/lines', [SaleController::class, 'addLine']);
+    Route::put('/sales/{sale}/lines/{line}', [SaleController::class, 'updateLine']);
+    Route::delete('/sales/{sale}/lines/{line}', [SaleController::class, 'removeLine']);
+    Route::post('/sales/{sale}/complete', [SaleController::class, 'complete']);
+    Route::post('/sales/{sale}/cancel', [SaleController::class, 'cancel']);
+
+    // Inventaire — scan mobile (feature 27)
+    Route::get('/inventory/lookup-barcode', [InventoryController::class, 'lookupBarcode']);
+    Route::post('/inventory/articles', [InventoryController::class, 'storeArticle']);
 });

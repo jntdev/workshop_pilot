@@ -25,6 +25,9 @@ class StoreArticleRequest extends FormRequest
             'unit' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'barcode' => ['nullable', 'string', 'max:64'],
+            'image_url' => ['nullable', 'string', 'max:500'],
+            'weight_kg' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

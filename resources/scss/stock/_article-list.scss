@@ -37,6 +37,29 @@
     }
   }
 
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-md;
+    background: $color-bg-light;
+    border-bottom: 1px solid $color-border-light;
+  }
+
+  &__filter-select {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    color: $color-neutral-dark;
+    background: $color-bg-white;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-blue;
+    }
+  }
+
   &__loading,
   &__empty {
     padding: $spacing-xl;
@@ -46,65 +69,125 @@
     font-style: italic;
   }
 
-  &__table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: $font-size-sm;
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: $spacing-md;
+    padding: $spacing-md;
+  }
 
-    th {
-      padding: $spacing-xs $spacing-sm;
-      text-align: left;
-      font-size: $font-size-xs;
-      font-weight: $font-weight-semibold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: $color-neutral-medium;
-      background: $color-bg-light;
-      border-bottom: 1px solid $color-border-light;
-    }
+  &__card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-md;
+    overflow: hidden;
+    background: $color-bg-white;
+    transition: box-shadow 0.15s, border-color 0.15s;
 
-    td {
-      padding: $spacing-xs $spacing-sm;
-      border-bottom: 1px solid $color-border-light;
-      color: $color-neutral-dark;
-    }
-
-    tr:last-child td {
-      border-bottom: none;
-    }
-
-    tr:hover td {
-      background: $color-bg-light;
+    &:hover {
+      border-color: $color-border-medium;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
   }
 
-  &__ref {
+  &__card-image-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    background: $color-bg-light;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  &__card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: $spacing-sm;
+    flex: 1;
+  }
+
+  &__card-reference {
     font-family: monospace;
     font-size: $font-size-xs;
     color: $color-neutral-medium;
+  }
+
+  &__card-designation {
+    font-size: $font-size-sm;
+    color: $color-neutral-dark;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.3em * 2);
+  }
+
+  &__card-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: $spacing-xs;
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
     white-space: nowrap;
+    overflow: hidden;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 
-  &__designation {
-    max-width: 240px;
+  &__card-prices {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: $spacing-xs;
   }
 
-  &__brand,
-  &__supplier {
+  &__card-price {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__card-price-ht {
     font-size: $font-size-xs;
     color: $color-neutral-medium;
     white-space: nowrap;
   }
 
-  &__price {
-    white-space: nowrap;
-    text-align: right;
+  &__card-secondary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
   }
 
-  &__tva {
-    text-align: right;
-    color: $color-neutral-medium;
+  &__card-stock-row {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+  }
+
+  &__card-badge--discontinued {
     font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-danger-red;
+  }
+
+  &__card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-xs;
+    margin-top: auto;
+    padding-top: 4px;
   }
 
   &__stock {
@@ -124,6 +207,89 @@
     }
   }
 
+  &__stock-edit {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: transparent;
+    border: 1px dashed transparent;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    font-weight: $font-weight-semibold;
+    font-size: inherit;
+    padding: 2px 4px;
+
+    &:hover {
+      border-color: $color-border-medium;
+      background: $color-bg-light;
+    }
+  }
+
+  &__stock-inline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+  }
+
+  &__stock-input {
+    width: 64px;
+    padding: 2px 4px;
+    font-size: $font-size-sm;
+    border: 1px solid $color-primary-blue;
+    border-radius: $radius-sm;
+    text-align: center;
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  &__stock-confirm,
+  &__stock-cancel {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: $font-size-sm;
+    padding: 2px 4px;
+    border-radius: $radius-sm;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__stock-confirm {
+    color: $color-success-green;
+
+    &:hover:not(:disabled) {
+      background: rgba($color-success-green, 0.1);
+    }
+  }
+
+  &__stock-cancel {
+    color: $color-danger-red;
+
+    &:hover:not(:disabled) {
+      background: rgba($color-danger-red, 0.1);
+    }
+  }
+
+  &__stock-error {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 5;
+    white-space: nowrap;
+    background: $color-danger-red;
+    color: white;
+    font-size: $font-size-xs;
+    padding: 2px 6px;
+    border-radius: $radius-sm;
+    margin-top: 2px;
+  }
+
   &__margin {
     font-weight: $font-weight-semibold;
     text-align: right;
@@ -140,18 +306,6 @@
     &--negative {
       color: $color-danger-red;
     }
-  }
-
-  &__unit {
-    font-size: $font-size-xs;
-    color: $color-neutral-medium;
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: $spacing-xs;
-    white-space: nowrap;
   }
 
   &__action {

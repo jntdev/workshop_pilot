@@ -542,13 +542,22 @@ export interface Article {
     notes: string | null;
     sort_order: number;
     stock_quantity: number;
+    barcode: string | null;
+    image_url: string | null;
+    weight_kg: number | null;
+    is_discontinued: boolean;
     brand?: Brand | null;
     supplier?: Supplier | null;
     subcategory?: ArticleSubcategory | null;
     category?: ArticleCategory | null;
 }
 
-export type StockMovementType = 'manual_in' | 'manual_out' | 'quote_consumption' | 'maintenance_consumption';
+export interface ArticleFilterOptions {
+    attributes: Record<string, string[]>;
+    brands: Brand[];
+}
+
+export type StockMovementType = 'manual_in' | 'manual_out' | 'quote_consumption' | 'maintenance_consumption' | 'sale_consumption' | 'sale_return';
 
 export interface StockMovement {
     id: number;
@@ -561,6 +570,35 @@ export interface StockMovement {
     unit_price_ht: number | null;
     note: string | null;
     created_at: string;
+}
+
+// Caisse
+export type SaleStatus = 'draft' | 'completed' | 'cancelled';
+
+export interface SaleLine {
+    id: number;
+    article_id: number | null;
+    designation: string;
+    reference: string | null;
+    quantity: number;
+    purchase_price_ht: number;
+    unit_price_ttc: number;
+    tva_rate: number;
+    line_total_ttc: number;
+    position: number;
+}
+
+export interface Sale {
+    id: number;
+    reference: string | null;
+    status: SaleStatus;
+    payment_method: PaymentMethod | null;
+    total_ht: number;
+    total_tva: number;
+    total_ttc: number;
+    completed_at: string | null;
+    cancelled_at: string | null;
+    lines: SaleLine[];
 }
 
 declare module '@inertiajs/react' {

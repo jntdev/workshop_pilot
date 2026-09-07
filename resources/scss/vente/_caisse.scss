@@ -1,0 +1,215 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.caisse-page {
+  max-width: 1200px;
+  margin: 0 auto;
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+    margin-bottom: $spacing-lg;
+  }
+}
+
+.caisse-form {
+  &__scan {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+  }
+
+  &__scan-input {
+    flex: 1;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-lg;
+    border: 1px solid $color-neutral-light;
+    border-radius: $radius-sm;
+
+    &:disabled {
+      background: $color-neutral-light;
+    }
+  }
+
+  &__scan-loading {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+  }
+
+  &__error {
+    padding: $spacing-sm $spacing-md;
+    margin-bottom: $spacing-md;
+    background: rgba($color-danger-red, 0.1);
+    color: $color-danger-red;
+    border-radius: $radius-sm;
+  }
+
+  &__success {
+    padding: $spacing-sm $spacing-md;
+    margin-bottom: $spacing-md;
+    background: rgba($color-success-green, 0.1);
+    color: $color-success-green;
+    border-radius: $radius-sm;
+  }
+
+  &__choices {
+    margin-bottom: $spacing-md;
+    padding: $spacing-md;
+    border: 1px solid $color-neutral-light;
+    border-radius: $radius-sm;
+  }
+
+  &__choices-label {
+    font-weight: $font-weight-medium;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__choices-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__choice button {
+    width: 100%;
+    text-align: left;
+    padding: $spacing-xs $spacing-sm;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+      background: $color-neutral-light;
+    }
+  }
+
+  &__cart {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: $spacing-md;
+
+    th,
+    td {
+      padding: $spacing-xs $spacing-sm;
+      border-bottom: 1px solid $color-neutral-light;
+      text-align: left;
+    }
+  }
+
+  &__cart-price-input,
+  &__cart-quantity-input {
+    width: 80px;
+    padding: $spacing-xs;
+    border: 1px solid $color-neutral-light;
+    border-radius: $radius-sm;
+  }
+
+  &__cart-remove {
+    background: none;
+    border: none;
+    color: $color-danger-red;
+    cursor: pointer;
+  }
+
+  &__total {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    text-align: right;
+    margin-bottom: $spacing-md;
+  }
+
+  &__payment {
+    display: flex;
+    gap: $spacing-sm;
+    justify-content: flex-end;
+  }
+
+  &__payment-select {
+    padding: $spacing-sm;
+    border: 1px solid $color-neutral-light;
+    border-radius: $radius-sm;
+  }
+
+  &__finalize {
+    padding: $spacing-sm $spacing-lg;
+    background: $color-primary-blue;
+    color: white;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    font-weight: $font-weight-medium;
+
+    &:disabled {
+      background: $color-neutral-light;
+      cursor: not-allowed;
+    }
+
+    &:not(:disabled):hover {
+      background: darken($color-primary-blue, 8%);
+    }
+  }
+}
+
+.recent-sales {
+  margin-top: $spacing-xl;
+  padding-top: $spacing-lg;
+  border-top: 1px solid $color-neutral-light;
+
+  &__title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+    margin-bottom: $spacing-md;
+  }
+
+  &__error {
+    padding: $spacing-sm $spacing-md;
+    margin-bottom: $spacing-md;
+    background: rgba($color-danger-red, 0.1);
+    color: $color-danger-red;
+    border-radius: $radius-sm;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: $spacing-xs $spacing-sm;
+      border-bottom: 1px solid $color-neutral-light;
+      text-align: left;
+    }
+  }
+
+  &__status {
+    padding: 2px $spacing-xs;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+
+    &--completed {
+      background: rgba($color-success-green, 0.1);
+      color: $color-success-green;
+    }
+
+    &--cancelled {
+      background: rgba($color-neutral-medium, 0.15);
+      color: $color-neutral-medium;
+    }
+  }
+
+  &__cancel {
+    background: none;
+    border: none;
+    color: $color-danger-red;
+    cursor: pointer;
+
+    &:disabled {
+      color: $color-neutral-medium;
+      cursor: not-allowed;
+    }
+  }
+}

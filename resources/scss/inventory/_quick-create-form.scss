@@ -1,0 +1,113 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.quick-create-form {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  overflow-y: auto;
+  background: $color-bg-white;
+
+  &__photo-step {
+    height: 100%;
+  }
+
+  &__uploading {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $color-neutral-medium;
+    font-size: $font-size-sm;
+  }
+
+  &__barcode {
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+    margin: 0;
+  }
+
+  &__preview {
+    width: 96px;
+    height: 96px;
+    align-self: center;
+    object-fit: cover;
+    border-radius: $radius-md;
+  }
+
+  &__input {
+    padding: $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    color: $color-neutral-dark;
+    background: $color-bg-white;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-blue;
+    }
+  }
+
+  &__price-row {
+    display: flex;
+    gap: $spacing-sm;
+
+    .quick-create-form__input {
+      flex: 1;
+    }
+  }
+
+  &__attributes {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+    padding-top: $spacing-xs;
+    border-top: 1px solid $color-border-light;
+  }
+
+  &__error {
+    font-size: $font-size-sm;
+    color: $color-danger-red;
+  }
+
+  &__actions {
+    display: flex;
+    gap: $spacing-sm;
+    margin-top: auto;
+  }
+
+  &__cancel-btn,
+  &__submit-btn {
+    flex: 1;
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    border-radius: $radius-sm;
+    cursor: pointer;
+  }
+
+  &__cancel-btn {
+    background: $color-bg-light;
+    color: $color-neutral-dark;
+    border: 1px solid $color-border-medium;
+  }
+
+  &__submit-btn {
+    background: $color-primary-blue;
+    color: white;
+    border: none;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background: darken($color-primary-blue, 8%);
+    }
+  }
+}

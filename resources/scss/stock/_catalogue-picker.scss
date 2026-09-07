@@ -6,9 +6,9 @@
   background: $color-bg-white;
   border-radius: $radius-lg;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-  width: 900px;
-  max-width: 95vw;
-  height: 80vh;
+  width: 98vw;
+  max-width: 98vw;
+  height: 96vh;
   display: flex;
   flex-direction: column;
 
@@ -20,7 +20,7 @@
     align-items: center;
     justify-content: center;
     z-index: 60;
-    padding: $spacing-md;
+    padding: $spacing-sm;
   }
 
   &__header {
@@ -170,6 +170,27 @@
     padding: $spacing-md;
   }
 
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+  }
+
+  &__filter-select {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    color: $color-neutral-dark;
+    background: $color-bg-white;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-blue;
+    }
+  }
+
   &__loading,
   &__empty {
     text-align: center;
@@ -179,35 +200,93 @@
     padding: $spacing-xl;
   }
 
-  &__table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: $font-size-sm;
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: $spacing-md;
+  }
 
-    th {
-      padding: $spacing-xs $spacing-sm;
-      text-align: left;
-      font-size: $font-size-xs;
-      font-weight: $font-weight-semibold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: $color-neutral-medium;
-      border-bottom: 1px solid $color-border-light;
-    }
+  &__card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-md;
+    overflow: hidden;
+    background: $color-bg-white;
+    transition: box-shadow 0.15s, border-color 0.15s;
 
-    td {
-      padding: $spacing-xs $spacing-sm;
-      border-bottom: 1px solid $color-border-light;
-      color: $color-neutral-dark;
-    }
-
-    tr:last-child td {
-      border-bottom: none;
+    &:hover {
+      border-color: $color-border-medium;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
   }
 
-  &__row:hover td {
+  &__card-image-wrap {
+    width: 100%;
+    aspect-ratio: 1;
     background: $color-bg-light;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  &__card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: $spacing-sm;
+    flex: 1;
+  }
+
+  &__card-reference {
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+  }
+
+  &__card-designation {
+    font-size: $font-size-sm;
+    color: $color-neutral-dark;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.3em * 2);
+  }
+
+  &__card-prices {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: $spacing-xs;
+  }
+
+  &__card-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    margin-top: auto;
+    padding-top: 4px;
+  }
+
+  &__card-price {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__card-price-ht {
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+    white-space: nowrap;
+  }
+
+  &__card-badge--discontinued {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-danger-red;
   }
 
   &__stock {
@@ -231,6 +310,7 @@
     border-radius: $radius-sm;
     cursor: pointer;
     white-space: nowrap;
+    width: 100%;
 
     &:hover {
       background: darken($color-primary-blue, 8%);

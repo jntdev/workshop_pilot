@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Article, StockMovement } from '@/types';
+import { quantityStep } from '@/utils/articleQuantity';
 
 interface Props {
     article: Article;
@@ -40,15 +41,23 @@ export default function ArticleStockPanel({ article, csrfToken, onClose, onChang
 
     const handleAdd = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
         setFormError(null);
+
+        const quantity = parseFloat(form.quantity) || 0;
+
+        if (quantityStep(article.unit) === '1' && !Number.isInteger(quantity)) {
+            setFormError('Quantité entière requise pour cette unité');
+            return;
+        }
+
+        setIsLoading(true);
 
         const res = await fetch(`/api/articles/${article.id}/stock-movements`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
             body: JSON.stringify({
                 type: form.type,
-                quantity: parseInt(form.quantity) || 0,
+                quantity,
                 unit_price_ht: form.unit_price_ht ? Math.round(parseFloat(form.unit_price_ht) * 100) : null,
                 note: form.note || null,
             }),
@@ -110,7 +119,8 @@ export default function ArticleStockPanel({ article, csrfToken, onClose, onChang
                         </select>
                         <input
                             type="number"
-                            min="1"
+                            step={quantityStep(article.unit)}
+                            min={quantityStep(article.unit) === '1' ? '1' : '0.01'}
                             className="stock-panel__input stock-panel__input--qty"
                             placeholder="Qté"
                             value={form.quantity}

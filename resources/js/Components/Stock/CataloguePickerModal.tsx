@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Article, ArticleCategory, Brand } from '@/types';
+import type { Article, ArticleFilterOptions, ArticleSubcategory } from '@/types';
+import { ATTRIBUTE_LABELS, orderedAttributeEntries, formatOptionLabel } from '@/utils/articleFilters';
+import ArticleCardImage from '@/Components/Stock/ArticleCardImage';
 
 interface Props {
     onSelect: (article: Article) => void;
@@ -11,31 +13,37 @@ function formatPrice(cents: number): string {
 }
 
 export default function CataloguePickerModal({ onSelect, onClose }: Props) {
-    const [categories, setCategories] = useState<ArticleCategory[]>([]);
-    const [brands, setBrands] = useState<Brand[]>([]);
+    const [subcategories, setSubcategories] = useState<ArticleSubcategory[]>([]);
     const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
+    const [filterOptions, setFilterOptions] = useState<ArticleFilterOptions | null>(null);
+    const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
     const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         fetch('/api/article-categories', { headers: { Accept: 'application/json' } })
             .then(r => r.json())
-            .then(data => {
-                setCategories(data.categories ?? []);
-                if (data.categories?.length > 0) {
-                    setExpandedIds(new Set([data.categories[0].id]));
-                }
-            });
-        fetch('/api/brands', { headers: { Accept: 'application/json' } })
-            .then(r => r.json())
-            .then(data => setBrands(data.brands ?? []));
+            .then(data => setSubcategories(data.categories?.[0]?.subcategories ?? []));
     }, []);
 
-    const loadArticles = useCallback(async (subcategoryId: number | null, brandId: number | null, q: string) => {
+    useEffect(() => {
+        setSelectedAttributes({});
+        setSelectedBrandId(null);
+        setFilterOptions(null);
+
+        if (selectedSubcategoryId === null) {
+            return;
+        }
+
+        fetch(`/api/article-subcategories/${selectedSubcategoryId}/filter-options`, { headers: { Accept: 'application/json' } })
+            .then(r => r.json())
+            .then(data => setFilterOptions(data));
+    }, [selectedSubcategoryId]);
+
+    const loadArticles = useCallback(async (subcategoryId: number | null, brandId: number | null, attributes: Record<string, string>, q: string) => {
         setIsLoading(true);
         let url = '';
         if (q.length >= 3) {
@@ -44,6 +52,9 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
             const params = new URLSearchParams({ per_page: '50' });
             if (subcategoryId) { params.set('subcategory_id', String(subcategoryId)); }
             if (brandId) { params.set('brand_id', String(brandId)); }
+            Object.entries(attributes).forEach(([key, value]) => {
+                if (value) { params.set(`attribute[${key}]`, value); }
+            });
             url = `/api/articles?${params}`;
         }
         const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -54,13 +65,13 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
 
     useEffect(() => {
         if (debounceRef.current) { clearTimeout(debounceRef.current); }
-        debounceRef.current = setTimeout(() => loadArticles(selectedSubcategoryId, selectedBrandId, search), 250);
-    }, [selectedSubcategoryId, selectedBrandId, search, loadArticles]);
+        debounceRef.current = setTimeout(() => loadArticles(selectedSubcategoryId, selectedBrandId, selectedAttributes, search), 250);
+    }, [selectedSubcategoryId, selectedBrandId, selectedAttributes, search, loadArticles]);
 
-    const toggleExpand = (id: number) => {
-        setExpandedIds(prev => {
-            const next = new Set(prev);
-            if (next.has(id)) { next.delete(id); } else { next.add(id); }
+    const setAttributeFilter = (key: string, value: string) => {
+        setSelectedAttributes(prev => {
+            const next = { ...prev };
+            if (value) { next[key] = value; } else { delete next[key]; }
             return next;
         });
     };
@@ -85,89 +96,93 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                     <nav className="catalogue-picker__nav">
                         <button
                             type="button"
-                            className={`catalogue-picker__nav-all ${selectedSubcategoryId === null && selectedBrandId === null && !search ? 'catalogue-picker__nav-all--active' : ''}`}
-                            onClick={() => { setSelectedSubcategoryId(null); setSelectedBrandId(null); setSearch(''); }}
+                            className={`catalogue-picker__nav-all ${selectedSubcategoryId === null && !search ? 'catalogue-picker__nav-all--active' : ''}`}
+                            onClick={() => { setSelectedSubcategoryId(null); setSearch(''); }}
                         >
                             Tous les articles
                         </button>
 
-                        {brands.length > 0 && (
-                            <div className="catalogue-picker__nav-section">
-                                <span className="catalogue-picker__nav-section-title">Marques</span>
-                                {brands.map(brand => (
-                                    <button
-                                        key={brand.id}
-                                        type="button"
-                                        className={`catalogue-picker__nav-sub ${selectedBrandId === brand.id ? 'catalogue-picker__nav-sub--active' : ''}`}
-                                        onClick={() => { setSelectedBrandId(brand.id); setSearch(''); }}
-                                    >
-                                        {brand.name}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        {categories.map(cat => (
-                            <div key={cat.id} className="catalogue-picker__nav-cat">
-                                <button
-                                    type="button"
-                                    className="catalogue-picker__nav-cat-name"
-                                    onClick={() => toggleExpand(cat.id)}
-                                >
-                                    {expandedIds.has(cat.id) ? '▼' : '▶'} {cat.name}
-                                </button>
-                                {expandedIds.has(cat.id) && cat.subcategories.map(sub => (
-                                    <button
-                                        key={sub.id}
-                                        type="button"
-                                        className={`catalogue-picker__nav-sub ${selectedSubcategoryId === sub.id ? 'catalogue-picker__nav-sub--active' : ''}`}
-                                        onClick={() => { setSelectedSubcategoryId(sub.id === selectedSubcategoryId ? null : sub.id); setSearch(''); }}
-                                    >
-                                        {sub.name}
-                                    </button>
-                                ))}
-                            </div>
+                        {subcategories.map(sub => (
+                            <button
+                                key={sub.id}
+                                type="button"
+                                className={`catalogue-picker__nav-sub ${selectedSubcategoryId === sub.id ? 'catalogue-picker__nav-sub--active' : ''}`}
+                                onClick={() => { setSelectedSubcategoryId(sub.id === selectedSubcategoryId ? null : sub.id); setSearch(''); }}
+                            >
+                                {sub.name}
+                            </button>
                         ))}
                     </nav>
 
                     <div className="catalogue-picker__results">
+                        {selectedSubcategoryId !== null && (
+                            <div className="catalogue-picker__filters">
+                                {filterOptions && orderedAttributeEntries(filterOptions.attributes).map(([key, values]) => (
+                                    <select
+                                        key={key}
+                                        className="catalogue-picker__filter-select"
+                                        value={selectedAttributes[key] ?? ''}
+                                        onChange={e => setAttributeFilter(key, e.target.value)}
+                                    >
+                                        <option value="">{ATTRIBUTE_LABELS[key] ?? key}</option>
+                                        {values.map(value => (
+                                            <option key={value} value={value}>{formatOptionLabel(key, value)}</option>
+                                        ))}
+                                    </select>
+                                ))}
+
+                                {filterOptions && filterOptions.brands.length > 0 && (
+                                    <select
+                                        className="catalogue-picker__filter-select"
+                                        value={selectedBrandId ?? ''}
+                                        onChange={e => setSelectedBrandId(e.target.value ? Number(e.target.value) : null)}
+                                    >
+                                        <option value="">Marque</option>
+                                        {filterOptions.brands.map(brand => (
+                                            <option key={brand.id} value={brand.id}>{brand.name}</option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+                        )}
+
                         {isLoading ? (
                             <div className="catalogue-picker__loading">Chargement...</div>
                         ) : articles.length === 0 ? (
                             <div className="catalogue-picker__empty">Aucun article</div>
                         ) : (
-                            <table className="catalogue-picker__table">
-                                <thead>
-                                    <tr>
-                                        <th>Référence</th>
-                                        <th>Désignation</th>
-                                        <th>Px vente TTC</th>
-                                        <th>Stock</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {articles.map(article => (
-                                        <tr key={article.id} className="catalogue-picker__row">
-                                            <td>{article.reference}</td>
-                                            <td>{article.designation}</td>
-                                            <td>{formatPrice(article.sale_price_ttc)}</td>
-                                            <td className={article.stock_quantity > 0 ? 'catalogue-picker__stock--ok' : 'catalogue-picker__stock--zero'}>
-                                                {article.stock_quantity}
-                                            </td>
-                                            <td>
-                                                <button
-                                                    type="button"
-                                                    className="catalogue-picker__select-btn"
-                                                    onClick={() => onSelect(article)}
-                                                >
-                                                    Sélectionner
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <div className="catalogue-picker__grid">
+                                {articles.map(article => (
+                                    <div key={article.id} className="catalogue-picker__card">
+                                        <div className="catalogue-picker__card-image-wrap">
+                                            <ArticleCardImage article={article} />
+                                        </div>
+                                        <div className="catalogue-picker__card-body">
+                                            <span className="catalogue-picker__card-reference">{article.reference}</span>
+                                            <span className="catalogue-picker__card-designation">{article.designation}</span>
+                                            <div className="catalogue-picker__card-prices">
+                                                <span className="catalogue-picker__card-price">{formatPrice(article.sale_price_ttc)}</span>
+                                                <span className="catalogue-picker__card-price-ht">PA HT: {formatPrice(article.purchase_price_ht)}</span>
+                                            </div>
+                                            <div className="catalogue-picker__card-footer">
+                                                <span className={article.stock_quantity > 0 ? 'catalogue-picker__stock--ok' : 'catalogue-picker__stock--zero'}>
+                                                    Stock: {article.stock_quantity}
+                                                </span>
+                                                {article.is_discontinued && (
+                                                    <span className="catalogue-picker__card-badge--discontinued">Non disponible fournisseur</span>
+                                                )}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="catalogue-picker__select-btn"
+                                                onClick={() => onSelect(article)}
+                                            >
+                                                Sélectionner
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </div>

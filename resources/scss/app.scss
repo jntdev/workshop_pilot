@@ -44,6 +44,7 @@
 @use 'photos/gallery' as photos-gallery;
 
 // Stock & Catalogue
+@use 'stock/article-card-image';
 @use 'stock/index-page' as stock-page;
 @use 'stock/article-tree';
 @use 'stock/article-list';
@@ -51,3 +52,8 @@
 @use 'stock/stock-panel';
 @use 'stock/article-autocomplete';
 @use 'stock/catalogue-picker';
+@use 'vente/caisse';
+@use 'inventory/barcode-scanner';
+@use 'inventory/photo-capture';
+@use 'inventory/scan';
+@use 'inventory/quick-create-form';
