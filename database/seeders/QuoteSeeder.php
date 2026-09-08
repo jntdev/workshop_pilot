@@ -26,7 +26,7 @@ class QuoteSeeder extends Seeder
         $quote1 = Quote::create([
             'client_id' => $clients->where('email', 'marie.dubois@example.com')->first()?->id ?? $clients->first()->id,
             'reference' => 'DEV-202511-0001',
-            'status' => 'brouillon',
+            'status' => 'reception',
             'bike_description' => 'VTT Rockrider 540 bleu',
             'reception_comment' => 'Freins qui grincent + chaîne qui saute',
             'valid_until' => now()->addDays(15),
@@ -81,7 +81,7 @@ class QuoteSeeder extends Seeder
         $quote2 = Quote::create([
             'client_id' => $clients->where('email', 'jean.martin@example.com')->first()?->id ?? $clients->skip(1)->first()->id,
             'reference' => 'DEV-202511-0002',
-            'status' => 'prêt',
+            'status' => 'validated',
             'bike_description' => 'Vélo de ville Elops 520 noir',
             'reception_comment' => 'Révision annuelle avant l\'hiver',
             'valid_until' => now()->addDays(10),
@@ -136,7 +136,7 @@ class QuoteSeeder extends Seeder
         $quote3 = Quote::create([
             'client_id' => $clients->where('email', 'sophie.bernard@example.com')->first()?->id ?? $clients->skip(2)->first()->id,
             'reference' => 'DEV-202511-0003',
-            'status' => 'brouillon',
+            'status' => 'reception',
             'bike_description' => 'Vélo de route Triban RC520 rouge',
             'reception_comment' => 'Pneus usés, crevaisons fréquentes',
             'valid_until' => now()->addDays(20),
@@ -191,7 +191,7 @@ class QuoteSeeder extends Seeder
         $quote4 = Quote::create([
             'client_id' => $clients->where('email', 'thomas.petit@example.com')->first()?->id ?? $clients->skip(3)->first()->id,
             'reference' => 'DEV-202511-0004',
-            'status' => 'brouillon',
+            'status' => 'reception',
             'bike_description' => 'Vélo cargo Longtail gris',
             'reception_comment' => 'Roue arrière voilée après choc',
             'valid_until' => now()->addDays(12),
@@ -233,7 +233,7 @@ class QuoteSeeder extends Seeder
         $quote5 = Quote::create([
             'client_id' => $clients->where('email', 'claire.robert@example.com')->first()?->id ?? $clients->skip(4)->first()->id,
             'reference' => 'DEV-202511-0005',
-            'status' => 'prêt',
+            'status' => 'validated',
             'bike_description' => 'VAE Riverside 500E vert',
             'reception_comment' => 'Installation éclairage et garde-boue pour vélotaf',
             'valid_until' => now()->addDays(30),
@@ -301,7 +301,7 @@ class QuoteSeeder extends Seeder
         $quote6 = Quote::create([
             'client_id' => $clients->where('email', 'marie.dubois@example.com')->first()?->id ?? $clients->first()->id,
             'reference' => 'DEV-202511-0006',
-            'status' => 'modifiable',
+            'status' => 'to_complete',
             'bike_description' => 'Gravel Triban GRVL 120 orange',
             'reception_comment' => 'Upgrade transmission pour plus de polyvalence',
             'valid_until' => now()->addDays(14),
@@ -357,7 +357,7 @@ class QuoteSeeder extends Seeder
         $quote7 = Quote::create([
             'client_id' => $clients->where('email', 'jean.martin@example.com')->first()?->id ?? $clients->skip(1)->first()->id,
             'reference' => 'DEV-202511-0007',
-            'status' => 'facturé',
+            'status' => 'invoiced',
             'bike_description' => 'VTC Riverside 920 anthracite',
             'reception_comment' => 'Fourche défectueuse suite à accident',
             'invoiced_at' => now()->subDays(5),
@@ -400,7 +400,7 @@ class QuoteSeeder extends Seeder
         $quote8 = Quote::create([
             'client_id' => $clients->where('email', 'sophie.bernard@example.com')->first()?->id ?? $clients->skip(2)->first()->id,
             'reference' => 'DEV-202511-0008',
-            'status' => 'brouillon',
+            'status' => 'reception',
             'bike_description' => 'Vélo de route carbone',
             'reception_comment' => 'Changement poste de pilotage complet',
             'valid_until' => now()->addDays(25),

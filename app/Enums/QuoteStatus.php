@@ -9,6 +9,9 @@ enum QuoteStatus: string
     case ToQuote = 'to_quote';
     case PendingValidation = 'pending_validation';
     case Validated = 'validated';
+    case QuoteToOrder = 'quote_to_order';
+    case QuoteOrdered = 'quote_ordered';
+    case QuoteReceived = 'quote_received';
     case InProgress = 'in_progress';
     case Done = 'done';
     case Invoiced = 'invoiced';
@@ -21,6 +24,9 @@ enum QuoteStatus: string
             self::ToQuote => 'À chiffrer',
             self::PendingValidation => 'Attente validation',
             self::Validated => 'Validé',
+            self::QuoteToOrder => 'À commander',
+            self::QuoteOrdered => 'En commande',
+            self::QuoteReceived => 'Commande reçue',
             self::InProgress => 'En cours',
             self::Done => 'Terminé',
             self::Invoiced => 'Facturé',
@@ -36,6 +42,9 @@ enum QuoteStatus: string
             self::ToQuote,
             self::PendingValidation,
             self::Validated,
+            self::QuoteToOrder,
+            self::QuoteOrdered,
+            self::QuoteReceived,
             self::InProgress,
             self::Done,
         ];

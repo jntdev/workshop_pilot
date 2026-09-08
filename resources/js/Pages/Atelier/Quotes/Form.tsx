@@ -10,6 +10,9 @@ const QUOTE_STATUSES: { value: QuoteStatusSlug; label: string }[] = [
     { value: 'to_quote', label: 'À chiffrer' },
     { value: 'pending_validation', label: 'Attente validation' },
     { value: 'validated', label: 'Validé' },
+    { value: 'quote_to_order', label: 'À commander' },
+    { value: 'quote_ordered', label: 'En commande' },
+    { value: 'quote_received', label: 'Commande reçue' },
     { value: 'in_progress', label: 'En cours' },
     { value: 'done', label: 'Terminé' },
 ];

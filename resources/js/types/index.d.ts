@@ -118,6 +118,9 @@ export type QuoteStatusSlug =
     | 'to_quote'
     | 'pending_validation'
     | 'validated'
+    | 'quote_to_order'
+    | 'quote_ordered'
+    | 'quote_received'
     | 'in_progress'
     | 'done'
     | 'invoiced';

@@ -874,6 +874,9 @@
     &--to_quote          { background: lighten(#ff9800, 40%); border-color: #ff9800; color: darken(#ff9800, 25%); }
     &--pending_validation { background: lighten($color-primary-blue, 42%); border-color: $color-primary-blue; color: darken($color-primary-blue, 10%); }
     &--validated         { background: lighten(#8bc34a, 40%); border-color: #8bc34a; color: darken(#8bc34a, 25%); }
+    &--quote_to_order    { background: lighten(#9c27b0, 42%); border-color: #9c27b0; color: darken(#9c27b0, 15%); }
+    &--quote_ordered     { background: lighten(#673ab7, 40%); border-color: #673ab7; color: darken(#673ab7, 15%); }
+    &--quote_received    { background: lighten(#3f51b5, 40%); border-color: #3f51b5; color: darken(#3f51b5, 15%); }
     &--in_progress       { background: lighten(#03a9f4, 40%); border-color: #03a9f4; color: darken(#03a9f4, 25%); }
     &--done              { background: lighten($color-success-green, 42%); border-color: $color-success-green; color: darken($color-success-green, 20%); }
 }
@@ -1039,6 +1042,9 @@
     &--to_quote         { background: lighten(#ff9800, 40%); border-color: #ff9800; color: darken(#ff9800, 25%); }
     &--pending_validation { background: lighten($color-primary-blue, 42%); border-color: $color-primary-blue; color: darken($color-primary-blue, 10%); }
     &--validated        { background: lighten(#8bc34a, 40%); border-color: #8bc34a; color: darken(#8bc34a, 25%); }
+    &--quote_to_order   { background: lighten(#9c27b0, 42%); border-color: #9c27b0; color: darken(#9c27b0, 15%); }
+    &--quote_ordered    { background: lighten(#673ab7, 40%); border-color: #673ab7; color: darken(#673ab7, 15%); }
+    &--quote_received   { background: lighten(#3f51b5, 40%); border-color: #3f51b5; color: darken(#3f51b5, 15%); }
     &--in_progress      { background: lighten(#03a9f4, 40%); border-color: #03a9f4; color: darken(#03a9f4, 25%); }
     &--done             { background: lighten($color-success-green, 42%); border-color: $color-success-green; color: darken($color-success-green, 20%); }
 }
