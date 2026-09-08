@@ -29,7 +29,8 @@
   }
 
   &__new-btn,
-  &__scan-btn {
+  &__scan-btn,
+  &__sync-btn {
     padding: $spacing-xs $spacing-md;
     font-size: $font-size-sm;
     font-weight: $font-weight-medium;
@@ -58,6 +59,38 @@
 
     &:hover {
       background: $color-bg-light;
+    }
+  }
+
+  &__sync-btn {
+    background: $color-bg-white;
+    color: $color-neutral-dark;
+    border: 1px solid $color-border-light;
+
+    &:hover:not(:disabled) {
+      background: $color-bg-light;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__sync-result {
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-md;
+
+    &--success {
+      background: rgba($color-success-green, 0.1);
+      color: $color-success-green;
+    }
+
+    &--error {
+      background: rgba($color-danger-red, 0.1);
+      color: $color-danger-red;
     }
   }
 

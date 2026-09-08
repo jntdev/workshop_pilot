@@ -60,6 +60,17 @@ return [
             'report' => false,
         ],
 
+        'cgn_ftp' => [
+            'driver' => 'ftp',
+            'host' => env('FTP_CGN_HOST'),
+            'port' => (int) env('FTP_CGN_PORT', 21),
+            'username' => env('FTP_CGN_USERNAME'),
+            'password' => env('FTP_CGN_PASSWORD'),
+            'passive' => true,
+            'timeout' => 30,
+            'throw' => false,
+        ],
+
     ],
 
     /*

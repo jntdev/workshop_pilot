@@ -41,4 +41,8 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
     ],
 
+    'cgn_ftp' => [
+        'remote_path' => env('FTP_CGN_REMOTE_PATH'),
+    ],
+
 ];

@@ -18,6 +18,8 @@ export default function StockIndex() {
     const [editingArticle, setEditingArticle] = useState<Article | null | 'new'>(null);
     const [stockArticle, setStockArticle] = useState<Article | null>(null);
     const [listRefreshKey, setListRefreshKey] = useState(0);
+    const [isSyncingCgn, setIsSyncingCgn] = useState(false);
+    const [cgnSyncResult, setCgnSyncResult] = useState<{ success: boolean; message: string } | null>(null);
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
@@ -88,6 +90,30 @@ export default function StockIndex() {
         setSelectedBrandId(id);
     };
 
+    const syncCgnCatalogue = async () => {
+        setIsSyncingCgn(true);
+        setCgnSyncResult(null);
+
+        try {
+            const res = await fetch('/api/catalogue/sync-cgn', {
+                method: 'POST',
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            });
+            const data = await res.json();
+
+            setCgnSyncResult({ success: data.success, message: data.message });
+
+            if (data.success) {
+                loadBrands();
+                refreshList();
+            }
+        } catch {
+            setCgnSyncResult({ success: false, message: 'Erreur réseau : impossible de contacter le serveur.' });
+        } finally {
+            setIsSyncingCgn(false);
+        }
+    };
+
     return (
         <MainLayout title="Catalogue & Stock">
             <Head title="Catalogue & Stock" />
@@ -96,6 +122,14 @@ export default function StockIndex() {
                 <div className="stock-page__header">
                     <h1 className="stock-page__title">Catalogue articles</h1>
                     <div className="stock-page__header-actions">
+                        <button
+                            type="button"
+                            className="stock-page__sync-btn"
+                            onClick={syncCgnCatalogue}
+                            disabled={isSyncingCgn}
+                        >
+                            {isSyncingCgn ? '⏳ Import en cours...' : '📥 Importer le catalogue CGN'}
+                        </button>
                         <a href="/inventaire/scan" className="stock-page__scan-btn">📷 Scanner</a>
                         <button
                             type="button"
@@ -106,6 +140,12 @@ export default function StockIndex() {
                         </button>
                     </div>
                 </div>
+
+                {cgnSyncResult && (
+                    <div className={`stock-page__sync-result stock-page__sync-result--${cgnSyncResult.success ? 'success' : 'error'}`}>
+                        {cgnSyncResult.success ? '✓ ' : '✗ '}{cgnSyncResult.message}
+                    </div>
+                )}
 
                 <div className="stock-page__tabs">
                     <button

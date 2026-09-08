@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\BikeCategoryController;
 use App\Http\Controllers\Api\BikeController;
 use App\Http\Controllers\Api\BikeMaintenanceLogController;
 use App\Http\Controllers\Api\BikeSizeController;
+use App\Http\Controllers\Api\CatalogueSyncController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\InventoryController;
@@ -186,4 +187,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Inventaire — scan mobile (feature 27)
     Route::get('/inventory/lookup-barcode', [InventoryController::class, 'lookupBarcode']);
     Route::post('/inventory/articles', [InventoryController::class, 'storeArticle']);
+
+    // Catalogue — Synchronisation CGN via FTP (feature 28)
+    Route::post('/catalogue/sync-cgn', [CatalogueSyncController::class, 'syncCgn']);
 });
