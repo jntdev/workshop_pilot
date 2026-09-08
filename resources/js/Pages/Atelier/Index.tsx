@@ -7,6 +7,16 @@ import { AtelierPageProps, Quote } from '@/types';
 
 interface Props extends AtelierPageProps {}
 
+type TabType = 'quotes' | 'invoices' | 'clients' | 'archives';
+
+const ACTIVE_TAB_STORAGE_KEY = 'atelier.quotes.activeTab';
+const VALID_TABS: TabType[] = ['quotes', 'invoices', 'clients', 'archives'];
+
+function getStoredActiveTab(): TabType {
+    const stored = localStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
+    return VALID_TABS.includes(stored as TabType) ? (stored as TabType) : 'quotes';
+}
+
 export default function AtelierIndex({
     stats,
     comparisonStats,
@@ -24,7 +34,12 @@ export default function AtelierIndex({
     const [invoices, setInvoices] = useState<Quote[]>(initialInvoices);
     const [invoicesLoaded, setInvoicesLoaded] = useState(false);
     const [isRebuilding, setIsRebuilding] = useState(false);
-    const [activeTab, setActiveTab] = useState<'quotes' | 'invoices' | 'clients' | 'archives'>('quotes');
+    const [activeTab, setActiveTab] = useState<TabType>(getStoredActiveTab);
+
+    const handleTabChange = useCallback((tab: TabType) => {
+        setActiveTab(tab);
+        localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, tab);
+    }, []);
 
     const loadInvoices = useCallback(async (year: number, month: number) => {
         try {
@@ -149,7 +164,7 @@ export default function AtelierIndex({
                         onLoadInvoices={handleLoadInvoices}
                         invoicesLoaded={invoicesLoaded}
                         activeTab={activeTab}
-                        onTabChange={setActiveTab}
+                        onTabChange={handleTabChange}
                     />
                 </div>
             </div>

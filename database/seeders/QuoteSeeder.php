@@ -2,10 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Enums\QuoteStatus;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteLine;
+use App\Services\Quotes\QuoteCalculator;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 
 class QuoteSeeder extends Seeder
 {
@@ -455,5 +458,44 @@ class QuoteSeeder extends Seeder
         $this->command->info('8 documents créés avec succès :');
         $this->command->info('  - 7 devis');
         $this->command->info('  - 1 facture');
+
+        $bulkCount = $this->createBulkQuotes($clients);
+        $this->command->info("{$bulkCount} devis supplémentaires générés pour les tests de volume.");
+    }
+
+    /**
+     * Génère un grand nombre de devis via factory, répartis sur tous les statuts,
+     * pour disposer d'assez de données afin de tester l'ergonomie de la liste (filtres, scroll).
+     */
+    private function createBulkQuotes(Collection $clients): int
+    {
+        $calculator = new QuoteCalculator;
+        $statuses = QuoteStatus::quoteStatuses();
+        $count = 60;
+
+        for ($i = 0; $i < $count; $i++) {
+            $status = $statuses[$i % count($statuses)];
+
+            $quote = Quote::factory()->create([
+                'client_id' => $clients->random()->id,
+                'status' => $status,
+            ]);
+
+            $lines = [];
+            $lineCount = fake()->numberBetween(1, 4);
+
+            for ($position = 0; $position < $lineCount; $position++) {
+                $line = QuoteLine::factory()->create([
+                    'quote_id' => $quote->id,
+                    'position' => $position,
+                ]);
+
+                $lines[] = $line->toArray();
+            }
+
+            $quote->update($calculator->aggregateTotals($lines));
+        }
+
+        return $count;
     }
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useLayoutEffect, useEffect } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { Quote, QuoteStatusSlug } from '@/types';
 
@@ -59,6 +59,16 @@ const getCsrfToken = (): string => {
     return match ? decodeURIComponent(match[1]) : '';
 };
 
+const STATUS_FILTER_STORAGE_KEY = 'atelier.quotes.statusFilter';
+
+function getStoredStatusFilter(): string {
+    const stored = localStorage.getItem(STATUS_FILTER_STORAGE_KEY);
+    return stored && (stored === 'all' || stored in STATUS_FILTER_LABELS) ? stored : 'all';
+}
+
+const SCROLL_Y_STORAGE_KEY = 'atelier.quotes.scrollY';
+const HIGHLIGHTED_QUOTE_STORAGE_KEY = 'atelier.quotes.highlightedId';
+
 function formatCurrency(value: string | number): string {
     const num = typeof value === 'string' ? parseFloat(value) : value;
     return new Intl.NumberFormat('fr-FR', {
@@ -76,9 +86,11 @@ interface QuotesTableProps {
     type: 'quotes' | 'invoices' | 'archives';
     onStatusChange?: (quoteId: number, status: QuoteStatusSlug) => void;
     onArchiveToggle?: (quoteId: number) => void;
+    highlightedId?: number | null;
+    onRowVisit?: (quoteId: number) => void;
 }
 
-function QuotesTable({ items, type, onStatusChange, onArchiveToggle }: QuotesTableProps) {
+function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlightedId, onRowVisit }: QuotesTableProps) {
     const [paidAtMap, setPaidAtMap] = useState<Record<number, string>>({});
 
     const handleDelete = (quoteId: number, e: React.FormEvent) => {
@@ -132,7 +144,10 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle }: QuotesTab
             </thead>
             <tbody>
                 {items.map((item) => (
-                    <tr key={item.id}>
+                    <tr
+                        key={item.id}
+                        className={item.id === highlightedId ? 'quotes-list__row--highlighted' : undefined}
+                    >
                         <td>{item.reference}</td>
                         <td>{item.client.prenom} {item.client.nom}</td>
                         <td>{item.bike_description || '-'}</td>
@@ -184,6 +199,7 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle }: QuotesTab
                                         : `/atelier/devis/${item.id}/modifier`
                                 }
                                 className="quotes-list__link"
+                                onClick={() => onRowVisit?.(item.id)}
                             >
                                 Consulter
                             </Link>
@@ -390,12 +406,18 @@ export default function QuotesTabs({
     activeTab,
     onTabChange,
 }: QuotesTabsProps) {
-    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>(getStoredStatusFilter);
+
+    const handleStatusFilterChange = useCallback((slug: string) => {
+        setStatusFilter(slug);
+        localStorage.setItem(STATUS_FILTER_STORAGE_KEY, slug);
+    }, []);
     const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
     const [archivedQuotes, setArchivedQuotes] = useState<Quote[]>(initialArchivedQuotes);
     const [clientSearch, setClientSearch] = useState('');
     const [clientResults, setClientResults] = useState<Map<number, Quote[]>>(new Map());
     const [isSearching, setIsSearching] = useState(false);
+    const [highlightedId, setHighlightedId] = useState<number | null>(null);
 
     const handleTabChange = (tab: TabType) => {
         onTabChange(tab);
@@ -403,6 +425,57 @@ export default function QuotesTabs({
             onLoadInvoices();
         }
     };
+
+    const handleRowVisit = useCallback((quoteId: number) => {
+        sessionStorage.setItem(HIGHLIGHTED_QUOTE_STORAGE_KEY, String(quoteId));
+    }, []);
+
+    useLayoutEffect(() => {
+        const restoreHighlight = () => {
+            const stored = sessionStorage.getItem(HIGHLIGHTED_QUOTE_STORAGE_KEY);
+            if (stored === null) return;
+
+            setHighlightedId(parseInt(stored, 10));
+            sessionStorage.removeItem(HIGHLIGHTED_QUOTE_STORAGE_KEY);
+        };
+
+        restoreHighlight();
+        const removeListener = router.on('navigate', restoreHighlight);
+
+        return removeListener;
+    }, []);
+
+    useLayoutEffect(() => {
+        const restoreScroll = () => {
+            const stored = sessionStorage.getItem(SCROLL_Y_STORAGE_KEY);
+            if (stored === null) return;
+
+            // Attend que React ait peint le tableau (hauteur finale de page) avant de scroller.
+            requestAnimationFrame(() => window.scrollTo(0, parseInt(stored, 10)));
+        };
+
+        // Inertia remet le scroll à 0 après chaque navigation ; on restaure juste après.
+        restoreScroll();
+        const removeListener = router.on('navigate', restoreScroll);
+
+        return removeListener;
+    }, []);
+
+    useLayoutEffect(() => {
+        const handleScroll = () => {
+            sessionStorage.setItem(SCROLL_Y_STORAGE_KEY, String(window.scrollY));
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    useEffect(() => {
+        if (highlightedId === null) return;
+
+        const timeout = setTimeout(() => setHighlightedId(null), 3000);
+        return () => clearTimeout(timeout);
+    }, [highlightedId]);
 
     const handleStatusChange = async (quoteId: number, status: QuoteStatusSlug) => {
         try {
@@ -538,7 +611,7 @@ export default function QuotesTabs({
                         <button
                             key={slug}
                             type="button"
-                            onClick={() => setStatusFilter(slug)}
+                            onClick={() => handleStatusFilterChange(slug)}
                             className={`quotes-status-filter ${statusFilter === slug ? 'quotes-status-filter--active' : ''}`}
                         >
                             {label}
@@ -555,6 +628,8 @@ export default function QuotesTabs({
                     type="quotes"
                     onStatusChange={handleStatusChange}
                     onArchiveToggle={handleArchiveToggle}
+                    highlightedId={highlightedId}
+                    onRowVisit={handleRowVisit}
                 />
             </div>
 

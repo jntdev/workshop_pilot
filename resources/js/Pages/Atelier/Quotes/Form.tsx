@@ -348,7 +348,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             if (result.ok) {
                 setMessage('Devis enregistré avec succès.');
                 if (!stayOnPage) {
-                    router.visit('/atelier/devis/' + result.id);
+                    router.visit('/atelier');
                 } else if (!isEdit) {
                     router.visit('/atelier/devis/' + result.id + '/modifier');
                 }

@@ -1410,3 +1410,17 @@
         border-radius: 0 0 8px 8px;
     }
 }
+
+// Ligne mise en évidence au retour depuis la fiche d'un devis (repère visuel de scroll)
+.quotes-list__row--highlighted {
+    animation: quotes-list-row-highlight 3s ease-out;
+}
+
+@keyframes quotes-list-row-highlight {
+    0% {
+        background-color: lighten($color-primary-blue, 45%);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
