@@ -314,10 +314,15 @@ class ImportCgnCatalogue extends Command
             return $this->brandCache[$name];
         }
 
-        $sortOrder = (Brand::max('sort_order') ?? -1) + 1;
-        $brand = Brand::create(['name' => $name, 'sort_order' => $sortOrder]);
+        $brand = Brand::firstOrNew(['name' => $name]);
+
+        if (! $brand->exists) {
+            $brand->sort_order = (Brand::max('sort_order') ?? -1) + 1;
+            $brand->save();
+            $this->brandsCreated++;
+        }
+
         $this->brandCache[$name] = $brand->id;
-        $this->brandsCreated++;
 
         return $brand->id;
     }
@@ -330,8 +335,13 @@ class ImportCgnCatalogue extends Command
             return $this->categoryCache[$name];
         }
 
-        $sortOrder = (ArticleCategory::max('sort_order') ?? -1) + 1;
-        $category = ArticleCategory::create(['name' => $name, 'sort_order' => $sortOrder]);
+        $category = ArticleCategory::firstOrNew(['name' => $name]);
+
+        if (! $category->exists) {
+            $category->sort_order = (ArticleCategory::max('sort_order') ?? -1) + 1;
+            $category->save();
+        }
+
         $this->categoryCache[$name] = $category->id;
 
         return $category->id;
@@ -347,14 +357,18 @@ class ImportCgnCatalogue extends Command
             return $this->subcategoryCache[$cacheKey];
         }
 
-        $sortOrder = (ArticleSubcategory::where('article_category_id', $categoryId)->max('sort_order') ?? -1) + 1;
-        $subcategory = ArticleSubcategory::create([
+        $subcategory = ArticleSubcategory::firstOrNew([
             'article_category_id' => $categoryId,
             'name' => $name,
-            'sort_order' => $sortOrder,
         ]);
+
+        if (! $subcategory->exists) {
+            $subcategory->sort_order = (ArticleSubcategory::where('article_category_id', $categoryId)->max('sort_order') ?? -1) + 1;
+            $subcategory->save();
+            $this->subcategoriesCreated++;
+        }
+
         $this->subcategoryCache[$cacheKey] = $subcategory->id;
-        $this->subcategoriesCreated++;
 
         return $subcategory->id;
     }
