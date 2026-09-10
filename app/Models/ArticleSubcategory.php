@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ArticleCategorySource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,5 +28,10 @@ class ArticleSubcategory extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('name');
+    }
+
+    public function isManual(): bool
+    {
+        return $this->category->source === ArticleCategorySource::Manual;
     }
 }

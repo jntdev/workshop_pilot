@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Article, ArticleCategory, Brand, Supplier } from '@/types';
+import ArticleAutocomplete from '@/Components/Stock/ArticleAutocomplete';
 
 interface Props {
     article: Article | null;
@@ -27,6 +28,9 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
     const [newSupplierName, setNewSupplierName] = useState('');
     const [showNewSupplier, setShowNewSupplier] = useState(false);
     const [supplierError, setSupplierError] = useState<string | null>(null);
+
+    const [lotSearch, setLotSearch] = useState(article?.lot ? `${article.lot.reference} — ${article.lot.designation}` : '');
+    const [selectedLot, setSelectedLot] = useState<Article | null>(article?.lot ?? null);
 
     useEffect(() => {
         fetch('/api/brands', { headers: { Accept: 'application/json' } })
@@ -85,6 +89,8 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
         tva_rate: article ? String(article.tva_rate) : '20',
         unit: article?.unit ?? 'pièce',
         supplier_id: article?.supplier_id ? String(article.supplier_id) : '',
+        lot_article_id: article?.lot_article_id ? String(article.lot_article_id) : '',
+        lot_quantity: article?.lot_quantity ? String(article.lot_quantity) : '',
         notes: article?.notes ?? '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -93,6 +99,8 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
     const allSubcategories = categories.flatMap(c =>
         c.subcategories.map(s => ({ ...s, categoryName: c.name }))
     );
+
+    const isReadOnly = article !== null && !article.is_editable;
 
     const set = (key: string, value: string) => {
         setForm(prev => ({ ...prev, [key]: value }));
@@ -114,6 +122,8 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
             tva_rate: parseFloat(form.tva_rate),
             unit: form.unit,
             supplier_id: form.supplier_id ? Number(form.supplier_id) : null,
+            lot_article_id: form.lot_article_id ? Number(form.lot_article_id) : null,
+            lot_quantity: form.lot_quantity ? Number(form.lot_quantity) : null,
             notes: form.notes || null,
         };
 
@@ -154,7 +164,14 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
 
                 {errors._global && <div className="article-form__error">{errors._global}</div>}
 
+                {isReadOnly && (
+                    <div className="article-form__info-banner">
+                        Cet article provient du catalogue fournisseur et ne peut pas être modifié.
+                    </div>
+                )}
+
                 <form className="article-form__body" onSubmit={handleSubmit}>
+                    <fieldset className="article-form__fieldset" disabled={isReadOnly}>
                     <div className="article-form__field">
                         <label className="article-form__label">Sous-catégorie</label>
                         <select
@@ -324,6 +341,44 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
                         )}
                     </div>
 
+                    <div className="article-form__row">
+                        <div className="article-form__field article-form__field--grow">
+                            <label className="article-form__label">Lot d'origine</label>
+                            <ArticleAutocomplete
+                                value={lotSearch}
+                                articleId={form.lot_article_id ? Number(form.lot_article_id) : null}
+                                onChange={setLotSearch}
+                                onSelect={a => {
+                                    set('lot_article_id', String(a.id));
+                                    setLotSearch(`${a.reference} — ${a.designation}`);
+                                    setSelectedLot(a);
+                                }}
+                                onDetach={() => { set('lot_article_id', ''); setLotSearch(''); setSelectedLot(null); }}
+                                placeholder="Rechercher le lot en stock (rouleau, boîte...)"
+                                hasStock
+                            />
+                            <span className="article-form__hint">
+                                À renseigner si cet article est vendu à l'unité depuis un lot déjà en stock (ex: chaîne au mètre depuis un touret).
+                                {selectedLot?.lot_quantity ? ` Prix unitaire suggéré : ${centsToEuros(Math.round(selectedLot.sale_price_ttc / selectedLot.lot_quantity))} €.` : ''}
+                            </span>
+                        </div>
+                        <div className="article-form__field">
+                            <label className="article-form__label">Unités par lot</label>
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                className="article-form__input"
+                                value={form.lot_quantity}
+                                onChange={e => set('lot_quantity', e.target.value)}
+                                placeholder="ex: 25"
+                            />
+                            <span className="article-form__hint">
+                                Si ce lot se décompte facilement (ex: boîte de 25 plaquettes). Laisser vide sinon (ex: touret de chaîne, bidon de liquide).
+                            </span>
+                        </div>
+                    </div>
+
                     <div className="article-form__field">
                         <label className="article-form__label">Notes</label>
                         <textarea
@@ -335,11 +390,17 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
                         />
                     </div>
 
+                    </fieldset>
+
                     <div className="article-form__footer">
-                        <button type="button" className="article-form__btn" onClick={onClose}>Annuler</button>
-                        <button type="submit" className="article-form__btn article-form__btn--primary" disabled={isLoading}>
-                            {isLoading ? 'Enregistrement...' : (article ? 'Enregistrer' : 'Créer')}
+                        <button type="button" className="article-form__btn" onClick={onClose}>
+                            {isReadOnly ? 'Fermer' : 'Annuler'}
                         </button>
+                        {!isReadOnly && (
+                            <button type="submit" className="article-form__btn article-form__btn--primary" disabled={isLoading}>
+                                {isLoading ? 'Enregistrement...' : (article ? 'Enregistrer' : 'Créer')}
+                            </button>
+                        )}
                     </div>
                 </form>
             </div>

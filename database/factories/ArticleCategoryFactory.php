@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ArticleCategorySource;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,6 +20,12 @@ class ArticleCategoryFactory extends Factory
         return [
             'name' => $this->faker->unique()->word(),
             'sort_order' => $this->faker->numberBetween(0, 10),
+            'source' => ArticleCategorySource::Catalogue,
         ];
+    }
+
+    public function manual(): static
+    {
+        return $this->state(['source' => ArticleCategorySource::Manual]);
     }
 }

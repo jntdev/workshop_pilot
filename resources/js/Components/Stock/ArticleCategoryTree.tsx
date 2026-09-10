@@ -7,6 +7,7 @@ interface Props {
     onSelectSubcategory: (id: number | null) => void;
     onChanged: () => void;
     csrfToken: string;
+    allowCreate: boolean;
 }
 
 type EditingItem =
@@ -15,7 +16,7 @@ type EditingItem =
     | { kind: 'new-subcategory'; categoryId: number; name: string }
     | { kind: 'edit-subcategory'; id: number; categoryId: number; name: string };
 
-export default function ArticleCategoryTree({ categories, selectedSubcategoryId, onSelectSubcategory, onChanged, csrfToken }: Props) {
+export default function ArticleCategoryTree({ categories, selectedSubcategoryId, onSelectSubcategory, onChanged, csrfToken, allowCreate }: Props) {
     const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set(categories.map(c => c.id)));
     const [editing, setEditing] = useState<EditingItem | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -194,54 +195,58 @@ export default function ArticleCategoryTree({ categories, selectedSubcategoryId,
                                     </div>
                                 ))}
 
-                                {editing?.kind === 'new-subcategory' && editing.categoryId === cat.id ? (
-                                    <div className="article-tree__inline-form article-tree__inline-form--sub">
-                                        <input
-                                            className="article-tree__input"
-                                            value={editing.name}
-                                            onChange={e => setEditing({ ...editing, name: e.target.value })}
-                                            placeholder="Nom de la sous-catégorie"
-                                            autoFocus
-                                            onKeyDown={e => { if (e.key === 'Enter') { save(); } if (e.key === 'Escape') { setEditing(null); } }}
-                                        />
-                                        <button type="button" className="article-tree__btn article-tree__btn--primary" onClick={save} disabled={isLoading || !editing.name}>✓</button>
-                                        <button type="button" className="article-tree__btn" onClick={() => setEditing(null)}>✕</button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        className="article-tree__add-sub"
-                                        onClick={() => setEditing({ kind: 'new-subcategory', categoryId: cat.id, name: '' })}
-                                    >
-                                        + Sous-catégorie
-                                    </button>
+                                {allowCreate && (
+                                    editing?.kind === 'new-subcategory' && editing.categoryId === cat.id ? (
+                                        <div className="article-tree__inline-form article-tree__inline-form--sub">
+                                            <input
+                                                className="article-tree__input"
+                                                value={editing.name}
+                                                onChange={e => setEditing({ ...editing, name: e.target.value })}
+                                                placeholder="Nom de la sous-catégorie"
+                                                autoFocus
+                                                onKeyDown={e => { if (e.key === 'Enter') { save(); } if (e.key === 'Escape') { setEditing(null); } }}
+                                            />
+                                            <button type="button" className="article-tree__btn article-tree__btn--primary" onClick={save} disabled={isLoading || !editing.name}>✓</button>
+                                            <button type="button" className="article-tree__btn" onClick={() => setEditing(null)}>✕</button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            className="article-tree__add-sub"
+                                            onClick={() => setEditing({ kind: 'new-subcategory', categoryId: cat.id, name: '' })}
+                                        >
+                                            + Sous-catégorie
+                                        </button>
+                                    )
                                 )}
                             </div>
                         )}
                     </div>
                 ))}
 
-                {editing?.kind === 'new-category' ? (
-                    <div className="article-tree__inline-form article-tree__inline-form--category">
-                        <input
-                            className="article-tree__input"
-                            value={editing.name}
-                            onChange={e => setEditing({ ...editing, name: e.target.value })}
-                            placeholder="Nom de la catégorie"
-                            autoFocus
-                            onKeyDown={e => { if (e.key === 'Enter') { save(); } if (e.key === 'Escape') { setEditing(null); } }}
-                        />
-                        <button type="button" className="article-tree__btn article-tree__btn--primary" onClick={save} disabled={isLoading || !editing.name}>✓</button>
-                        <button type="button" className="article-tree__btn" onClick={() => setEditing(null)}>✕</button>
-                    </div>
-                ) : (
-                    <button
-                        type="button"
-                        className="article-tree__add-category"
-                        onClick={() => setEditing({ kind: 'new-category', name: '' })}
-                    >
-                        + Catégorie
-                    </button>
+                {allowCreate && (
+                    editing?.kind === 'new-category' ? (
+                        <div className="article-tree__inline-form article-tree__inline-form--category">
+                            <input
+                                className="article-tree__input"
+                                value={editing.name}
+                                onChange={e => setEditing({ ...editing, name: e.target.value })}
+                                placeholder="Nom de la catégorie"
+                                autoFocus
+                                onKeyDown={e => { if (e.key === 'Enter') { save(); } if (e.key === 'Escape') { setEditing(null); } }}
+                            />
+                            <button type="button" className="article-tree__btn article-tree__btn--primary" onClick={save} disabled={isLoading || !editing.name}>✓</button>
+                            <button type="button" className="article-tree__btn" onClick={() => setEditing(null)}>✕</button>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            className="article-tree__add-category"
+                            onClick={() => setEditing({ kind: 'new-category', name: '' })}
+                        >
+                            + Catégorie
+                        </button>
+                    )
                 )}
             </div>
         </div>

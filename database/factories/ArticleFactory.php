@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\ArticleCategory;
 use App\Models\ArticleSubcategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +19,10 @@ class ArticleFactory extends Factory
     public function definition(): array
     {
         return [
-            'article_subcategory_id' => ArticleSubcategory::factory(),
+            // Sous-catégorie manuelle par défaut, pour que l'article créé soit éditable
+            // (comportement historique attendu par les tests existants) — les tests
+            // voulant explicitement un article catalogue passent leur propre subcategory.
+            'article_subcategory_id' => ArticleSubcategory::factory()->for(ArticleCategory::factory()->manual(), 'category'),
             'reference' => $this->faker->unique()->bothify('??-###'),
             'designation' => $this->faker->sentence(3),
             'purchase_price_ht' => $this->faker->numberBetween(100, 5000),

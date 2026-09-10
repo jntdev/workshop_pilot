@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Article, ArticleFilterOptions, ArticleSubcategory } from '@/types';
+import type { Article, ArticleCategory, ArticleFilterOptions } from '@/types';
 import { ATTRIBUTE_LABELS, orderedAttributeEntries, formatOptionLabel } from '@/utils/articleFilters';
 import ArticleCardImage from '@/Components/Stock/ArticleCardImage';
 
@@ -13,21 +13,24 @@ function formatPrice(cents: number): string {
 }
 
 export default function CataloguePickerModal({ onSelect, onClose }: Props) {
-    const [subcategories, setSubcategories] = useState<ArticleSubcategory[]>([]);
+    const [categories, setCategories] = useState<ArticleCategory[]>([]);
     const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
     const [filterOptions, setFilterOptions] = useState<ArticleFilterOptions | null>(null);
     const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
     const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
+    const [hasMovements, setHasMovements] = useState<boolean | null>(true);
     const [articles, setArticles] = useState<Article[]>([]);
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        fetch('/api/article-categories', { headers: { Accept: 'application/json' } })
+        const source = hasMovements === true ? 'manual' : 'catalogue';
+        fetch(`/api/article-categories?source=${source}`, { headers: { Accept: 'application/json' } })
             .then(r => r.json())
-            .then(data => setSubcategories(data.categories?.[0]?.subcategories ?? []));
-    }, []);
+            .then(data => setCategories(data.categories ?? []));
+        setSelectedSubcategoryId(null);
+    }, [hasMovements]);
 
     useEffect(() => {
         setSelectedAttributes({});
@@ -43,15 +46,18 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
             .then(data => setFilterOptions(data));
     }, [selectedSubcategoryId]);
 
-    const loadArticles = useCallback(async (subcategoryId: number | null, brandId: number | null, attributes: Record<string, string>, q: string) => {
+    const loadArticles = useCallback(async (subcategoryId: number | null, brandId: number | null, attributes: Record<string, string>, q: string, movements: boolean | null) => {
         setIsLoading(true);
         let url = '';
         if (q.length >= 3) {
-            url = `/api/articles/search?q=${encodeURIComponent(q)}`;
+            const params = new URLSearchParams({ q });
+            if (movements !== null) { params.set('has_movements', movements ? '1' : '0'); }
+            url = `/api/articles/search?${params}`;
         } else {
             const params = new URLSearchParams({ per_page: '50' });
             if (subcategoryId) { params.set('subcategory_id', String(subcategoryId)); }
             if (brandId) { params.set('brand_id', String(brandId)); }
+            if (movements !== null) { params.set('has_movements', movements ? '1' : '0'); }
             Object.entries(attributes).forEach(([key, value]) => {
                 if (value) { params.set(`attribute[${key}]`, value); }
             });
@@ -65,8 +71,8 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
 
     useEffect(() => {
         if (debounceRef.current) { clearTimeout(debounceRef.current); }
-        debounceRef.current = setTimeout(() => loadArticles(selectedSubcategoryId, selectedBrandId, selectedAttributes, search), 250);
-    }, [selectedSubcategoryId, selectedBrandId, selectedAttributes, search, loadArticles]);
+        debounceRef.current = setTimeout(() => loadArticles(selectedSubcategoryId, selectedBrandId, selectedAttributes, search, hasMovements), 250);
+    }, [selectedSubcategoryId, selectedBrandId, selectedAttributes, search, hasMovements, loadArticles]);
 
     const setAttributeFilter = (key: string, value: string) => {
         setSelectedAttributes(prev => {
@@ -92,6 +98,23 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                     <button type="button" className="catalogue-picker__close" onClick={onClose}>✕</button>
                 </div>
 
+                <div className="catalogue-picker__tabs">
+                    <button
+                        type="button"
+                        className={`catalogue-picker__tab ${hasMovements === true ? 'catalogue-picker__tab--active' : ''}`}
+                        onClick={() => setHasMovements(true)}
+                    >
+                        Stock atelier
+                    </button>
+                    <button
+                        type="button"
+                        className={`catalogue-picker__tab ${hasMovements === null ? 'catalogue-picker__tab--active' : ''}`}
+                        onClick={() => setHasMovements(null)}
+                    >
+                        Catalogue complet
+                    </button>
+                </div>
+
                 <div className="catalogue-picker__body">
                     <nav className="catalogue-picker__nav">
                         <button
@@ -102,16 +125,34 @@ export default function CataloguePickerModal({ onSelect, onClose }: Props) {
                             Tous les articles
                         </button>
 
-                        {subcategories.map(sub => (
-                            <button
-                                key={sub.id}
-                                type="button"
-                                className={`catalogue-picker__nav-sub ${selectedSubcategoryId === sub.id ? 'catalogue-picker__nav-sub--active' : ''}`}
-                                onClick={() => { setSelectedSubcategoryId(sub.id === selectedSubcategoryId ? null : sub.id); setSearch(''); }}
-                            >
-                                {sub.name}
-                            </button>
-                        ))}
+                        {hasMovements === true ? (
+                            categories.map(cat => (
+                                <div key={cat.id} className="catalogue-picker__nav-group">
+                                    <span className="catalogue-picker__nav-group-label">{cat.name}</span>
+                                    {cat.subcategories.map(sub => (
+                                        <button
+                                            key={sub.id}
+                                            type="button"
+                                            className={`catalogue-picker__nav-sub ${selectedSubcategoryId === sub.id ? 'catalogue-picker__nav-sub--active' : ''}`}
+                                            onClick={() => { setSelectedSubcategoryId(sub.id === selectedSubcategoryId ? null : sub.id); setSearch(''); }}
+                                        >
+                                            {sub.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            ))
+                        ) : (
+                            categories.flatMap(c => c.subcategories).map(sub => (
+                                <button
+                                    key={sub.id}
+                                    type="button"
+                                    className={`catalogue-picker__nav-sub ${selectedSubcategoryId === sub.id ? 'catalogue-picker__nav-sub--active' : ''}`}
+                                    onClick={() => { setSelectedSubcategoryId(sub.id === selectedSubcategoryId ? null : sub.id); setSearch(''); }}
+                                >
+                                    {sub.name}
+                                </button>
+                            ))
+                        )}
                     </nav>
 
                     <div className="catalogue-picker__results">

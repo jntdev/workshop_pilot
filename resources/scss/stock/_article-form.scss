@@ -61,12 +61,31 @@
     font-size: $font-size-sm;
   }
 
+  &__info-banner {
+    margin: $spacing-md $spacing-xl 0;
+    padding: $spacing-sm $spacing-md;
+    background: $color-bg-light;
+    color: $color-neutral-medium;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+  }
+
   &__body {
     padding: $spacing-xl;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: $spacing-md;
+  }
+
+  &__fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+    border: none;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
   }
 
   &__row {
@@ -119,6 +138,11 @@
   &__field-error {
     font-size: $font-size-xs;
     color: $color-danger-red;
+  }
+
+  &__hint {
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
   }
 
   &__brand-row {

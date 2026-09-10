@@ -2,18 +2,30 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ArticleCategorySource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreArticleCategoryRequest;
 use App\Http\Requests\Api\UpdateArticleCategoryRequest;
 use App\Models\ArticleCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ArticleCategoryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $categories = ArticleCategory::ordered()->with('subcategories')->get();
+        $request->validate([
+            'source' => ['sometimes', Rule::enum(ArticleCategorySource::class)],
+        ]);
+
+        $query = ArticleCategory::ordered()->with('subcategories');
+
+        if ($request->filled('source')) {
+            $query->where('source', ArticleCategorySource::from($request->string('source')->toString()));
+        }
+
+        $categories = $query->get();
 
         return response()->json(['categories' => $categories]);
     }
@@ -25,6 +37,8 @@ class ArticleCategoryController extends Controller
         if (! isset($validated['sort_order'])) {
             $validated['sort_order'] = (ArticleCategory::max('sort_order') ?? -1) + 1;
         }
+
+        $validated['source'] = ArticleCategorySource::Manual;
 
         $category = ArticleCategory::create($validated);
 

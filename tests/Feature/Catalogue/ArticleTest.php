@@ -205,6 +205,65 @@ class ArticleTest extends TestCase
     }
 
     #[Test]
+    public function it_filters_search_results_by_stock_when_has_stock_is_true(): void
+    {
+        $inStock = Article::factory()->create(['reference' => 'LOT-STOCK', 'designation' => 'Touret chaine']);
+        $inStock->stockMovements()->create(['quantity' => 5, 'type' => 'manual_in']);
+        Article::factory()->create(['reference' => 'LOT-EMPTY', 'designation' => 'Touret chaine']);
+
+        $response = $this->actingAs($this->user)->getJson('/api/articles/search?q=Touret&has_stock=1');
+
+        $response->assertOk();
+        $references = collect($response->json())->pluck('reference');
+        $this->assertTrue($references->contains('LOT-STOCK'));
+        $this->assertFalse($references->contains('LOT-EMPTY'));
+    }
+
+    #[Test]
+    public function it_creates_an_article_linked_to_a_lot_with_suggested_unit_price(): void
+    {
+        $lot = Article::factory()->create(['reference' => 'PLAQ-BOITE25', 'sale_price_ttc' => 1050, 'lot_quantity' => 25]);
+
+        $response = $this->actingAs($this->user)->postJson('/api/articles', [
+            'reference' => 'PLAQ-BOITE25-u',
+            'designation' => 'Plaquette unité',
+            'purchase_price_ht' => 20,
+            'sale_price_ttc' => 42,
+            'tva_rate' => 20,
+            'unit' => 'paire',
+            'lot_article_id' => $lot->id,
+        ]);
+
+        $response->assertCreated();
+        $this->assertEqualsWithDelta(42.0, $response->json('suggested_unit_price_ttc'), 0.001);
+    }
+
+    #[Test]
+    public function it_returns_null_suggested_unit_price_when_lot_quantity_is_not_set(): void
+    {
+        $lot = Article::factory()->create(['reference' => 'TOURET-CHAINE', 'sale_price_ttc' => 53112, 'lot_quantity' => null]);
+        $unit = Article::factory()->create(['reference' => 'CHAINE-u', 'lot_article_id' => $lot->id]);
+
+        $response = $this->actingAs($this->user)->getJson("/api/articles/{$unit->id}");
+
+        $response->assertOk();
+        $this->assertNull($response->json('suggested_unit_price_ttc'));
+    }
+
+    #[Test]
+    public function it_rejects_an_article_being_its_own_lot(): void
+    {
+        $article = Article::factory()->create();
+
+        $response = $this->actingAs($this->user)->putJson("/api/articles/{$article->id}", [
+            'lot_article_id' => $article->id,
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('lot_article_id');
+    }
+
+    #[Test]
     public function it_updates_an_article(): void
     {
         $article = Article::factory()->create(['designation' => 'Ancienne désignation']);
@@ -228,6 +287,35 @@ class ArticleTest extends TestCase
         $response->assertOk();
         $this->assertDatabaseMissing('articles', ['id' => $article->id]);
         $this->assertDatabaseHas('quote_lines', ['id' => $quoteLine->id, 'article_id' => null]);
+    }
+
+    #[Test]
+    public function it_refuses_to_update_a_catalogue_article(): void
+    {
+        $subcategory = ArticleSubcategory::factory()->for(ArticleCategory::factory(), 'category')->create();
+        $article = Article::factory()->create([
+            'article_subcategory_id' => $subcategory->id,
+            'designation' => 'Ancienne désignation',
+        ]);
+
+        $response = $this->actingAs($this->user)->putJson("/api/articles/{$article->id}", [
+            'designation' => 'Nouvelle désignation',
+        ]);
+
+        $response->assertUnprocessable();
+        $this->assertDatabaseHas('articles', ['id' => $article->id, 'designation' => 'Ancienne désignation']);
+    }
+
+    #[Test]
+    public function it_refuses_to_delete_a_catalogue_article(): void
+    {
+        $subcategory = ArticleSubcategory::factory()->for(ArticleCategory::factory(), 'category')->create();
+        $article = Article::factory()->create(['article_subcategory_id' => $subcategory->id]);
+
+        $response = $this->actingAs($this->user)->deleteJson("/api/articles/{$article->id}");
+
+        $response->assertUnprocessable();
+        $this->assertDatabaseHas('articles', ['id' => $article->id]);
     }
 
     #[Test]

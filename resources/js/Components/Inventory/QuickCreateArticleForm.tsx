@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ArticleFilterOptions, ArticleSubcategory, Brand } from '@/types';
+import type { ArticleCategory, ArticleFilterOptions, ArticleSubcategory, Brand } from '@/types';
 import { ATTRIBUTE_LABELS, orderedAttributeEntries, formatOptionLabel } from '@/utils/articleFilters';
 import { quantityStep } from '@/utils/articleQuantity';
 import PhotoCapture from '@/Components/Inventory/PhotoCapture';
@@ -36,9 +36,9 @@ export default function QuickCreateArticleForm({ barcode, csrfToken, onCreated, 
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/article-categories', { headers: { Accept: 'application/json' } })
+        fetch('/api/article-categories?source=catalogue', { headers: { Accept: 'application/json' } })
             .then(r => r.json())
-            .then(data => setSubcategories(data.categories?.[0]?.subcategories ?? []));
+            .then(data => setSubcategories((data.categories as ArticleCategory[] ?? []).flatMap(c => c.subcategories)));
 
         fetch('/api/brands', { headers: { Accept: 'application/json' } })
             .then(r => r.json())

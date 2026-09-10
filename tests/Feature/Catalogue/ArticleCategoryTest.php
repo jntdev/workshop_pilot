@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Catalogue;
 
+use App\Enums\ArticleCategorySource;
 use App\Models\ArticleCategory;
 use App\Models\ArticleSubcategory;
 use App\Models\User;
@@ -91,6 +92,66 @@ class ArticleCategoryTest extends TestCase
 
         $response->assertUnprocessable();
         $this->assertDatabaseHas('article_categories', ['id' => $category->id]);
+    }
+
+    #[Test]
+    public function it_always_marks_a_created_category_as_manual(): void
+    {
+        $response = $this->actingAs($this->user)->postJson('/api/article-categories', [
+            'name' => 'Transmission',
+            'source' => ArticleCategorySource::Catalogue->value,
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('article_categories', [
+            'name' => 'Transmission',
+            'source' => ArticleCategorySource::Manual->value,
+        ]);
+    }
+
+    #[Test]
+    public function it_filters_categories_by_manual_source(): void
+    {
+        ArticleCategory::factory()->manual()->create(['name' => 'Freinage']);
+        ArticleCategory::factory()->create(['name' => 'Pieces Cycles']);
+
+        $response = $this->actingAs($this->user)->getJson('/api/article-categories?source=manual');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'categories')
+            ->assertJsonPath('categories.0.name', 'Freinage');
+    }
+
+    #[Test]
+    public function it_filters_categories_by_catalogue_source(): void
+    {
+        ArticleCategory::factory()->manual()->create(['name' => 'Freinage']);
+        ArticleCategory::factory()->create(['name' => 'Pieces Cycles']);
+
+        $response = $this->actingAs($this->user)->getJson('/api/article-categories?source=catalogue');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'categories')
+            ->assertJsonPath('categories.0.name', 'Pieces Cycles');
+    }
+
+    #[Test]
+    public function it_returns_all_categories_when_source_is_omitted(): void
+    {
+        ArticleCategory::factory()->manual()->create();
+        ArticleCategory::factory()->create();
+
+        $response = $this->actingAs($this->user)->getJson('/api/article-categories');
+
+        $response->assertOk()->assertJsonCount(2, 'categories');
+    }
+
+    #[Test]
+    public function it_rejects_an_invalid_source_filter_value(): void
+    {
+        $response = $this->actingAs($this->user)->getJson('/api/article-categories?source=bogus');
+
+        $response->assertUnprocessable();
     }
 
     #[Test]

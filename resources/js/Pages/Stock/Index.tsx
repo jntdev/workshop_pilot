@@ -23,8 +23,9 @@ export default function StockIndex() {
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-    const loadCategories = useCallback(async () => {
-        const res = await fetch('/api/article-categories', { headers: { Accept: 'application/json' } });
+    const loadCategories = useCallback(async (hasMovementsFilter: boolean | null) => {
+        const source = hasMovementsFilter === true ? 'manual' : 'catalogue';
+        const res = await fetch(`/api/article-categories?source=${source}`, { headers: { Accept: 'application/json' } });
         const data = await res.json();
         setCategories(data.categories ?? []);
     }, []);
@@ -36,9 +37,14 @@ export default function StockIndex() {
     }, []);
 
     useEffect(() => {
-        loadCategories();
+        loadCategories(hasMovements);
         loadBrands();
-    }, [loadCategories, loadBrands]);
+    }, [hasMovements, loadCategories, loadBrands]);
+
+    const handleTabChange = (value: boolean | null) => {
+        setHasMovements(value);
+        setSelectedSubcategoryId(null);
+    };
 
     useEffect(() => {
         setSelectedAttributes({});
@@ -72,9 +78,9 @@ export default function StockIndex() {
     }, [refreshList, loadBrands]);
 
     const handleCategoriesChanged = useCallback(() => {
-        loadCategories();
+        loadCategories(hasMovements);
         refreshList();
-    }, [loadCategories, refreshList]);
+    }, [loadCategories, hasMovements, refreshList]);
 
     const selectedSubcategory: ArticleSubcategory | null = categories
         .flatMap(c => c.subcategories)
@@ -151,14 +157,14 @@ export default function StockIndex() {
                     <button
                         type="button"
                         className={`stock-page__tab ${hasMovements === true ? 'stock-page__tab--active' : ''}`}
-                        onClick={() => setHasMovements(true)}
+                        onClick={() => handleTabChange(true)}
                     >
                         Stock atelier
                     </button>
                     <button
                         type="button"
                         className={`stock-page__tab ${hasMovements === null ? 'stock-page__tab--active' : ''}`}
-                        onClick={() => setHasMovements(null)}
+                        onClick={() => handleTabChange(null)}
                     >
                         Catalogue complet
                     </button>
@@ -172,6 +178,7 @@ export default function StockIndex() {
                             onSelectSubcategory={handleSelectSubcategory}
                             onChanged={handleCategoriesChanged}
                             csrfToken={csrfToken}
+                            allowCreate={hasMovements === true}
                         />
 
                         {brands.length > 0 && (

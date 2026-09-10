@@ -16,6 +16,8 @@ class Article extends Model
         'article_subcategory_id',
         'brand_id',
         'supplier_id',
+        'lot_article_id',
+        'lot_quantity',
         'reference',
         'designation',
         'purchase_price_ht',
@@ -29,7 +31,7 @@ class Article extends Model
         'weight_kg',
     ];
 
-    protected $appends = ['stock_quantity', 'is_discontinued'];
+    protected $appends = ['stock_quantity', 'is_discontinued', 'is_editable', 'suggested_unit_price_ttc'];
 
     public function casts(): array
     {
@@ -39,6 +41,7 @@ class Article extends Model
             'tva_rate' => 'float',
             'weight_kg' => 'float',
             'sort_order' => 'integer',
+            'lot_quantity' => 'integer',
         ];
     }
 
@@ -55,6 +58,16 @@ class Article extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function lot(): BelongsTo
+    {
+        return $this->belongsTo(Article::class, 'lot_article_id');
+    }
+
+    public function units(): HasMany
+    {
+        return $this->hasMany(Article::class, 'lot_article_id');
     }
 
     public function stockMovements(): HasMany
@@ -80,6 +93,20 @@ class Article extends Model
     public function getIsDiscontinuedAttribute(): bool
     {
         return $this->attributeValue('supplier_status') === 'discontinued';
+    }
+
+    public function getIsEditableAttribute(): bool
+    {
+        return $this->subcategory === null || $this->subcategory->isManual();
+    }
+
+    public function getSuggestedUnitPriceTtcAttribute(): ?float
+    {
+        if ($this->lot === null || $this->lot->lot_quantity === null || $this->lot->lot_quantity === 0) {
+            return null;
+        }
+
+        return round($this->lot->sale_price_ttc / $this->lot->lot_quantity, 2);
     }
 
     public function scopeOrdered(Builder $query): Builder

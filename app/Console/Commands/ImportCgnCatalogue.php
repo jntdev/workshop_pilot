@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ArticleCategorySource;
 use App\Models\Article;
 use App\Models\ArticleAttribute;
 use App\Models\ArticleCategory;
@@ -339,6 +340,7 @@ class ImportCgnCatalogue extends Command
 
         if (! $category->exists) {
             $category->sort_order = (ArticleCategory::max('sort_order') ?? -1) + 1;
+            $category->source = ArticleCategorySource::Catalogue;
             $category->save();
         }
 

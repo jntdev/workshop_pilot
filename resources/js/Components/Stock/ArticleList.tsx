@@ -140,7 +140,10 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
         if (subcategoryId) { params.set('subcategory_id', String(subcategoryId)); }
         if (brandId) { params.set('brand_id', String(brandId)); }
         if (search) { params.set('search', search); }
-        if (hasMovements !== null) { params.set('has_movements', hasMovements ? '1' : '0'); }
+        // Sur l'onglet Stock atelier, sélectionner une de mes catégories montre tous ses
+        // articles (avec ou sans stock) : le filtre has_movements n'a alors plus lieu d'être.
+        const suppressMovementsFilter = hasMovements === true && subcategoryId !== null;
+        if (hasMovements !== null && !suppressMovementsFilter) { params.set('has_movements', hasMovements ? '1' : '0'); }
         Object.entries(attributes ?? {}).forEach(([key, value]) => {
             if (value) { params.set(`attribute[${key}]`, value); }
         });
@@ -260,12 +263,16 @@ export default function ArticleList({ subcategoryId, subcategoryLabel, brandId, 
                                         <button type="button" className="article-list__action" onClick={() => onOpenStock(article)} title="Mouvements de stock">
                                             📦
                                         </button>
-                                        <button type="button" className="article-list__action" onClick={() => onEdit(article)}>
-                                            Modifier
-                                        </button>
-                                        <button type="button" className="article-list__action article-list__action--danger" onClick={() => handleDelete(article.id)}>
-                                            Supprimer
-                                        </button>
+                                        {article.is_editable && (
+                                            <button type="button" className="article-list__action" onClick={() => onEdit(article)}>
+                                                Modifier
+                                            </button>
+                                        )}
+                                        {article.is_editable && (
+                                            <button type="button" className="article-list__action article-list__action--danger" onClick={() => handleDelete(article.id)}>
+                                                Supprimer
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

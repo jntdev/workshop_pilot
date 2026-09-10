@@ -264,4 +264,14 @@ class ImportCgnCatalogueTest extends TestCase
             ->expectsOutputToContain('PNEUS VELO')
             ->expectsOutputToContain('100%');
     }
+
+    #[Test]
+    public function it_marks_categories_created_during_import_as_catalogue_source(): void
+    {
+        $this->runImport();
+
+        $article = Article::where('reference', '435447')->first();
+
+        $this->assertSame('catalogue', $article->subcategory->category->source->value);
+    }
 }

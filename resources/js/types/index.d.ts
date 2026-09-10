@@ -550,6 +550,7 @@ export interface ArticleCategory {
     id: number;
     name: string;
     sort_order: number;
+    source: 'manual' | 'catalogue';
     subcategories: ArticleSubcategory[];
 }
 
@@ -566,6 +567,8 @@ export interface Article {
     article_subcategory_id: number | null;
     brand_id: number | null;
     supplier_id: number | null;
+    lot_article_id: number | null;
+    lot_quantity: number | null;
     reference: string;
     designation: string;
     purchase_price_ht: number;
@@ -579,10 +582,13 @@ export interface Article {
     image_url: string | null;
     weight_kg: number | null;
     is_discontinued: boolean;
+    is_editable: boolean;
+    suggested_unit_price_ttc: number | null;
     brand?: Brand | null;
     supplier?: Supplier | null;
     subcategory?: ArticleSubcategory | null;
     category?: ArticleCategory | null;
+    lot?: Article | null;
 }
 
 export interface ArticleFilterOptions {

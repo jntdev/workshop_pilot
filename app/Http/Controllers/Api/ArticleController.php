@@ -54,7 +54,7 @@ class ArticleController extends Controller
             'attribute.*' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $query = Article::with(['subcategory.category', 'brand', 'supplier'])->ordered();
+        $query = Article::with(['subcategory.category', 'brand', 'supplier', 'lot'])->ordered();
 
         if ($request->filled('subcategory_id')) {
             $query->where('article_subcategory_id', $request->integer('subcategory_id'));
@@ -151,8 +151,20 @@ class ArticleController extends Controller
 
         $firstWord = preg_split('/\s+/', trim($term))[0] ?? $term;
 
-        $articles = Article::with(['subcategory.category', 'brand', 'supplier'])
-            ->search($term)
+        $query = Article::with(['subcategory.category', 'brand', 'supplier', 'lot'])
+            ->search($term);
+
+        if ($request->filled('has_movements')) {
+            $request->boolean('has_movements')
+                ? $query->whereHas('stockMovements')
+                : $query->whereDoesntHave('stockMovements');
+        }
+
+        if ($request->boolean('has_stock')) {
+            $query->withSum('stockMovements', 'quantity')->having('stock_movements_sum_quantity', '>', 0);
+        }
+
+        $articles = $query
             ->orderByRaw('CASE WHEN designation LIKE ? THEN 0 ELSE 1 END', ["{$firstWord}%"])
             ->ordered()
             ->limit(30)
@@ -168,6 +180,10 @@ class ArticleController extends Controller
                 'stock_quantity' => $article->stock_quantity,
                 'image_url' => $article->image_url,
                 'is_discontinued' => $article->is_discontinued,
+                'is_editable' => $article->is_editable,
+                'lot_article_id' => $article->lot_article_id,
+                'lot_quantity' => $article->lot_quantity,
+                'suggested_unit_price_ttc' => $article->suggested_unit_price_ttc,
                 'brand' => $article->brand ? ['id' => $article->brand->id, 'name' => $article->brand->name] : null,
                 'supplier' => $article->supplier ? ['id' => $article->supplier->id, 'name' => $article->supplier->name] : null,
                 'subcategory' => $article->subcategory ? ['id' => $article->subcategory->id, 'name' => $article->subcategory->name] : null,
@@ -375,7 +391,7 @@ class ArticleController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $article = Article::with(['subcategory.category', 'brand', 'supplier'])->findOrFail($id);
+        $article = Article::with(['subcategory.category', 'brand', 'supplier', 'lot'])->findOrFail($id);
 
         return response()->json($article);
     }
@@ -390,20 +406,30 @@ class ArticleController extends Controller
 
         $article = Article::create($validated);
 
-        return response()->json($article->load('subcategory.category', 'brand', 'supplier'), 201);
+        return response()->json($article->load('subcategory.category', 'brand', 'supplier', 'lot'), 201);
     }
 
     public function update(UpdateArticleRequest $request, int $id): JsonResponse
     {
         $article = Article::findOrFail($id);
+
+        if (! $article->is_editable) {
+            return response()->json(['message' => 'Impossible de modifier un article du catalogue fournisseur.'], 422);
+        }
+
         $article->update($request->validated());
 
-        return response()->json($article->load('subcategory.category', 'brand', 'supplier'));
+        return response()->json($article->load('subcategory.category', 'brand', 'supplier', 'lot'));
     }
 
     public function destroy(int $id): JsonResponse
     {
         $article = Article::findOrFail($id);
+
+        if (! $article->is_editable) {
+            return response()->json(['message' => 'Impossible de supprimer un article du catalogue fournisseur.'], 422);
+        }
+
         $article->delete();
 
         return response()->json(['message' => 'Article supprimé.']);
