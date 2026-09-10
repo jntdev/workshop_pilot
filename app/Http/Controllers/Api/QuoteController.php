@@ -9,14 +9,19 @@ use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteLine;
 use App\Services\Quotes\QuoteCalculator;
+use App\Services\Quotes\QuoteMerger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class QuoteController extends Controller
 {
-    public function __construct(private QuoteCalculator $calculator) {}
+    public function __construct(
+        private QuoteCalculator $calculator,
+        private QuoteMerger $merger,
+    ) {}
 
     public function show(Quote $quote): JsonResponse
     {
@@ -62,39 +67,89 @@ class QuoteController extends Controller
 
     public function update(Request $request, Quote $quote): JsonResponse
     {
-        if ($quote->isInvoice()) {
-            return response()->json(['message' => 'Impossible de modifier une facture.'], 422);
-        }
+        $mine = $this->validateQuoteRequest($request);
+        $conflictData = $this->validateConflictData($request);
+        $this->validateLines($mine['lines'], $quote);
 
-        $validated = $this->validateQuoteRequest($request);
-        $this->validateLines($validated['lines'], $quote);
+        return DB::transaction(function () use ($request, $quote, $mine, $conflictData) {
+            $quote->refresh()->load('client', 'lines');
 
-        $client = $this->resolveClient($request, $validated);
+            if ($quote->trashed()) {
+                return response()->json(['message' => 'Ce devis a été supprimé.'], 404);
+            }
 
-        $totalEstimatedTime = $this->calculateTotalEstimatedTime($validated['lines']);
+            if ($quote->isInvoice()) {
+                return response()->json([
+                    'message' => 'Ce devis a été transformé en facture entre-temps.',
+                    'became_invoice' => true,
+                ], 422);
+            }
 
-        $quote->update([
-            'client_id' => $client->id,
-            'bike_description' => $validated['bike_description'],
-            'reception_comment' => $validated['reception_comment'],
-            'remarks' => $validated['remarks'] ?? null,
-            'email_note' => $validated['email_note'] ?? null,
-            'valid_until' => $validated['valid_until'],
-            'discount_type' => $validated['discount_value'] ? $validated['discount_type'] : null,
-            'discount_value' => $validated['discount_value'] ?: null,
-            'total_ht' => $validated['totals']['total_ht'],
-            'total_tva' => $validated['totals']['total_tva'],
-            'total_ttc' => $validated['totals']['total_ttc'],
-            'margin_total_ht' => $validated['totals']['margin_total_ht'],
-            'total_estimated_time_minutes' => $totalEstimatedTime,
-            'actual_time_minutes' => $validated['actual_time_minutes'] ?? null,
-        ]);
+            $theirs = $this->formatQuoteForMerge($quote);
+            // Sans base explicite (client legacy ne connaissant pas le merge), on suppose
+            // que l'état actuel en base est la référence de départ : tout écart entre mine
+            // et theirs est alors imputé à cet onglet (comportement last-write-wins d'origine).
+            $base = $conflictData['base'] ?? $theirs;
 
-        $this->syncLines($quote, $validated['lines']);
+            $result = $this->merger->merge(
+                base: $base,
+                mine: $mine,
+                theirs: $theirs,
+                resolvedConflicts: $conflictData['resolved_conflicts'] ?? [],
+            );
 
-        $quote->load('client', 'lines');
+            if ($result->hasUnresolvedConflicts()) {
+                return response()->json([
+                    'conflict' => true,
+                    'fields' => $result->fieldConflicts,
+                    'lines' => $result->lineConflicts,
+                    'theirs_snapshot' => $this->formatQuote($quote),
+                ], 409);
+            }
 
-        return response()->json($this->formatQuote($quote));
+            $this->validateLines($result->lines, $quote);
+
+            $client = $this->resolveClient($request, $result->fields);
+
+            $totalEstimatedTime = $this->calculateTotalEstimatedTime($result->lines);
+
+            $quote->update([
+                'client_id' => $client->id,
+                'bike_description' => $result->fields['bike_description'],
+                'reception_comment' => $result->fields['reception_comment'],
+                'remarks' => $result->fields['remarks'] ?? null,
+                'email_note' => $result->fields['email_note'] ?? null,
+                'valid_until' => $result->fields['valid_until'],
+                'discount_type' => $result->fields['discount_value'] ? $result->fields['discount_type'] : null,
+                'discount_value' => $result->fields['discount_value'] ?: null,
+                'actual_time_minutes' => $result->fields['actual_time_minutes'] ?? null,
+                'total_estimated_time_minutes' => $totalEstimatedTime,
+            ]);
+
+            $this->syncLines($quote, $result->lines);
+
+            $quote->refresh();
+            $totals = $this->calculator->aggregateTotals($quote->lines()->get()->toArray());
+
+            if (! empty($quote->discount_value) && (float) $quote->discount_value !== 0.0) {
+                $discounted = $this->calculator->applyDiscount(
+                    $totals['total_ht'],
+                    $totals['total_tva'],
+                    $quote->discount_type ?? 'percent',
+                    (string) $quote->discount_value,
+                );
+
+                $totals['total_ht'] = $discounted['total_ht'];
+                $totals['total_tva'] = $discounted['total_tva'];
+                $totals['total_ttc'] = $discounted['total_ttc'];
+            }
+
+            $quote->update($totals);
+
+            $quote->load('client', 'lines');
+
+            return response()->json($this->formatQuote($quote));
+        });
     }
 
     public function destroy(Quote $quote): JsonResponse
@@ -318,6 +373,7 @@ class QuoteController extends Controller
             'lines.*.line_total_ttc' => 'nullable|numeric',
             'lines.*.estimated_time_minutes' => 'nullable|integer|min:0',
             'lines.*.id' => 'nullable|integer',
+            'lines.*.client_key' => 'nullable|string|max:100',
             'lines.*.article_id' => 'nullable|integer|exists:articles,id',
             'lines.*.needs_order' => 'boolean',
             'lines.*.ordered_at' => 'nullable|date',
@@ -329,6 +385,30 @@ class QuoteController extends Controller
             'totals.total_ttc' => 'required|numeric',
             'totals.margin_total_ht' => 'required|numeric',
         ]);
+    }
+
+    /**
+     * base et resolved_conflicts sont des structures libres (reflet du format de mine),
+     * pas des champs métier à valider un par un : lus tels quels plutôt que via
+     * $request->validate(), qui ne conserverait que les sous-clés déclarées explicitement.
+     *
+     * @return array{base?: array<string, mixed>, resolved_conflicts?: array{fields?: array<string, mixed>, lines?: array<string, mixed>}}
+     */
+    protected function validateConflictData(Request $request): array
+    {
+        $data = [];
+
+        $base = $request->input('base');
+        if (is_array($base)) {
+            $data['base'] = $base;
+        }
+
+        $resolvedConflicts = $request->input('resolved_conflicts');
+        if (is_array($resolvedConflicts)) {
+            $data['resolved_conflicts'] = $resolvedConflicts;
+        }
+
+        return $data;
     }
 
     protected function resolveClient(Request $request, array $validated): Client
@@ -378,7 +458,7 @@ class QuoteController extends Controller
         $errors = [];
 
         $existingIds = $quote
-            ? $quote->lines()->pluck('id')->all()
+            ? $quote->lines()->withTrashed()->pluck('id')->all()
             : [];
 
         foreach ($lines as $index => $line) {
@@ -505,6 +585,7 @@ class QuoteController extends Controller
             'invoiced_at' => $quote->invoiced_at?->toISOString(),
             'paid_at' => $quote->paid_at?->format('Y-m-d'),
             'created_at' => $quote->created_at->toISOString(),
+            'updated_at' => $quote->updated_at->toISOString(),
             'status' => $quote->status?->value,
             'is_invoice' => $quote->isInvoice(),
             'can_edit' => $quote->canEdit(),
@@ -526,6 +607,52 @@ class QuoteController extends Controller
                 'line_total_ht' => $line->line_total_ht,
                 'line_total_ttc' => $line->line_total_ttc,
                 'position' => $line->position,
+                'estimated_time_minutes' => $line->estimated_time_minutes,
+                'needs_order' => $line->needs_order,
+                'ordered_at' => $line->ordered_at?->toISOString(),
+                'received_at' => $line->received_at?->toISOString(),
+            ])->toArray(),
+        ];
+    }
+
+    /**
+     * Représente le devis au même format "à plat" que le payload de validateQuoteRequest(),
+     * pour permettre la comparaison three-way avec base/mine dans QuoteMerger.
+     */
+    protected function formatQuoteForMerge(Quote $quote): array
+    {
+        return [
+            'client_id' => $quote->client_id,
+            'client_prenom' => $quote->client->prenom,
+            'client_nom' => $quote->client->nom,
+            'client_email' => $quote->client->email,
+            'client_telephone' => $quote->client->telephone,
+            'client_adresse' => $quote->client->adresse,
+            'client_origine_contact' => $quote->client->origine_contact,
+            'client_commentaires' => $quote->client->commentaires,
+            'client_avantage_type' => $quote->client->avantage_type,
+            'client_avantage_valeur' => $quote->client->avantage_valeur,
+            'client_avantage_expiration' => $quote->client->avantage_expiration?->format('Y-m-d'),
+            'bike_description' => $quote->bike_description,
+            'reception_comment' => $quote->reception_comment,
+            'remarks' => $quote->remarks,
+            'email_note' => $quote->email_note,
+            'valid_until' => $quote->valid_until->format('Y-m-d'),
+            'discount_type' => $quote->discount_type,
+            'discount_value' => $quote->discount_value,
+            'actual_time_minutes' => $quote->actual_time_minutes,
+            'lines' => $quote->lines->map(fn (QuoteLine $line) => [
+                'id' => $line->id,
+                'article_id' => $line->article_id,
+                'title' => $line->title,
+                'reference' => $line->reference,
+                'quantity' => $line->quantity,
+                'purchase_price_ht' => $line->purchase_price_ht,
+                'sale_price_ht' => $line->sale_price_ht,
+                'sale_price_ttc' => $line->sale_price_ttc,
+                'margin_amount_ht' => $line->margin_amount_ht,
+                'margin_rate' => $line->margin_rate,
+                'tva_rate' => $line->tva_rate,
                 'estimated_time_minutes' => $line->estimated_time_minutes,
                 'needs_order' => $line->needs_order,
                 'ordered_at' => $line->ordered_at?->toISOString(),

@@ -54,6 +54,7 @@ export interface ClientFormPageProps extends PageProps {
 
 export interface QuoteLine {
     id?: number;
+    client_key?: string;
     article_id?: number | null;
     title: string;
     reference: string | null;
@@ -73,6 +74,12 @@ export interface QuoteLine {
     needs_order: boolean;
     ordered_at: string | null;
     received_at: string | null;
+    /** Marqueur frontend-only pour la résolution inline de conflit — jamais envoyé au serveur. */
+    _conflict?: {
+        role: 'mine' | 'theirs';
+        lineKey: string;
+        hasNoContent?: boolean;
+    };
 }
 
 export interface QuoteTotals {
@@ -104,12 +111,35 @@ export interface QuoteDetail {
     invoiced_at: string | null;
     paid_at: string | null;
     created_at: string;
+    updated_at: string;
     is_invoice: boolean;
     can_edit: boolean;
     can_delete: boolean;
     is_archived: boolean;
     status: QuoteStatusSlug | null;
     lines: QuoteLine[];
+}
+
+export interface QuoteFieldConflict {
+    path: string;
+    base: string | number | null;
+    mine: string | number | null;
+    theirs: string | number | null;
+}
+
+export interface QuoteLineConflict {
+    type: 'line_conflict' | 'delete_vs_update' | 'update_vs_delete';
+    line_key: string;
+    base: QuoteLine | null;
+    mine: QuoteLine | null;
+    theirs: QuoteLine | null;
+}
+
+export interface QuoteConflictResponse {
+    conflict: true;
+    fields: QuoteFieldConflict[];
+    lines: QuoteLineConflict[];
+    theirs_snapshot: QuoteDetail;
 }
 
 export type QuoteStatusSlug =

@@ -266,6 +266,60 @@
             border-top: 2px solid $color-primary-blue;
             background-color: lighten($color-primary-blue, 42%);
         }
+
+        // Résolution de conflit inline — bleu = ma version actuelle, orange = version entrante.
+        // Le bloc mine/theirs est volontairement isolé du reste du tableau (marge verticale +
+        // bordure complète) pour qu'on distingue immédiatement les 2 lignes comparées, et le
+        // survol générique de ligne est désactivé (le fond reste fixe) pour ne pas brouiller
+        // cette lecture.
+        &--conflict-mine {
+            border: 2px solid $color-primary-blue;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            background-color: lighten($color-primary-blue, 47%);
+            margin-top: 0.75rem;
+
+            &:hover {
+                background-color: lighten($color-primary-blue, 47%);
+            }
+        }
+
+        &--conflict-theirs {
+            border: 2px solid #e65100;
+            border-top: 2px dashed #e65100;
+            border-radius: 0 0 6px 6px;
+            background-color: #fff8f0;
+            margin-bottom: 0.75rem;
+
+            &:hover {
+                background-color: #fff8f0;
+            }
+        }
+
+        &--ghost-deleted {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.9rem;
+            font-style: italic;
+            color: $color-neutral-medium;
+        }
+    }
+
+    &__btn-remove-conflict {
+        padding: 0.35rem 0.7rem;
+        border-radius: 4px;
+        border: 1px solid #e65100;
+        background: transparent;
+        color: #b34700;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover {
+            background-color: #fff3e0;
+        }
     }
 
     &__drag-handle {
@@ -1424,3 +1478,58 @@
         background-color: transparent;
     }
 }
+
+// Encart de résolution de conflit inline sous un champ simple (bike_description, remarks...)
+.field-conflict-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    background-color: #fff3e0;
+    border: 1px solid #e65100;
+    border-radius: 4px;
+    font-size: 0.82rem;
+
+    &__text {
+        color: #7a3a00;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    &__apply {
+        padding: 0.3rem 0.7rem;
+        border-radius: 4px;
+        border: 1px solid #e65100;
+        background-color: #e65100;
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+            background-color: #b34700;
+        }
+    }
+
+    &__dismiss {
+        padding: 0.3rem 0.7rem;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: $color-neutral-medium;
+        font-size: 0.78rem;
+        cursor: pointer;
+        text-decoration: underline;
+
+        &:hover {
+            color: $color-neutral-dark;
+        }
+    }
+}
+

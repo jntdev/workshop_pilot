@@ -13,6 +13,7 @@ interface QuoteLinesTableProps {
     onReorder: (from: number, to: number) => void;
     onAddLine: () => void;
     onRemoveLine: (index: number) => void;
+    onRemoveConflictLine: (index: number) => void;
     disabled?: boolean;
 }
 
@@ -62,6 +63,7 @@ export default function QuoteLinesTable({
     onReorder,
     onAddLine,
     onRemoveLine,
+    onRemoveConflictLine,
     disabled,
 }: QuoteLinesTableProps) {
     const [pickerForLine, setPickerForLine] = useState<number | null>(null);
@@ -174,13 +176,34 @@ export default function QuoteLinesTable({
                 </div>
             )}
 
-            {lines.map((line, index) => (
+            {lines.map((line, index) => {
+                if (line._conflict?.hasNoContent) {
+                    return (
+                        <div
+                            key={line.id ?? line.client_key ?? index}
+                            className="quote-lines-table__row quote-lines-table__row--conflict-theirs quote-lines-table__row--ghost-deleted"
+                        >
+                            <span>Ligne supprimée par l'autre onglet</span>
+                            <button
+                                type="button"
+                                onClick={() => onRemoveConflictLine(index)}
+                                className="quote-lines-table__btn-remove-conflict"
+                            >
+                                Supprimer cette version
+                            </button>
+                        </div>
+                    );
+                }
+
+                return (
                 <div
-                    key={index}
+                    key={line.id ?? line.client_key ?? index}
                     className={[
                         'quote-lines-table__row',
                         draggingIndex === index ? 'quote-lines-table__row--dragging' : '',
                         dragOverIndex === index ? 'quote-lines-table__row--drag-over' : '',
+                        line._conflict?.role === 'mine' ? 'quote-lines-table__row--conflict-mine' : '',
+                        line._conflict?.role === 'theirs' ? 'quote-lines-table__row--conflict-theirs' : '',
                     ].join(' ').trim()}
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDrop={(e) => handleDrop(e, index)}
@@ -337,20 +360,32 @@ export default function QuoteLinesTable({
                     </div>
                     {/* Supprimer */}
                     <div className="quote-lines-table__cell">
-                        <button
-                            type="button"
-                            onClick={() => onRemoveLine(index)}
-                            className="quote-lines-table__btn-remove"
-                            title="Supprimer la prestation"
-                            disabled={disabled}
-                        >
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
-                            </svg>
-                        </button>
+                        {line._conflict ? (
+                            <button
+                                type="button"
+                                onClick={() => onRemoveConflictLine(index)}
+                                className="quote-lines-table__btn-remove-conflict"
+                                title="Supprimer cette version"
+                            >
+                                Supprimer cette version
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => onRemoveLine(index)}
+                                className="quote-lines-table__btn-remove"
+                                title="Supprimer la prestation"
+                                disabled={disabled}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+                                </svg>
+                            </button>
+                        )}
                     </div>
                 </div>
-            ))}
+                );
+            })}
 
             {!disabled && (
                 <button

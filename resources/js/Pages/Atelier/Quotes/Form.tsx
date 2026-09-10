@@ -1,8 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { ClientSearch, QuoteLinesTable, QuoteTotals, ConvertModal } from '@/Components/Atelier/QuoteForm';
-import { QuoteFormPageProps, QuoteLine, QuoteTotals as QuoteTotalsType, Client, QuoteStatusSlug } from '@/types';
+import { ClientSearch, QuoteLinesTable, QuoteTotals, ConvertModal, FieldConflictBanner } from '@/Components/Atelier/QuoteForm';
+import {
+    QuoteFormPageProps,
+    QuoteLine,
+    QuoteTotals as QuoteTotalsType,
+    Client,
+    QuoteStatusSlug,
+    QuoteFieldConflict,
+    QuoteLineConflict,
+    QuoteDetail,
+} from '@/types';
 
 const QUOTE_STATUSES: { value: QuoteStatusSlug; label: string }[] = [
     { value: 'reception', label: 'Bon de réception' },
@@ -44,6 +53,7 @@ interface ClientFormData {
 }
 
 const emptyLine = (): QuoteLine => ({
+    client_key: crypto.randomUUID(),
     title: '',
     reference: null,
     article_id: null,
@@ -71,6 +81,79 @@ const emptyTotals = (): QuoteTotalsType => ({
     total_ttc: '0.00',
     margin_total_ht: '0.00',
 });
+
+/**
+ * Représente un devis chargé (prop Inertia ou snapshot serveur post-conflit) au même
+ * format "à plat" que le payload envoyé au serveur, pour servir de "base" au merge.
+ */
+const quoteToMergeFormat = (quote: QuoteDetail): Record<string, unknown> => ({
+    client_id: quote.client_id,
+    client_prenom: quote.client.prenom,
+    client_nom: quote.client.nom,
+    client_email: quote.client.email,
+    client_telephone: quote.client.telephone,
+    client_adresse: quote.client.adresse,
+    client_origine_contact: quote.client.origine_contact,
+    client_commentaires: quote.client.commentaires,
+    client_avantage_type: quote.client.avantage_type ?? 'aucun',
+    client_avantage_valeur: quote.client.avantage_valeur ?? 0,
+    client_avantage_expiration: quote.client.avantage_expiration,
+    bike_description: quote.bike_description,
+    reception_comment: quote.reception_comment,
+    remarks: quote.remarks,
+    email_note: quote.email_note,
+    valid_until: quote.valid_until,
+    discount_type: quote.discount_type,
+    discount_value: quote.discount_value,
+    actual_time_minutes: quote.actual_time_minutes,
+    lines: quote.lines,
+});
+
+function lineKeyOf(line: QuoteLine): string {
+    return line.id ? `id:${line.id}` : `client_key:${line.client_key ?? ''}`;
+}
+
+/**
+ * Insère, pour chaque conflit de ligne signalé par le serveur, une ligne fantôme
+ * représentant la version "theirs" juste après sa ligne "mine" correspondante (ou à sa
+ * position d'origine si "mine" a été supprimée), et marque les lignes concernées.
+ */
+function injectConflictGhosts(lines: QuoteLine[], conflicts: QuoteLineConflict[]): QuoteLine[] {
+    let result = [...lines];
+
+    for (const conflict of conflicts) {
+        const ghostSource = conflict.theirs ?? conflict.base;
+        const ghost: QuoteLine = {
+            ...(ghostSource ?? {
+                title: '', reference: null, article_id: null, quantity: '1', purchase_price_ht: '0',
+                sale_price_ht: '0', sale_price_ttc: '0', margin_amount_ht: '0', margin_rate: '0',
+                tva_rate: '20', position: 0, estimated_time_minutes: null, needs_order: false,
+                ordered_at: null, received_at: null,
+            }),
+            id: undefined,
+            client_key: `conflict-ghost:${conflict.line_key}`,
+            _conflict: {
+                role: 'theirs',
+                lineKey: conflict.line_key,
+                hasNoContent: conflict.theirs === null,
+            },
+        };
+
+        const mineIndex = result.findIndex(l => lineKeyOf(l) === conflict.line_key);
+
+        if (mineIndex === -1) {
+            // mine === null (delete_vs_update) : insérer le fantôme à la position d'origine.
+            const insertAt = Math.min(conflict.base?.position ?? result.length, result.length);
+            result = [...result.slice(0, insertAt), ghost, ...result.slice(insertAt)];
+            continue;
+        }
+
+        result[mineIndex] = { ...result[mineIndex], _conflict: { role: 'mine', lineKey: conflict.line_key } };
+        result = [...result.slice(0, mineIndex + 1), ghost, ...result.slice(mineIndex + 1)];
+    }
+
+    return result;
+}
 
 export default function QuoteForm({ quote }: QuoteFormPageProps) {
     const isEdit = !!quote;
@@ -137,6 +220,27 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     const [emailError, setEmailError] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [message, setMessage] = useState<string | null>(null);
+
+    // Snapshot du devis tel qu'il était à l'ouverture (ou après la dernière sauvegarde
+    // réussie) : sert de "base" pour la détection de conflit d'édition concurrente.
+    const baseSnapshotRef = useRef<Record<string, unknown> | null>(quote ? quoteToMergeFormat(quote) : null);
+
+    // Conflits de champ encore actifs, indexés par path. Un champ résolu (appliqué ou
+    // ignoré) en est retiré et son bandeau disparaît.
+    const [fieldConflicts, setFieldConflicts] = useState<Record<string, QuoteFieldConflict>>({});
+
+    // Décisions déjà prises sur des champs en conflit, à renvoyer en resolved_conflicts.fields
+    // au prochain save. Purgé après une sauvegarde réussie.
+    const [resolvedFieldValues, setResolvedFieldValues] = useState<Record<string, unknown>>({});
+
+    // Décisions déjà prises sur des lignes en conflit (line_key -> ligne finale ou null),
+    // à renvoyer en resolved_conflicts.lines au prochain save.
+    const [resolvedLineValues, setResolvedLineValues] = useState<Record<string, QuoteLine | null>>({});
+
+    const hasUnresolvedConflicts = Object.keys(fieldConflicts).length > 0 || lines.some(l => l._conflict);
+    const remainingConflictsCount =
+        Object.keys(fieldConflicts).length +
+        new Set(lines.filter(l => l._conflict).map(l => l._conflict!.lineKey)).size;
 
     // Calculate total estimated time from lines (same logic as backend)
     const totalEstimatedTimeMinutes = (() => {
@@ -245,6 +349,39 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         setLines(prev => prev.filter((_, i) => i !== index));
     };
 
+    const stripConflictMarker = (line: QuoteLine): QuoteLine => {
+        const { _conflict, ...rest } = line;
+        return rest;
+    };
+
+    // Recalcule, après une mutation de `lines`, si le conflit `lineKey` est désormais résolu
+    // (0 ou 1 emplacement restant) et met à jour resolvedLineValues / nettoie les marqueurs.
+    const settleLineConflict = (lineKey: string, nextLines: QuoteLine[]): QuoteLine[] => {
+        const remaining = nextLines.filter(l => l._conflict?.lineKey === lineKey);
+
+        if (remaining.length === 0) {
+            setResolvedLineValues(prev => ({ ...prev, [lineKey]: null }));
+            return nextLines;
+        }
+
+        if (remaining.length === 1) {
+            const survivor = remaining[0];
+            const resolved = survivor._conflict?.hasNoContent ? null : stripConflictMarker(survivor);
+            setResolvedLineValues(prev => ({ ...prev, [lineKey]: resolved }));
+            return nextLines.map(l => (l._conflict?.lineKey === lineKey ? stripConflictMarker(l) : l));
+        }
+
+        return nextLines;
+    };
+
+    const handleRemoveConflictLine = (index: number) => {
+        setLines(prev => {
+            const conflict = prev[index]._conflict;
+            const next = prev.filter((_, i) => i !== index);
+            return conflict ? settleLineConflict(conflict.lineKey, next) : next;
+        });
+    };
+
     const handleReorder = useCallback((from: number, to: number) => {
         setLines(prev => {
             const next = [...prev];
@@ -270,15 +407,40 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         setDiscountValue(value);
     };
 
-    // Filtre les lignes vides (sans titre) avant l'envoi au backend
+    // Résout un conflit de champ simple : apply=true remplace la valeur locale par la
+    // valeur entrante (theirs), apply=false confirme qu'on garde la valeur actuelle.
+    // Dans les deux cas, le champ est retiré des conflits actifs et la décision est
+    // mémorisée pour le prochain envoi (resolved_conflicts.fields).
+    const resolveFieldConflict = (path: string, apply: boolean, applySetter: (value: unknown) => void, currentValue: unknown) => {
+        const conflict = fieldConflicts[path];
+        if (!conflict) return;
+
+        const finalValue = apply ? conflict.theirs : currentValue;
+        if (apply) {
+            applySetter(conflict.theirs);
+        }
+        setResolvedFieldValues(prev => ({ ...prev, [path]: finalValue }));
+        setFieldConflicts(prev => {
+            const next = { ...prev };
+            delete next[path];
+            return next;
+        });
+    };
+
+    // Filtre les lignes vides (sans titre) et les fantômes de conflit non résolus avant l'envoi.
     const getFilledLines = () => {
-        return lines.filter(line => line.title && line.title.trim() !== '');
+        return lines
+            .filter(line => !line._conflict)
+            .filter(line => line.title && line.title.trim() !== '');
     };
 
     const buildSavePayload = () => {
+        const resolvedConflicts = (Object.keys(resolvedFieldValues).length || Object.keys(resolvedLineValues).length)
+            ? { fields: resolvedFieldValues, lines: resolvedLineValues }
+            : undefined;
         const trimmedPhone = client.telephone.trim();
         const sanitizedClient = { ...client, telephone: trimmedPhone };
-        return {
+        const mine = {
             client_id: sanitizedClient.id,
             client_prenom: sanitizedClient.prenom,
             client_nom: sanitizedClient.nom,
@@ -301,9 +463,25 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             totals: totals,
             actual_time_minutes: actualTimeMinutes,
         };
+
+        return {
+            ...mine,
+            base: baseSnapshotRef.current ?? mine,
+            ...(resolvedConflicts ? { resolved_conflicts: resolvedConflicts } : {}),
+        };
     };
 
-    const persistQuote = async (): Promise<{ ok: boolean; id?: number }> => {
+    type PersistResult =
+        | { ok: true; id: number }
+        | { ok: false; conflict?: { fields: QuoteFieldConflict[]; lines: QuoteLineConflict[] } }
+        | { ok: false; becameInvoice: true };
+
+    const persistQuote = async (): Promise<PersistResult> => {
+        if (hasUnresolvedConflicts) {
+            setMessage('Veuillez résoudre les conflits affichés avant d\'enregistrer.');
+            return { ok: false };
+        }
+
         const trimmedPhone = client.telephone.trim();
         if (!trimmedPhone) {
             setMessage('Le téléphone du client est obligatoire.');
@@ -312,20 +490,46 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
 
         const url = isEdit ? '/api/quotes/' + quote!.id : '/api/quotes';
         const method = isEdit ? 'PUT' : 'POST';
+        const payload = buildSavePayload();
 
         const response = await fetch(url, {
             method,
             headers: apiHeaders(),
             credentials: 'same-origin',
-            body: JSON.stringify(buildSavePayload()),
+            body: JSON.stringify(payload),
         });
 
         if (response.ok) {
             const result = await response.json();
+            applyServerSnapshot(result);
             return { ok: true, id: result.id };
         }
 
         const errorData = await response.json();
+
+        if (response.status === 409 && errorData.conflict) {
+            const fields: QuoteFieldConflict[] = errorData.fields ?? [];
+            const lineConflictsList: QuoteLineConflict[] = errorData.lines ?? [];
+
+            setFieldConflicts(Object.fromEntries(fields.map(f => [f.path, f])));
+            setLines(prev => injectConflictGhosts(prev, lineConflictsList));
+            setResolvedFieldValues({});
+            setResolvedLineValues({});
+
+            if (errorData.theirs_snapshot) {
+                applyServerSnapshot(errorData.theirs_snapshot, { onlyBaseSnapshot: true });
+            }
+
+            const count = fields.length + lineConflictsList.length;
+            setMessage(`${count} conflit${count > 1 ? 's' : ''} à résoudre ci-dessous avant de pouvoir enregistrer.`);
+            return { ok: false, conflict: { fields, lines: lineConflictsList } };
+        }
+
+        if (response.status === 422 && errorData.became_invoice) {
+            setMessage(errorData.message ?? 'Ce devis a été transformé en facture entre-temps.');
+            return { ok: false, becameInvoice: true };
+        }
+
         if (errorData.errors) {
             const formattedErrors: Record<string, string> = {};
             Object.entries(errorData.errors).forEach(([key, value]) => {
@@ -338,6 +542,24 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         return { ok: false };
     };
 
+    // Resynchronise le snapshot de base (et, sur succès complet, les states du formulaire)
+    // avec la réponse serveur, pour qu'un save répété ne détecte pas de faux conflit.
+    const applyServerSnapshot = (quoteData: QuoteDetail, options?: { onlyBaseSnapshot?: boolean }) => {
+        baseSnapshotRef.current = quoteToMergeFormat(quoteData);
+
+        if (options?.onlyBaseSnapshot) {
+            return;
+        }
+
+        setLines(quoteData.lines.length ? quoteData.lines : [emptyLine()]);
+        setTotals({
+            total_ht: quoteData.total_ht,
+            total_tva: quoteData.total_tva,
+            total_ttc: quoteData.total_ttc,
+            margin_total_ht: quoteData.margin_total_ht,
+        });
+    };
+
     const handleSave = async (stayOnPage: boolean = false) => {
         setIsSaving(true);
         setErrors({});
@@ -346,6 +568,9 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         try {
             const result = await persistQuote();
             if (result.ok) {
+                setFieldConflicts({});
+                setResolvedFieldValues({});
+                setResolvedLineValues({});
                 setMessage('Devis enregistré avec succès.');
                 if (!stayOnPage) {
                     router.visit('/atelier');
@@ -603,6 +828,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     {errors.client_prenom && (
                                         <span className="quote-form__field-error">{errors.client_prenom}</span>
                                     )}
+                                    {fieldConflicts.client_prenom && (
+                                        <FieldConflictBanner
+                                            theirsValue={fieldConflicts.client_prenom.theirs as string}
+                                            onApply={() => resolveFieldConflict('client_prenom', true, (v) => setClient(prev => ({ ...prev, prenom: String(v ?? '') })), client.prenom)}
+                                            onDismiss={() => resolveFieldConflict('client_prenom', false, () => {}, client.prenom)}
+                                        />
+                                    )}
                                 </div>
                                 <div className="quote-form__field">
                                     <label className="quote-form__label">Nom *</label>
@@ -617,6 +849,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     {errors.client_nom && (
                                         <span className="quote-form__field-error">{errors.client_nom}</span>
                                     )}
+                                    {fieldConflicts.client_nom && (
+                                        <FieldConflictBanner
+                                            theirsValue={fieldConflicts.client_nom.theirs as string}
+                                            onApply={() => resolveFieldConflict('client_nom', true, (v) => setClient(prev => ({ ...prev, nom: String(v ?? '') })), client.nom)}
+                                            onDismiss={() => resolveFieldConflict('client_nom', false, () => {}, client.nom)}
+                                        />
+                                    )}
                                 </div>
                                 <div className="quote-form__field">
                                     <label className="quote-form__label">Email</label>
@@ -629,6 +868,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     />
                                     {errors.client_email && (
                                         <span className="quote-form__field-error">{errors.client_email}</span>
+                                    )}
+                                    {fieldConflicts.client_email && (
+                                        <FieldConflictBanner
+                                            theirsValue={fieldConflicts.client_email.theirs as string}
+                                            onApply={() => resolveFieldConflict('client_email', true, (v) => setClient(prev => ({ ...prev, email: String(v ?? '') })), client.email)}
+                                            onDismiss={() => resolveFieldConflict('client_email', false, () => {}, client.email)}
+                                        />
                                     )}
                                 </div>
                                 <div className="quote-form__field">
@@ -644,6 +890,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     {errors.client_telephone && (
                                         <span className="quote-form__field-error">{errors.client_telephone}</span>
                                     )}
+                                    {fieldConflicts.client_telephone && (
+                                        <FieldConflictBanner
+                                            theirsValue={fieldConflicts.client_telephone.theirs as string}
+                                            onApply={() => resolveFieldConflict('client_telephone', true, (v) => setClient(prev => ({ ...prev, telephone: String(v ?? '') })), client.telephone)}
+                                            onDismiss={() => resolveFieldConflict('client_telephone', false, () => {}, client.telephone)}
+                                        />
+                                    )}
                                 </div>
                                 <div className="quote-form__field quote-form__field--full">
                                     <label className="quote-form__label">Adresse</label>
@@ -656,6 +909,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     />
                                     {errors.client_adresse && (
                                         <span className="quote-form__field-error">{errors.client_adresse}</span>
+                                    )}
+                                    {fieldConflicts.client_adresse && (
+                                        <FieldConflictBanner
+                                            theirsValue={fieldConflicts.client_adresse.theirs as string}
+                                            onApply={() => resolveFieldConflict('client_adresse', true, (v) => setClient(prev => ({ ...prev, adresse: String(v ?? '') })), client.adresse)}
+                                            onDismiss={() => resolveFieldConflict('client_adresse', false, () => {}, client.adresse)}
+                                        />
                                     )}
                                 </div>
                             </div>
@@ -755,6 +1015,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                 {errors.bike_description && (
                                     <span className="quote-form__field-error">{errors.bike_description}</span>
                                 )}
+                                {fieldConflicts.bike_description && (
+                                    <FieldConflictBanner
+                                        theirsValue={fieldConflicts.bike_description.theirs as string}
+                                        onApply={() => resolveFieldConflict('bike_description', true, (v) => setBikeDescription(String(v ?? '')), bikeDescription)}
+                                        onDismiss={() => resolveFieldConflict('bike_description', false, () => {}, bikeDescription)}
+                                    />
+                                )}
                             </div>
                             <div className="quote-form__field quote-form__field--full">
                                 <label className="quote-form__label">Commentaire de réception *</label>
@@ -769,6 +1036,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                 />
                                 {errors.reception_comment && (
                                     <span className="quote-form__field-error">{errors.reception_comment}</span>
+                                )}
+                                {fieldConflicts.reception_comment && (
+                                    <FieldConflictBanner
+                                        theirsValue={fieldConflicts.reception_comment.theirs as string}
+                                        onApply={() => resolveFieldConflict('reception_comment', true, (v) => setReceptionComment(String(v ?? '')), receptionComment)}
+                                        onDismiss={() => resolveFieldConflict('reception_comment', false, () => {}, receptionComment)}
+                                    />
                                 )}
                             </div>
                         </div>
@@ -785,6 +1059,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                             onReorder={handleReorder}
                             onAddLine={handleAddLine}
                             onRemoveLine={handleRemoveLine}
+                            onRemoveConflictLine={handleRemoveConflictLine}
                             disabled={isReadOnly}
                         />
                     </section>
@@ -803,6 +1078,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     placeholder="Ex: Chaîne à prévoir, pneu arrière usé, câble de frein à commander..."
                                     readOnly={isReadOnly}
                                 />
+                                {fieldConflicts.remarks && (
+                                    <FieldConflictBanner
+                                        theirsValue={fieldConflicts.remarks.theirs as string}
+                                        onApply={() => resolveFieldConflict('remarks', true, (v) => setRemarks(String(v ?? '')), remarks)}
+                                        onDismiss={() => resolveFieldConflict('remarks', false, () => {}, remarks)}
+                                    />
+                                )}
                                 {!isReadOnly && (
                                     <div className="quote-form__email-note">
                                         <h3 className="quote-form__subsection-title">
@@ -816,6 +1098,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                             rows={4}
                                             placeholder="Ex: Votre vélo est prêt, prévoir un délai de 3 jours pour les pièces..."
                                         />
+                                        {fieldConflicts.email_note && (
+                                            <FieldConflictBanner
+                                                theirsValue={fieldConflicts.email_note.theirs as string}
+                                                onApply={() => resolveFieldConflict('email_note', true, (v) => setEmailNote(String(v ?? '')), emailNote)}
+                                                onDismiss={() => resolveFieldConflict('email_note', false, () => {}, emailNote)}
+                                            />
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -900,9 +1189,14 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                 <button
                                     type="submit"
                                     className="quote-form__btn quote-form__btn--primary"
-                                    disabled={isSaving}
+                                    disabled={isSaving || hasUnresolvedConflicts}
+                                    title={hasUnresolvedConflicts ? `${remainingConflictsCount} conflit(s) à résoudre avant d'enregistrer` : undefined}
                                 >
-                                    {isSaving ? 'Enregistrement...' : 'Enregistrer le devis'}
+                                    {isSaving
+                                        ? 'Enregistrement...'
+                                        : hasUnresolvedConflicts
+                                        ? `Résoudre les conflits (${remainingConflictsCount})`
+                                        : 'Enregistrer le devis'}
                                 </button>
                                 {isEdit && (
                                     <button

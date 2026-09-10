@@ -72,7 +72,7 @@ class QuoteLineSyncTest extends TestCase
             ->assertStatus(200);
 
         $this->assertDatabaseHas('quote_lines', ['id' => $lineToKeep->id]);
-        $this->assertDatabaseMissing('quote_lines', ['id' => $lineToDelete->id]);
+        $this->assertSoftDeleted('quote_lines', ['id' => $lineToDelete->id]);
     }
 
     #[Test]
