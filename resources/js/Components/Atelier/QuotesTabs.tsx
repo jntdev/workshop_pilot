@@ -92,6 +92,7 @@ interface QuotesTableProps {
 
 function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlightedId, onRowVisit }: QuotesTableProps) {
     const [paidAtMap, setPaidAtMap] = useState<Record<number, string>>({});
+    const [clientNotifiedMap, setClientNotifiedMap] = useState<Record<number, { notified: boolean; date: string }>>({});
 
     const handleDelete = (quoteId: number, e: React.FormEvent) => {
         e.preventDefault();
@@ -112,6 +113,30 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
             body: JSON.stringify({ paid_at: value || null }),
         });
     }, []);
+
+    const persistClientNotified = useCallback(async (quoteId: number, notified: boolean, date: string) => {
+        await fetch(`/api/quotes/${quoteId}/client-notified`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-XSRF-TOKEN': getCsrfToken(),
+            },
+            body: JSON.stringify({ client_notified: notified, client_notified_at: notified ? date : null }),
+        });
+    }, []);
+
+    const handleClientNotifiedToggle = useCallback((quoteId: number, currentDate: string, checked: boolean) => {
+        setClientNotifiedMap(prev => ({ ...prev, [quoteId]: { notified: checked, date: currentDate } }));
+        persistClientNotified(quoteId, checked, currentDate);
+    }, [persistClientNotified]);
+
+    const handleClientNotifiedDateChange = useCallback((quoteId: number, notified: boolean, date: string) => {
+        setClientNotifiedMap(prev => ({ ...prev, [quoteId]: { notified, date } }));
+        if (notified) {
+            persistClientNotified(quoteId, true, date);
+        }
+    }, [persistClientNotified]);
 
     if (items.length === 0) {
         return (
@@ -137,6 +162,7 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                     <th>Total TTC</th>
                     <th>{type === 'invoices' ? 'Date de facturation' : 'Date'}</th>
                     {type === 'invoices' && <th>Payé le</th>}
+                    {type === 'quotes' && <th>Client prévenu</th>}
                     {type === 'quotes' && <th>Statut</th>}
                     {type === 'archives' && <th>Type</th>}
                     <th>Actions</th>
@@ -169,6 +195,31 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                                 />
                             </td>
                         )}
+                        {type === 'quotes' && (() => {
+                            const state = clientNotifiedMap[item.id] ?? {
+                                notified: item.client_notified,
+                                date: item.client_notified_at ?? new Date().toISOString().split('T')[0],
+                            };
+                            return (
+                                <td className="quotes-list__client-notified">
+                                    <label className="quotes-list__client-notified-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={state.notified}
+                                            onChange={(e) => handleClientNotifiedToggle(item.id, state.date, e.target.checked)}
+                                        />
+                                    </label>
+                                    {state.notified && (
+                                        <input
+                                            type="date"
+                                            value={state.date}
+                                            onChange={(e) => handleClientNotifiedDateChange(item.id, true, e.target.value)}
+                                            className="quotes-list__client-notified-date-input"
+                                        />
+                                    )}
+                                </td>
+                            );
+                        })()}
                         {type === 'quotes' && (
                             <td>
                                 <select

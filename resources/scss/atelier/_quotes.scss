@@ -127,6 +127,33 @@
         margin-top: 0.25rem;
     }
 
+    &__checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        color: $color-neutral-dark;
+        font-size: 0.9rem;
+        cursor: pointer;
+
+        input[type='checkbox'] {
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+        }
+    }
+
+    &__client-notified {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    &__client-notified-date {
+        width: auto;
+    }
+
     &__btn-add-line {
         background-color: $color-primary-blue;
         color: white;
@@ -937,6 +964,41 @@
 
 // Champ date paiement inline dans la liste des factures
 .quotes-list__paid-at-input {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.82rem;
+    border: 1px solid $color-border-medium;
+    border-radius: 6px;
+    background: $color-bg-white;
+    color: $color-neutral-dark;
+    cursor: pointer;
+
+    &:focus {
+        outline: none;
+        border-color: $color-primary-blue;
+    }
+}
+
+// Colonne "Client prévenu" inline dans la liste des devis
+.quotes-list__client-notified {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.quotes-list__client-notified-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+    }
+}
+
+.quotes-list__client-notified-date-input {
     padding: 0.2rem 0.4rem;
     font-size: 0.82rem;
     border: 1px solid $color-border-medium;

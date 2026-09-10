@@ -203,6 +203,28 @@ class QuoteController extends Controller
         return response()->json(['paid_at' => $quote->fresh()->paid_at?->format('Y-m-d')]);
     }
 
+    public function updateClientNotified(Request $request, Quote $quote): JsonResponse
+    {
+        $validated = $request->validate([
+            'client_notified' => 'required|boolean',
+            'client_notified_at' => 'nullable|date',
+        ]);
+
+        $quote->update([
+            'client_notified' => $validated['client_notified'],
+            'client_notified_at' => $validated['client_notified']
+                ? \Carbon\Carbon::parse($validated['client_notified_at'] ?? now())
+                : null,
+        ]);
+
+        $quote->refresh();
+
+        return response()->json([
+            'client_notified' => $quote->client_notified,
+            'client_notified_at' => $quote->client_notified_at?->format('Y-m-d'),
+        ]);
+    }
+
     public function sendEmail(Request $request, Quote $quote): JsonResponse
     {
         $validated = $request->validate([
@@ -584,6 +606,8 @@ class QuoteController extends Controller
             'actual_time_minutes' => $quote->actual_time_minutes,
             'invoiced_at' => $quote->invoiced_at?->toISOString(),
             'paid_at' => $quote->paid_at?->format('Y-m-d'),
+            'client_notified' => $quote->client_notified,
+            'client_notified_at' => $quote->client_notified_at?->format('Y-m-d'),
             'created_at' => $quote->created_at->toISOString(),
             'updated_at' => $quote->updated_at->toISOString(),
             'status' => $quote->status?->value,

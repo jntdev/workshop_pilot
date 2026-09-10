@@ -281,6 +281,8 @@ class AtelierController extends Controller
             'status' => $quote->status?->value,
             'invoiced_at' => $quote->invoiced_at?->toISOString(),
             'paid_at' => $quote->paid_at?->format('Y-m-d'),
+            'client_notified' => $quote->client_notified,
+            'client_notified_at' => $quote->client_notified_at?->format('Y-m-d'),
             'created_at' => $quote->created_at->toISOString(),
             'can_delete' => $quote->canDelete(),
             'is_invoice' => $quote->isInvoice(),

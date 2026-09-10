@@ -110,6 +110,8 @@ export interface QuoteDetail {
     actual_time_minutes: number | null;
     invoiced_at: string | null;
     paid_at: string | null;
+    client_notified: boolean;
+    client_notified_at: string | null;
     created_at: string;
     updated_at: string;
     is_invoice: boolean;
@@ -168,6 +170,8 @@ export interface Quote {
     status: QuoteStatusSlug | null;
     invoiced_at: string | null;
     paid_at: string | null;
+    client_notified: boolean;
+    client_notified_at: string | null;
     created_at: string;
     can_delete: boolean;
     is_invoice: boolean;

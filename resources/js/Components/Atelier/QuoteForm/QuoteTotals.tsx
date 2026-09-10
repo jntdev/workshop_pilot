@@ -13,6 +13,11 @@ interface QuoteTotalsProps {
     onValidUntilChange: (date: string) => void;
     onActualTimeChange: (minutes: number | null) => void;
     onSaveActualTime?: () => Promise<void>;
+    clientNotified?: boolean;
+    clientNotifiedAt?: string;
+    onClientNotifiedChange?: (notified: boolean) => void;
+    onClientNotifiedAtChange?: (date: string) => void;
+    isSavingClientNotified?: boolean;
     disabled?: boolean;
     isInvoice?: boolean;
 }
@@ -43,6 +48,11 @@ export default function QuoteTotals({
     onValidUntilChange,
     onActualTimeChange,
     onSaveActualTime,
+    clientNotified,
+    clientNotifiedAt,
+    onClientNotifiedChange,
+    onClientNotifiedAtChange,
+    isSavingClientNotified,
     disabled,
     isInvoice,
 }: QuoteTotalsProps) {
@@ -168,6 +178,29 @@ export default function QuoteTotals({
                         disabled={disabled}
                     />
                 </div>
+
+                {onClientNotifiedChange && onClientNotifiedAtChange && (
+                    <div className="quote-form__field quote-form__field--full quote-form__client-notified">
+                        <label className="quote-form__checkbox-label">
+                            <input
+                                type="checkbox"
+                                checked={clientNotified ?? false}
+                                onChange={(e) => onClientNotifiedChange(e.target.checked)}
+                                disabled={disabled || isSavingClientNotified}
+                            />
+                            Client prévenu
+                        </label>
+                        {clientNotified && (
+                            <input
+                                type="date"
+                                value={clientNotifiedAt ?? ''}
+                                onChange={(e) => onClientNotifiedAtChange(e.target.value)}
+                                className="quote-form__input quote-form__client-notified-date"
+                                disabled={disabled || isSavingClientNotified}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

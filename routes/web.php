@@ -158,6 +158,8 @@ Route::middleware(['auth'])->group(function () {
             'margin_total_ht' => $q->margin_total_ht,
             'status' => $q->status?->value,
             'invoiced_at' => $q->invoiced_at?->toISOString(),
+            'client_notified' => $q->client_notified,
+            'client_notified_at' => $q->client_notified_at?->format('Y-m-d'),
             'created_at' => $q->created_at->toISOString(),
             'can_delete' => $q->canDelete(),
             'is_invoice' => $q->isInvoice(),

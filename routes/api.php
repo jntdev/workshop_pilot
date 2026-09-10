@@ -56,6 +56,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/quotes/{quote}/convert-to-invoice', [QuoteController::class, 'convertToInvoice']);
     Route::patch('/quotes/{quote}/actual-time', [QuoteController::class, 'updateActualTime']);
     Route::patch('/quotes/{quote}/paid-at', [QuoteController::class, 'updatePaidAt']);
+    Route::patch('/quotes/{quote}/client-notified', [QuoteController::class, 'updateClientNotified']);
     Route::post('/quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);
     Route::post('/quotes/calculate-line', [QuoteController::class, 'calculateLine']);
     Route::post('/quotes/calculate-totals', [QuoteController::class, 'calculateTotals']);

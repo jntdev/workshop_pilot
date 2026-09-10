@@ -205,6 +205,12 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         quote?.actual_time_minutes ?? null
     );
 
+    const [clientNotified, setClientNotified] = useState(quote?.client_notified ?? false);
+    const [clientNotifiedAt, setClientNotifiedAt] = useState(
+        quote?.client_notified_at ?? new Date().toISOString().split('T')[0]
+    );
+    const [isSavingClientNotified, setIsSavingClientNotified] = useState(false);
+
     const [quoteStatus, setQuoteStatus] = useState<QuoteStatusSlug>(
         (quote?.status as QuoteStatusSlug) ?? 'reception'
     );
@@ -750,6 +756,47 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         }
     };
 
+    const persistClientNotified = async (notified: boolean, notifiedAt: string) => {
+        if (!quote) return;
+
+        setIsSavingClientNotified(true);
+        try {
+            const response = await fetch('/api/quotes/' + quote.id + '/client-notified', {
+                method: 'PATCH',
+                headers: apiHeaders(),
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    client_notified: notified,
+                    client_notified_at: notified ? notifiedAt : null,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setClientNotified(data.client_notified);
+                if (data.client_notified_at) {
+                    setClientNotifiedAt(data.client_notified_at);
+                }
+            }
+        } catch (error) {
+            console.error('Client notified update error:', error);
+        } finally {
+            setIsSavingClientNotified(false);
+        }
+    };
+
+    const handleToggleClientNotified = (checked: boolean) => {
+        setClientNotified(checked);
+        persistClientNotified(checked, clientNotifiedAt);
+    };
+
+    const handleClientNotifiedAtChange = (date: string) => {
+        setClientNotifiedAt(date);
+        if (clientNotified) {
+            persistClientNotified(true, date);
+        }
+    };
+
     return (
         <MainLayout>
             <Head title={isEdit ? 'Modifier le devis' : 'Nouveau devis'} />
@@ -1121,6 +1168,11 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     onValidUntilChange={setValidUntil}
                                     onActualTimeChange={setActualTimeMinutes}
                                     onSaveActualTime={isInvoice ? handleSaveActualTime : undefined}
+                                    clientNotified={clientNotified}
+                                    clientNotifiedAt={clientNotifiedAt}
+                                    onClientNotifiedChange={isEdit ? handleToggleClientNotified : undefined}
+                                    onClientNotifiedAtChange={isEdit ? handleClientNotifiedAtChange : undefined}
+                                    isSavingClientNotified={isSavingClientNotified}
                                     disabled={isReadOnly}
                                     isInvoice={isInvoice}
                                 />
