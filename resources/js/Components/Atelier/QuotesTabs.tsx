@@ -114,27 +114,44 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
         });
     }, []);
 
-    const persistClientNotified = useCallback(async (quoteId: number, notified: boolean, date: string) => {
-        await fetch(`/api/quotes/${quoteId}/client-notified`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-XSRF-TOKEN': getCsrfToken(),
-            },
-            body: JSON.stringify({ client_notified: notified, client_notified_at: notified ? date : null }),
-        });
+    const persistClientNotified = useCallback(async (quoteId: number, notified: boolean, date: string): Promise<boolean> => {
+        try {
+            const response = await fetch(`/api/quotes/${quoteId}/client-notified`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+                body: JSON.stringify({ client_notified: notified, client_notified_at: notified ? date : null }),
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Client notified update error:', error);
+            return false;
+        }
     }, []);
 
-    const handleClientNotifiedToggle = useCallback((quoteId: number, currentDate: string, checked: boolean) => {
-        setClientNotifiedMap(prev => ({ ...prev, [quoteId]: { notified: checked, date: currentDate } }));
-        persistClientNotified(quoteId, checked, currentDate);
+    // Optimiste : on met à jour l'affichage immédiatement, puis on restaure l'état
+    // précédent si la sauvegarde échoue — sinon la case reste cochée à l'écran sans
+    // que rien n'ait été enregistré en base.
+    const handleClientNotifiedToggle = useCallback(async (quoteId: number, previous: { notified: boolean; date: string }, checked: boolean) => {
+        setClientNotifiedMap(prev => ({ ...prev, [quoteId]: { notified: checked, date: previous.date } }));
+        const ok = await persistClientNotified(quoteId, checked, previous.date);
+        if (!ok) {
+            setClientNotifiedMap(prev => ({ ...prev, [quoteId]: previous }));
+            alert('Erreur lors de l\'enregistrement de l\'information "client prévenu".');
+        }
     }, [persistClientNotified]);
 
-    const handleClientNotifiedDateChange = useCallback((quoteId: number, notified: boolean, date: string) => {
-        setClientNotifiedMap(prev => ({ ...prev, [quoteId]: { notified, date } }));
-        if (notified) {
-            persistClientNotified(quoteId, true, date);
+    const handleClientNotifiedDateChange = useCallback(async (quoteId: number, previous: { notified: boolean; date: string }, date: string) => {
+        setClientNotifiedMap(prev => ({ ...prev, [quoteId]: { notified: previous.notified, date } }));
+        if (!previous.notified) return;
+
+        const ok = await persistClientNotified(quoteId, true, date);
+        if (!ok) {
+            setClientNotifiedMap(prev => ({ ...prev, [quoteId]: previous }));
+            alert('Erreur lors de l\'enregistrement de l\'information "client prévenu".');
         }
     }, [persistClientNotified]);
 
@@ -206,14 +223,14 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                                         <input
                                             type="checkbox"
                                             checked={state.notified}
-                                            onChange={(e) => handleClientNotifiedToggle(item.id, state.date, e.target.checked)}
+                                            onChange={(e) => handleClientNotifiedToggle(item.id, state, e.target.checked)}
                                         />
                                     </label>
                                     {state.notified && (
                                         <input
                                             type="date"
                                             value={state.date}
-                                            onChange={(e) => handleClientNotifiedDateChange(item.id, true, e.target.value)}
+                                            onChange={(e) => handleClientNotifiedDateChange(item.id, state, e.target.value)}
                                             className="quotes-list__client-notified-date-input"
                                         />
                                     )}

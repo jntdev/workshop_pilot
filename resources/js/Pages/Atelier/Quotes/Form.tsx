@@ -756,8 +756,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         }
     };
 
+    // En cas d'échec (HTTP ou réseau), restaure l'état affiché tel qu'il était avant la
+    // tentative — sinon la case reste cochée à l'écran alors que rien n'a été enregistré.
     const persistClientNotified = async (notified: boolean, notifiedAt: string) => {
         if (!quote) return;
+
+        const previousNotified = clientNotified;
+        const previousNotifiedAt = clientNotifiedAt;
 
         setIsSavingClientNotified(true);
         try {
@@ -774,12 +779,19 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             if (response.ok) {
                 const data = await response.json();
                 setClientNotified(data.client_notified);
-                if (data.client_notified_at) {
-                    setClientNotifiedAt(data.client_notified_at);
-                }
+                setClientNotifiedAt(data.client_notified_at ?? previousNotifiedAt);
+                return;
             }
+
+            setClientNotified(previousNotified);
+            setClientNotifiedAt(previousNotifiedAt);
+            const errorData = await response.json().catch(() => null);
+            setMessage(errorData?.message || 'Erreur lors de l\'enregistrement de l\'information "client prévenu".');
         } catch (error) {
             console.error('Client notified update error:', error);
+            setClientNotified(previousNotified);
+            setClientNotifiedAt(previousNotifiedAt);
+            setMessage('Erreur de connexion lors de l\'enregistrement de l\'information "client prévenu".');
         } finally {
             setIsSavingClientNotified(false);
         }
