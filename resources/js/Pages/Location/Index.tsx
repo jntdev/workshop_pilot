@@ -496,7 +496,7 @@ export default function LocationIndex({ bikes, bikeCategories, bikeSizes, year, 
             if (isNewCategory) {
                 bikeColumns.push(
                     columnHelper.accessor(() => '', {
-                        id: `spacer-${bike.category}`,
+                        id: `spacer-${bike.category?.name}`,
                         header: () => <div className="location-table__spacer" />,
                         cell: () => <div className="location-table__spacer" />,
                         size: 120,
