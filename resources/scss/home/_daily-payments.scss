@@ -75,9 +75,14 @@
     padding: $spacing-xs $spacing-sm;
     cursor: pointer;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: $color-primary-blue;
       color: white;
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
     }
   }
 

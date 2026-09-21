@@ -13,7 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
-class DailyPaymentsTest extends TestCase
+class PaymentsHistoryTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -26,7 +26,7 @@ class DailyPaymentsTest extends TestCase
     }
 
     #[Test]
-    public function it_sums_quote_payments_by_method_for_the_given_day(): void
+    public function it_groups_quote_payments_by_day_and_method(): void
     {
         $quote = Quote::factory()->create();
         QuotePayment::factory()->create(['quote_id' => $quote->id, 'method' => 'cb', 'amount' => 50, 'paid_at' => '2026-09-15 10:00']);
@@ -34,16 +34,15 @@ class DailyPaymentsTest extends TestCase
         QuotePayment::factory()->create(['quote_id' => $quote->id, 'method' => 'liquide', 'amount' => 20, 'paid_at' => '2026-09-15 09:00']);
         QuotePayment::factory()->create(['quote_id' => $quote->id, 'method' => 'cb', 'amount' => 999, 'paid_at' => '2026-09-16 10:00']);
 
-        $response = $this->actingAs($this->user)->getJson('/api/dashboard/daily-payments?date=2026-09-15');
+        $response = $this->actingAs($this->user)->getJson('/api/dashboard/payments-history');
 
         $response->assertOk();
-        $this->assertEquals(80, $response->json('by_method.cb'));
-        $this->assertEquals(20, $response->json('by_method.liquide'));
-        $this->assertEquals(100, $response->json('total'));
-        $this->assertEquals(80, $response->json('by_source.atelier.cb'));
-        $this->assertEquals(20, $response->json('by_source.atelier.liquide'));
-        $this->assertEquals(0, $response->json('by_source.location.cb'));
-        $this->assertEquals(0, $response->json('by_source.caisse.cb'));
+        $this->assertEquals(80, $response->json('days.2026-09-15.by_method.cb'));
+        $this->assertEquals(20, $response->json('days.2026-09-15.by_method.liquide'));
+        $this->assertEquals(100, $response->json('days.2026-09-15.total'));
+        $this->assertEquals(999, $response->json('days.2026-09-16.by_method.cb'));
+        $this->assertEquals(80, $response->json('days.2026-09-15.by_source.atelier.cb'));
+        $this->assertEquals(0, $response->json('days.2026-09-15.by_source.location.cb'));
     }
 
     #[Test]
@@ -52,12 +51,11 @@ class DailyPaymentsTest extends TestCase
         $reservation = Reservation::factory()->create();
         ReservationPayment::factory()->create(['reservation_id' => $reservation->id, 'method' => 'virement', 'amount' => 75, 'paid_at' => '2026-09-15 11:00']);
 
-        $response = $this->actingAs($this->user)->getJson('/api/dashboard/daily-payments?date=2026-09-15');
+        $response = $this->actingAs($this->user)->getJson('/api/dashboard/payments-history');
 
         $response->assertOk();
-        $this->assertEquals(75, $response->json('by_method.virement'));
-        $this->assertEquals(75, $response->json('by_source.location.virement'));
-        $this->assertEquals(0, $response->json('by_source.atelier.virement'));
+        $this->assertEquals(75, $response->json('days.2026-09-15.by_method.virement'));
+        $this->assertEquals(75, $response->json('days.2026-09-15.by_source.location.virement'));
     }
 
     #[Test]
@@ -69,11 +67,11 @@ class DailyPaymentsTest extends TestCase
             'completed_at' => '2026-09-15 12:00',
         ]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/dashboard/daily-payments?date=2026-09-15');
+        $response = $this->actingAs($this->user)->getJson('/api/dashboard/payments-history');
 
         $response->assertOk();
-        $this->assertEquals(45, $response->json('by_method.cheque'));
-        $this->assertEquals(45, $response->json('by_source.caisse.cheque'));
+        $this->assertEquals(45, $response->json('days.2026-09-15.by_method.cheque'));
+        $this->assertEquals(45, $response->json('days.2026-09-15.by_source.caisse.cheque'));
     }
 
     #[Test]
@@ -87,11 +85,10 @@ class DailyPaymentsTest extends TestCase
             'cancelled_at' => '2026-09-15 13:00',
         ]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/dashboard/daily-payments?date=2026-09-15');
+        $response = $this->actingAs($this->user)->getJson('/api/dashboard/payments-history');
 
         $response->assertOk();
-        $this->assertEquals(0, $response->json('by_method.cb'));
-        $this->assertEquals(0, $response->json('total'));
+        $this->assertNull($response->json('days.2026-09-15'));
     }
 
     #[Test]
@@ -103,14 +100,14 @@ class DailyPaymentsTest extends TestCase
             'status' => SaleStatus::Draft,
         ]);
 
-        $response = $this->actingAs($this->user)->getJson('/api/dashboard/daily-payments?date=2026-09-15');
+        $response = $this->actingAs($this->user)->getJson('/api/dashboard/payments-history');
 
         $response->assertOk();
-        $this->assertEquals(0, $response->json('total'));
+        $this->assertSame([], $response->json('days'));
     }
 
     #[Test]
-    public function it_combines_all_three_sources_by_method(): void
+    public function it_combines_all_three_sources_on_the_same_day(): void
     {
         $quote = Quote::factory()->create();
         $reservation = Reservation::factory()->create();
@@ -119,31 +116,27 @@ class DailyPaymentsTest extends TestCase
         ReservationPayment::factory()->create(['reservation_id' => $reservation->id, 'method' => 'cb', 'amount' => 20, 'paid_at' => '2026-09-15 11:00']);
         Sale::factory()->completed()->create(['payment_method' => 'cb', 'total_ttc' => 3000, 'completed_at' => '2026-09-15 12:00']);
 
-        $response = $this->actingAs($this->user)->getJson('/api/dashboard/daily-payments?date=2026-09-15');
+        $response = $this->actingAs($this->user)->getJson('/api/dashboard/payments-history');
 
         $response->assertOk();
-        $this->assertEquals(60, $response->json('by_method.cb'));
-        $this->assertEquals(10, $response->json('by_source.atelier.cb'));
-        $this->assertEquals(20, $response->json('by_source.location.cb'));
-        $this->assertEquals(30, $response->json('by_source.caisse.cb'));
+        $this->assertEquals(60, $response->json('days.2026-09-15.by_method.cb'));
+        $this->assertEquals(10, $response->json('days.2026-09-15.by_source.atelier.cb'));
+        $this->assertEquals(20, $response->json('days.2026-09-15.by_source.location.cb'));
+        $this->assertEquals(30, $response->json('days.2026-09-15.by_source.caisse.cb'));
     }
 
     #[Test]
-    public function it_defaults_to_today_when_no_date_given(): void
+    public function it_returns_an_empty_days_object_when_there_is_no_payment(): void
     {
-        $quote = Quote::factory()->create();
-        QuotePayment::factory()->create(['quote_id' => $quote->id, 'method' => 'cb', 'amount' => 15, 'paid_at' => now()]);
-
-        $response = $this->actingAs($this->user)->getJson('/api/dashboard/daily-payments');
+        $response = $this->actingAs($this->user)->getJson('/api/dashboard/payments-history');
 
         $response->assertOk();
-        $this->assertSame(now()->format('Y-m-d'), $response->json('date'));
-        $this->assertEquals(15, $response->json('by_method.cb'));
+        $this->assertSame([], $response->json('days'));
     }
 
     #[Test]
     public function it_requires_authentication(): void
     {
-        $this->getJson('/api/dashboard/daily-payments')->assertStatus(401);
+        $this->getJson('/api/dashboard/payments-history')->assertStatus(401);
     }
 }

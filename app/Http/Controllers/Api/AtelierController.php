@@ -17,43 +17,48 @@ use Illuminate\Support\Facades\DB;
 
 class AtelierController extends Controller
 {
-    public function dailyPayments(Request $request): JsonResponse
+    /**
+     * Historique complet des encaissements, groupés par jour / source / mode de paiement.
+     * Pensé pour être chargé une seule fois côté client puis gardé en cache local.
+     */
+    public function paymentsHistory(): JsonResponse
     {
-        $date = $request->input('date') ? \Carbon\Carbon::parse($request->input('date')) : now();
-        $start = $date->copy()->startOfDay();
-        $end = $date->copy()->endOfDay();
-
         $emptyRow = collect(PaymentMethod::cases())->mapWithKeys(fn ($m) => [$m->value => 0])->all();
-        $bySource = [
-            'atelier' => $emptyRow,
-            'location' => $emptyRow,
-            'caisse' => $emptyRow,
-        ];
+        $byDate = [];
 
-        $quotePayments = QuotePayment::whereBetween('paid_at', [$start, $end])
-            ->select('method', DB::raw('SUM(amount) as total'))
-            ->groupBy('method')
+        $ensureDate = function (string $date) use (&$byDate, $emptyRow) {
+            if (! isset($byDate[$date])) {
+                $byDate[$date] = [
+                    'atelier' => $emptyRow,
+                    'location' => $emptyRow,
+                    'caisse' => $emptyRow,
+                ];
+            }
+        };
+
+        $quotePayments = QuotePayment::select(DB::raw('DATE(paid_at) as day'), 'method', DB::raw('SUM(amount) as total'))
+            ->groupBy('day', 'method')
             ->get();
 
         foreach ($quotePayments as $row) {
+            $ensureDate($row->day);
             $method = $row->method instanceof PaymentMethod ? $row->method->value : $row->method;
-            $bySource['atelier'][$method] += (float) $row->total;
+            $byDate[$row->day]['atelier'][$method] += (float) $row->total;
         }
 
-        $reservationPayments = ReservationPayment::whereBetween('paid_at', [$start, $end])
-            ->select('method', DB::raw('SUM(amount) as total'))
-            ->groupBy('method')
+        $reservationPayments = ReservationPayment::select(DB::raw('DATE(paid_at) as day'), 'method', DB::raw('SUM(amount) as total'))
+            ->groupBy('day', 'method')
             ->get();
 
         foreach ($reservationPayments as $row) {
+            $ensureDate($row->day);
             $method = $row->method instanceof PaymentMethod ? $row->method->value : $row->method;
-            $bySource['location'][$method] += (float) $row->total;
+            $byDate[$row->day]['location'][$method] += (float) $row->total;
         }
 
         $sales = Sale::where('status', 'completed')
-            ->whereBetween('completed_at', [$start, $end])
-            ->select('payment_method', DB::raw('SUM(total_ttc) as total'))
-            ->groupBy('payment_method')
+            ->select(DB::raw('DATE(completed_at) as day'), 'payment_method', DB::raw('SUM(total_ttc) as total'))
+            ->groupBy('day', 'payment_method')
             ->get();
 
         foreach ($sales as $row) {
@@ -61,22 +66,26 @@ class AtelierController extends Controller
             if ($method === null) {
                 continue;
             }
-            $bySource['caisse'][$method] += ((float) $row->total) / 100;
+            $ensureDate($row->day);
+            $byDate[$row->day]['caisse'][$method] += ((float) $row->total) / 100;
         }
 
-        $byMethod = $emptyRow;
-        foreach ($bySource as $sourceTotals) {
-            foreach ($sourceTotals as $method => $amount) {
-                $byMethod[$method] += $amount;
+        $days = collect($byDate)->map(function (array $bySource) use ($emptyRow) {
+            $byMethod = $emptyRow;
+            foreach ($bySource as $sourceTotals) {
+                foreach ($sourceTotals as $method => $amount) {
+                    $byMethod[$method] += $amount;
+                }
             }
-        }
 
-        return response()->json([
-            'date' => $date->format('Y-m-d'),
-            'by_source' => $bySource,
-            'by_method' => $byMethod,
-            'total' => array_sum($byMethod),
-        ]);
+            return [
+                'by_source' => $bySource,
+                'by_method' => $byMethod,
+                'total' => array_sum($byMethod),
+            ];
+        });
+
+        return response()->json(['days' => $days]);
     }
 
     public function stats(Request $request): JsonResponse

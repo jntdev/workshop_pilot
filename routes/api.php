@@ -32,7 +32,7 @@ Route::get('/health', fn () => response()->json(['status' => 'ok']));
 Route::middleware(['web', 'auth'])->group(function () {
     // Dashboard API routes
     Route::post('/dashboard/kpis/rebuild', [AtelierController::class, 'rebuildAllKpis']);
-    Route::get('/dashboard/daily-payments', [AtelierController::class, 'dailyPayments']);
+    Route::get('/dashboard/payments-history', [AtelierController::class, 'paymentsHistory']);
 
     // Atelier API routes
     Route::get('/atelier/stats', [AtelierController::class, 'stats']);
