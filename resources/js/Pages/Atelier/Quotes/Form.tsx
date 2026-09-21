@@ -1230,6 +1230,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                             </div>
                             <div className="quote-form__totals-wrapper">
                                 <QuoteTotals
+                                    quoteId={quote?.id}
                                     totals={totals}
                                     discountType={discountType}
                                     discountValue={discountValue}

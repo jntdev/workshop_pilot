@@ -1,0 +1,226 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.quote-payments {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-border-light;
+
+  &__header {
+    margin-bottom: $spacing-sm;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    border-radius: $radius-sm;
+
+    &--neutral {
+      background: $color-bg-light;
+      color: $color-neutral-medium;
+    }
+
+    &--success {
+      background: rgba($color-status-ok, 0.15);
+      color: darken($color-status-ok, 15%);
+    }
+
+    &--warning {
+      background: rgba(#f59e0b, 0.15);
+      color: #b45309;
+    }
+
+    &--error {
+      background: rgba($color-status-error, 0.15);
+      color: darken($color-status-error, 10%);
+    }
+  }
+
+  &__remaining {
+    font-size: $font-size-xs;
+    color: #b45309;
+    font-weight: $font-weight-medium;
+    align-self: center;
+  }
+
+  &__overpaid {
+    font-size: $font-size-xs;
+    color: $color-status-error;
+    font-weight: $font-weight-medium;
+    align-self: center;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__empty {
+    padding: $spacing-sm;
+    text-align: center;
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+    background: $color-bg-light;
+    border-radius: $radius-sm;
+    border: 1px dashed $color-border-light;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-sm;
+    padding: $spacing-xs $spacing-sm;
+    background: $color-bg-light;
+    border-radius: $radius-sm;
+    border: 1px solid $color-border-light;
+  }
+
+  &__row-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: $font-size-xs;
+  }
+
+  &__row-amount {
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__row-method {
+    color: $color-primary-blue;
+  }
+
+  &__row-date,
+  &__row-note {
+    color: $color-neutral-medium;
+  }
+
+  &__row-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: $color-neutral-medium;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: $radius-sm;
+    transition: background 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      background: rgba($color-status-error, 0.1);
+      color: $color-status-error;
+    }
+  }
+
+  &__error {
+    margin-bottom: $spacing-sm;
+    font-size: $font-size-xs;
+    color: $color-danger-red;
+  }
+
+  &__form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: $spacing-sm;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 100px;
+
+    &--grow {
+      flex: 1;
+    }
+
+    label {
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: $color-neutral-medium;
+    }
+
+    input,
+    select {
+      padding: 0.375rem 0.5rem;
+      font-size: $font-size-xs;
+      border: 1px solid $color-border-medium;
+      border-radius: $radius-sm;
+
+      &:focus {
+        outline: none;
+        border-color: $color-primary-blue;
+      }
+    }
+
+    input[type='number'] {
+      -moz-appearance: textfield;
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+  }
+
+  &__input-suffix {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    input {
+      width: 80px;
+    }
+  }
+
+  &__add-btn {
+    padding: 0.4rem $spacing-md;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: white;
+    background: $color-primary-blue;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover:not(:disabled) {
+      background: darken($color-primary-blue, 8%);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}

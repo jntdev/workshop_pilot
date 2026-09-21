@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { QuoteTotals as QuoteTotalsType, QuoteStatusSlug } from '@/types';
+import QuotePaymentsPanel from '@/Components/Atelier/QuotePaymentsPanel';
 
 interface QuoteTotalsProps {
+    quoteId?: number;
     totals: QuoteTotalsType;
     discountType: 'amount' | 'percent';
     discountValue: string;
@@ -43,6 +45,7 @@ function formatTime(minutes: number | null): string {
 }
 
 export default function QuoteTotals({
+    quoteId,
     totals,
     discountType,
     discountValue,
@@ -235,6 +238,10 @@ export default function QuoteTotals({
                             />
                         )}
                     </div>
+                )}
+
+                {quoteId && (
+                    <QuotePaymentsPanel quoteId={quoteId} totalTtc={parseFloat(totals.total_ttc) || 0} />
                 )}
             </div>
         </div>

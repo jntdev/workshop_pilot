@@ -105,7 +105,6 @@ interface QuotesTableProps {
 }
 
 function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlightedId, onRowVisit }: QuotesTableProps) {
-    const [paidAtMap, setPaidAtMap] = useState<Record<number, string>>({});
     const [clientNotifiedMap, setClientNotifiedMap] = useState<Record<number, { notified: boolean; date: string }>>({});
     const [workCompletedNotifiedMap, setWorkCompletedNotifiedMap] = useState<Record<number, { notified: boolean; date: string }>>({});
 
@@ -115,19 +114,6 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
             router.delete(`/atelier/devis/${quoteId}`);
         }
     };
-
-    const handlePaidAtChange = useCallback(async (quoteId: number, value: string) => {
-        setPaidAtMap(prev => ({ ...prev, [quoteId]: value }));
-        await fetch(`/api/quotes/${quoteId}/paid-at`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-XSRF-TOKEN': getCsrfToken(),
-            },
-            body: JSON.stringify({ paid_at: value || null }),
-        });
-    }, []);
 
     const persistClientNotified = useCallback(async (quoteId: number, notified: boolean, date: string): Promise<boolean> => {
         try {
@@ -258,12 +244,7 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                         </td>
                         {type === 'invoices' && (
                             <td>
-                                <input
-                                    type="date"
-                                    defaultValue={item.paid_at ?? ''}
-                                    onChange={(e) => handlePaidAtChange(item.id, e.target.value)}
-                                    className="quotes-list__paid-at-input"
-                                />
+                                {item.paid_at ? formatDate(item.paid_at) : '—'}
                             </td>
                         )}
                         {type === 'quotes' && (() => {

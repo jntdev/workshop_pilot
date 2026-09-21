@@ -362,6 +362,15 @@ export interface PaymentLine {
     note: string;
 }
 
+export interface QuotePayment {
+    id: number;
+    quote_id: number;
+    amount: number;
+    method: PaymentMethod;
+    paid_at: string;
+    note: string | null;
+}
+
 export interface BikeType {
     id: string; // ex: VAE_sb
     category: BikeCategoryRef;

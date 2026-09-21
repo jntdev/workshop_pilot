@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { Head } from '@inertiajs/react';
 import { KpiCell, RangeCell, type MetierKpi, type RangeKpi, formatCurrency } from '@/Components/Dashboard/KpiCard';
+import DailyPaymentsPanel from '@/Components/Dashboard/DailyPaymentsPanel';
 
 const MONTHS = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -161,6 +162,8 @@ export default function Dashboard({ kpis, period, season_kpis, season, yearly_kp
                         {isRebuilding ? 'Recalcul...' : 'Recalculer les KPIs'}
                     </button>
                 </div>
+
+                <DailyPaymentsPanel />
 
                 <div className="dashboard__grid">
                     {/* Colonne gauche */}

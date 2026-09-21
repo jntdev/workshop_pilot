@@ -190,19 +190,6 @@ class QuoteController extends Controller
         return response()->json($this->formatQuote($quote));
     }
 
-    public function updatePaidAt(Request $request, Quote $quote): JsonResponse
-    {
-        $validated = $request->validate([
-            'paid_at' => 'nullable|date',
-        ]);
-
-        $quote->update([
-            'paid_at' => $validated['paid_at'] ? \Carbon\Carbon::parse($validated['paid_at']) : null,
-        ]);
-
-        return response()->json(['paid_at' => $quote->fresh()->paid_at?->format('Y-m-d')]);
-    }
-
     public function updateClientNotified(Request $request, Quote $quote): JsonResponse
     {
         $validated = $request->validate([

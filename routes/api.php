@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\OrderLineController;
 use App\Http\Controllers\Api\PhotoController;
 use App\Http\Controllers\Api\QuoteCommentController;
 use App\Http\Controllers\Api\QuoteController;
+use App\Http\Controllers\Api\QuotePaymentController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\StockMovementController;
@@ -31,6 +32,7 @@ Route::get('/health', fn () => response()->json(['status' => 'ok']));
 Route::middleware(['web', 'auth'])->group(function () {
     // Dashboard API routes
     Route::post('/dashboard/kpis/rebuild', [AtelierController::class, 'rebuildAllKpis']);
+    Route::get('/dashboard/daily-payments', [AtelierController::class, 'dailyPayments']);
 
     // Atelier API routes
     Route::get('/atelier/stats', [AtelierController::class, 'stats']);
@@ -56,7 +58,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::patch('/quotes/{quote}/archive', [QuoteController::class, 'toggleArchive']);
     Route::post('/quotes/{quote}/convert-to-invoice', [QuoteController::class, 'convertToInvoice']);
     Route::patch('/quotes/{quote}/actual-time', [QuoteController::class, 'updateActualTime']);
-    Route::patch('/quotes/{quote}/paid-at', [QuoteController::class, 'updatePaidAt']);
     Route::patch('/quotes/{quote}/client-notified', [QuoteController::class, 'updateClientNotified']);
     Route::patch('/quotes/{quote}/work-completed-notified', [QuoteController::class, 'updateWorkCompletedNotified']);
     Route::post('/quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);
@@ -69,6 +70,11 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::patch('/quotes/{quote}/comments/resolve', [QuoteCommentController::class, 'resolve']);
     Route::patch('/quotes/{quote}/comments/reopen', [QuoteCommentController::class, 'reopen']);
     Route::delete('/quote-comments/{comment}', [QuoteCommentController::class, 'destroy']);
+
+    // Quote payments API routes
+    Route::get('/quotes/{quote}/payments', [QuotePaymentController::class, 'index']);
+    Route::post('/quotes/{quote}/payments', [QuotePaymentController::class, 'store']);
+    Route::delete('/quote-payments/{payment}', [QuotePaymentController::class, 'destroy']);
 
     // Reservations API routes
     Route::get('/reservations', [ReservationController::class, 'index']);

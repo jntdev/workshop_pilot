@@ -157,6 +157,37 @@ class Quote extends Model
         return $this->hasMany(QuoteComment::class)->orderBy('created_at')->orderBy('id');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(QuotePayment::class)->orderBy('paid_at');
+    }
+
+    public function totalPaid(): float
+    {
+        return (float) $this->payments()->sum('amount');
+    }
+
+    /**
+     * Recalcule paid_at : date du paiement dont le cumul (dans l'ordre chronologique)
+     * atteint ou dépasse le total TTC du devis. Null si le total n'est jamais atteint.
+     */
+    public function recalculatePaidAt(): void
+    {
+        $cumulative = 0.0;
+        $paidAt = null;
+        $total = (float) $this->total_ttc;
+
+        foreach ($this->payments as $payment) {
+            $cumulative += (float) $payment->amount;
+            if ($total > 0 && $cumulative >= $total) {
+                $paidAt = $payment->paid_at;
+                break;
+            }
+        }
+
+        $this->update(['paid_at' => $paidAt]);
+    }
+
     public function hasOpenComments(): bool
     {
         return $this->comments_resolved_at === null && $this->comments()->exists();

@@ -3,17 +3,82 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\Metier;
+use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Models\MonthlyKpi;
 use App\Models\Quote;
+use App\Models\QuotePayment;
 use App\Models\Reservation;
 use App\Models\ReservationPayment;
+use App\Models\Sale;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AtelierController extends Controller
 {
+    public function dailyPayments(Request $request): JsonResponse
+    {
+        $date = $request->input('date') ? \Carbon\Carbon::parse($request->input('date')) : now();
+        $start = $date->copy()->startOfDay();
+        $end = $date->copy()->endOfDay();
+
+        $emptyRow = collect(PaymentMethod::cases())->mapWithKeys(fn ($m) => [$m->value => 0])->all();
+        $bySource = [
+            'atelier' => $emptyRow,
+            'location' => $emptyRow,
+            'caisse' => $emptyRow,
+        ];
+
+        $quotePayments = QuotePayment::whereBetween('paid_at', [$start, $end])
+            ->select('method', DB::raw('SUM(amount) as total'))
+            ->groupBy('method')
+            ->get();
+
+        foreach ($quotePayments as $row) {
+            $method = $row->method instanceof PaymentMethod ? $row->method->value : $row->method;
+            $bySource['atelier'][$method] += (float) $row->total;
+        }
+
+        $reservationPayments = ReservationPayment::whereBetween('paid_at', [$start, $end])
+            ->select('method', DB::raw('SUM(amount) as total'))
+            ->groupBy('method')
+            ->get();
+
+        foreach ($reservationPayments as $row) {
+            $method = $row->method instanceof PaymentMethod ? $row->method->value : $row->method;
+            $bySource['location'][$method] += (float) $row->total;
+        }
+
+        $sales = Sale::where('status', 'completed')
+            ->whereBetween('completed_at', [$start, $end])
+            ->select('payment_method', DB::raw('SUM(total_ttc) as total'))
+            ->groupBy('payment_method')
+            ->get();
+
+        foreach ($sales as $row) {
+            $method = $row->payment_method instanceof PaymentMethod ? $row->payment_method->value : $row->payment_method;
+            if ($method === null) {
+                continue;
+            }
+            $bySource['caisse'][$method] += ((float) $row->total) / 100;
+        }
+
+        $byMethod = $emptyRow;
+        foreach ($bySource as $sourceTotals) {
+            foreach ($sourceTotals as $method => $amount) {
+                $byMethod[$method] += $amount;
+            }
+        }
+
+        return response()->json([
+            'date' => $date->format('Y-m-d'),
+            'by_source' => $bySource,
+            'by_method' => $byMethod,
+            'total' => array_sum($byMethod),
+        ]);
+    }
+
     public function stats(Request $request): JsonResponse
     {
         $year = (int) $request->input('year', now()->year);
