@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\MessageCategoryController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OrderLineController;
 use App\Http\Controllers\Api\PhotoController;
+use App\Http\Controllers\Api\QuoteCommentController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\SaleController;
@@ -57,9 +58,17 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::patch('/quotes/{quote}/actual-time', [QuoteController::class, 'updateActualTime']);
     Route::patch('/quotes/{quote}/paid-at', [QuoteController::class, 'updatePaidAt']);
     Route::patch('/quotes/{quote}/client-notified', [QuoteController::class, 'updateClientNotified']);
+    Route::patch('/quotes/{quote}/work-completed-notified', [QuoteController::class, 'updateWorkCompletedNotified']);
     Route::post('/quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);
     Route::post('/quotes/calculate-line', [QuoteController::class, 'calculateLine']);
     Route::post('/quotes/calculate-totals', [QuoteController::class, 'calculateTotals']);
+
+    // Quote comments API routes
+    Route::get('/quotes/{quote}/comments', [QuoteCommentController::class, 'index']);
+    Route::post('/quotes/{quote}/comments', [QuoteCommentController::class, 'store']);
+    Route::patch('/quotes/{quote}/comments/resolve', [QuoteCommentController::class, 'resolve']);
+    Route::patch('/quotes/{quote}/comments/reopen', [QuoteCommentController::class, 'reopen']);
+    Route::delete('/quote-comments/{comment}', [QuoteCommentController::class, 'destroy']);
 
     // Reservations API routes
     Route::get('/reservations', [ReservationController::class, 'index']);

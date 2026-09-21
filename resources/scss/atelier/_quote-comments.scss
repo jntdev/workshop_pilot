@@ -1,0 +1,177 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+.quote-comments {
+  margin-bottom: $spacing-lg;
+  padding: $spacing-lg;
+  background: $color-bg-white;
+  border: 1px solid $color-border-light;
+  border-radius: $radius-lg;
+
+  &__title {
+    margin: 0 0 $spacing-md;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: $spacing-sm;
+  }
+
+  &__resolve-btn {
+    padding: $spacing-xs $spacing-md;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-success-green;
+    background: #ecfdf5;
+    border: 1px solid $color-success-green;
+    border-radius: $radius-sm;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: $color-success-green;
+      color: white;
+    }
+
+    &--resolved {
+      color: $color-neutral-medium;
+      background: $color-bg-light;
+      border-color: $color-border-medium;
+
+      &:hover:not(:disabled) {
+        background: $color-neutral-medium;
+        color: white;
+      }
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+    max-height: 280px;
+    overflow-y: auto;
+    margin-bottom: $spacing-md;
+  }
+
+  &__loading,
+  &__empty {
+    padding: $spacing-md;
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+    text-align: center;
+  }
+
+  &__item {
+    padding: $spacing-sm $spacing-md;
+    background: $color-bg-light;
+    border-radius: $radius-md;
+  }
+
+  &__item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__recipient {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-primary-blue;
+  }
+
+  &__content {
+    margin: 0;
+    font-size: $font-size-sm;
+    color: $color-neutral-dark;
+    white-space: pre-wrap;
+  }
+
+  &__date {
+    font-size: $font-size-xs;
+    color: $color-neutral-medium;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+
+  &__recipient-picker {
+    display: flex;
+    gap: $spacing-sm;
+  }
+
+  &__recipient-btn {
+    padding: $spacing-xs $spacing-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-neutral-medium;
+    background: $color-bg-light;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    cursor: pointer;
+
+    &:hover {
+      color: $color-neutral-dark;
+    }
+
+    &--active {
+      color: white;
+      background: $color-primary-blue;
+      border-color: $color-primary-blue;
+    }
+  }
+
+  &__input-row {
+    display: flex;
+    gap: $spacing-sm;
+    align-items: stretch;
+  }
+
+  &__input {
+    flex: 1;
+    padding: $spacing-sm;
+    font-size: $font-size-sm;
+    border: 1px solid $color-border-medium;
+    border-radius: $radius-sm;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary-blue;
+    }
+  }
+
+  &__send {
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: white;
+    background: $color-primary-blue;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: darken($color-primary-blue, 8%);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}

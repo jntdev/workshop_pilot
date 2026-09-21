@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { ClientSearch, QuoteLinesTable, QuoteTotals, ConvertModal, FieldConflictBanner } from '@/Components/Atelier/QuoteForm';
+import QuoteCommentsPanel from '@/Components/Atelier/QuoteCommentsPanel';
 import {
     QuoteFormPageProps,
     QuoteLine,
@@ -210,6 +211,12 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         quote?.client_notified_at ?? new Date().toISOString().split('T')[0]
     );
     const [isSavingClientNotified, setIsSavingClientNotified] = useState(false);
+
+    const [workCompletedNotified, setWorkCompletedNotified] = useState(quote?.work_completed_notified ?? false);
+    const [workCompletedNotifiedAt, setWorkCompletedNotifiedAt] = useState(
+        quote?.work_completed_notified_at ?? new Date().toISOString().split('T')[0]
+    );
+    const [isSavingWorkCompletedNotified, setIsSavingWorkCompletedNotified] = useState(false);
 
     const [quoteStatus, setQuoteStatus] = useState<QuoteStatusSlug>(
         (quote?.status as QuoteStatusSlug) ?? 'reception'
@@ -611,7 +618,9 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                 body: JSON.stringify({ status: newStatus }),
             });
             if (response.ok) {
+                const data = await response.json();
                 setQuoteStatus(newStatus);
+                setWorkCompletedNotified(data.work_completed_notified);
                 setMessage('Statut mis à jour.');
             }
         } catch (error) {
@@ -786,12 +795,12 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             setClientNotified(previousNotified);
             setClientNotifiedAt(previousNotifiedAt);
             const errorData = await response.json().catch(() => null);
-            setMessage(errorData?.message || 'Erreur lors de l\'enregistrement de l\'information "client prévenu".');
+            setMessage(errorData?.message || 'Erreur lors de l\'enregistrement de l\'information "devis envoyé".');
         } catch (error) {
             console.error('Client notified update error:', error);
             setClientNotified(previousNotified);
             setClientNotifiedAt(previousNotifiedAt);
-            setMessage('Erreur de connexion lors de l\'enregistrement de l\'information "client prévenu".');
+            setMessage('Erreur de connexion lors de l\'enregistrement de l\'information "devis envoyé".');
         } finally {
             setIsSavingClientNotified(false);
         }
@@ -806,6 +815,57 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         setClientNotifiedAt(date);
         if (clientNotified) {
             persistClientNotified(true, date);
+        }
+    };
+
+    const persistWorkCompletedNotified = async (notified: boolean, notifiedAt: string) => {
+        if (!quote) return;
+
+        const previousNotified = workCompletedNotified;
+        const previousNotifiedAt = workCompletedNotifiedAt;
+
+        setIsSavingWorkCompletedNotified(true);
+        try {
+            const response = await fetch('/api/quotes/' + quote.id + '/work-completed-notified', {
+                method: 'PATCH',
+                headers: apiHeaders(),
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    work_completed_notified: notified,
+                    work_completed_notified_at: notified ? notifiedAt : null,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setWorkCompletedNotified(data.work_completed_notified);
+                setWorkCompletedNotifiedAt(data.work_completed_notified_at ?? previousNotifiedAt);
+                return;
+            }
+
+            setWorkCompletedNotified(previousNotified);
+            setWorkCompletedNotifiedAt(previousNotifiedAt);
+            const errorData = await response.json().catch(() => null);
+            setMessage(errorData?.message || 'Erreur lors de l\'enregistrement de l\'information "client prévenu".');
+        } catch (error) {
+            console.error('Work completed notified update error:', error);
+            setWorkCompletedNotified(previousNotified);
+            setWorkCompletedNotifiedAt(previousNotifiedAt);
+            setMessage('Erreur de connexion lors de l\'enregistrement de l\'information "client prévenu".');
+        } finally {
+            setIsSavingWorkCompletedNotified(false);
+        }
+    };
+
+    const handleToggleWorkCompletedNotified = (checked: boolean) => {
+        setWorkCompletedNotified(checked);
+        persistWorkCompletedNotified(checked, workCompletedNotifiedAt);
+    };
+
+    const handleWorkCompletedNotifiedAtChange = (date: string) => {
+        setWorkCompletedNotifiedAt(date);
+        if (workCompletedNotified) {
+            persistWorkCompletedNotified(true, date);
         }
     };
 
@@ -1128,6 +1188,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                         <h2 className="quote-form__section-title">Résumé</h2>
                         <div className="quote-form__summary-row">
                             <div className="quote-form__remarks">
+                                {isEdit && quote && <QuoteCommentsPanel quoteId={quote.id} />}
                                 <h3 className="quote-form__subsection-title">Remarques</h3>
                                 <textarea
                                     value={remarks}
@@ -1185,6 +1246,12 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                                     onClientNotifiedChange={isEdit ? handleToggleClientNotified : undefined}
                                     onClientNotifiedAtChange={isEdit ? handleClientNotifiedAtChange : undefined}
                                     isSavingClientNotified={isSavingClientNotified}
+                                    status={quoteStatus}
+                                    workCompletedNotified={workCompletedNotified}
+                                    workCompletedNotifiedAt={workCompletedNotifiedAt}
+                                    onWorkCompletedNotifiedChange={isEdit ? handleToggleWorkCompletedNotified : undefined}
+                                    onWorkCompletedNotifiedAtChange={isEdit ? handleWorkCompletedNotifiedAtChange : undefined}
+                                    isSavingWorkCompletedNotified={isSavingWorkCompletedNotified}
                                     disabled={isReadOnly}
                                     isInvoice={isInvoice}
                                 />

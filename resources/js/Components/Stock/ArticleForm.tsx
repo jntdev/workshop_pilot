@@ -341,42 +341,41 @@ export default function ArticleForm({ article, categories, csrfToken, onSaved, o
                         )}
                     </div>
 
-                    <div className="article-form__row">
-                        <div className="article-form__field article-form__field--grow">
-                            <label className="article-form__label">Lot d'origine</label>
-                            <ArticleAutocomplete
-                                value={lotSearch}
-                                articleId={form.lot_article_id ? Number(form.lot_article_id) : null}
-                                onChange={setLotSearch}
-                                onSelect={a => {
-                                    set('lot_article_id', String(a.id));
-                                    setLotSearch(`${a.reference} — ${a.designation}`);
-                                    setSelectedLot(a);
-                                }}
-                                onDetach={() => { set('lot_article_id', ''); setLotSearch(''); setSelectedLot(null); }}
-                                placeholder="Rechercher le lot en stock (rouleau, boîte...)"
-                                hasStock
-                            />
-                            <span className="article-form__hint">
-                                À renseigner si cet article est vendu à l'unité depuis un lot déjà en stock (ex: chaîne au mètre depuis un touret).
-                                {selectedLot?.lot_quantity ? ` Prix unitaire suggéré : ${centsToEuros(Math.round(selectedLot.sale_price_ttc / selectedLot.lot_quantity))} €.` : ''}
-                            </span>
-                        </div>
-                        <div className="article-form__field">
-                            <label className="article-form__label">Unités par lot</label>
-                            <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                className="article-form__input"
-                                value={form.lot_quantity}
-                                onChange={e => set('lot_quantity', e.target.value)}
-                                placeholder="ex: 25"
-                            />
-                            <span className="article-form__hint">
-                                Si ce lot se décompte facilement (ex: boîte de 25 plaquettes). Laisser vide sinon (ex: touret de chaîne, bidon de liquide).
-                            </span>
-                        </div>
+                    <div className="article-form__field">
+                        <label className="article-form__label">Lot d'origine</label>
+                        <ArticleAutocomplete
+                            value={lotSearch}
+                            articleId={form.lot_article_id ? Number(form.lot_article_id) : null}
+                            onChange={setLotSearch}
+                            onSelect={a => {
+                                set('lot_article_id', String(a.id));
+                                setLotSearch(`${a.reference} — ${a.designation}`);
+                                setSelectedLot(a);
+                            }}
+                            onDetach={() => { set('lot_article_id', ''); setLotSearch(''); setSelectedLot(null); }}
+                            placeholder="Rechercher le lot en stock (rouleau, boîte...)"
+                            hasStock
+                        />
+                        <span className="article-form__hint">
+                            À renseigner si cet article est vendu à l'unité depuis un lot déjà en stock (ex: chaîne au mètre depuis un touret).
+                            {selectedLot?.lot_quantity ? ` Prix unitaire suggéré : ${centsToEuros(Math.round(selectedLot.sale_price_ttc / selectedLot.lot_quantity))} €.` : ''}
+                        </span>
+                    </div>
+
+                    <div className="article-form__field">
+                        <label className="article-form__label">Unités par lot</label>
+                        <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="article-form__input"
+                            value={form.lot_quantity}
+                            onChange={e => set('lot_quantity', e.target.value)}
+                            placeholder="ex: 25"
+                        />
+                        <span className="article-form__hint">
+                            Si ce lot se décompte facilement (ex: boîte de 25 plaquettes). Laisser vide sinon (ex: touret de chaîne, bidon de liquide).
+                        </span>
                     </div>
 
                     <div className="article-form__field">

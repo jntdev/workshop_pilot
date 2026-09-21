@@ -139,6 +139,8 @@ Route::middleware(['auth'])->group(function () {
             ];
         };
 
+        $openCommentRecipientsByQuote = \App\Models\Quote::openCommentRecipientsByQuote();
+
         $mapQuote = fn ($q) => [
             'id' => $q->id,
             'reference' => $q->reference,
@@ -160,10 +162,13 @@ Route::middleware(['auth'])->group(function () {
             'invoiced_at' => $q->invoiced_at?->toISOString(),
             'client_notified' => $q->client_notified,
             'client_notified_at' => $q->client_notified_at?->format('Y-m-d'),
+            'work_completed_notified' => $q->work_completed_notified,
+            'work_completed_notified_at' => $q->work_completed_notified_at?->format('Y-m-d'),
             'created_at' => $q->created_at->toISOString(),
             'can_delete' => $q->canDelete(),
             'is_invoice' => $q->isInvoice(),
             'is_archived' => $q->is_archived,
+            'open_comment_recipients' => $openCommentRecipientsByQuote[$q->id] ?? [],
         ];
 
         $quotes = \App\Models\Quote::with('client')
@@ -284,6 +289,7 @@ Route::middleware(['auth'])->group(function () {
                 'bike_description' => $quote->bike_description,
                 'reception_comment' => $quote->reception_comment,
                 'remarks' => $quote->remarks,
+                'email_note' => $quote->email_note,
                 'valid_until' => $quote->valid_until->format('Y-m-d'),
                 'discount_type' => $quote->discount_type,
                 'discount_value' => $quote->discount_value,
@@ -294,10 +300,15 @@ Route::middleware(['auth'])->group(function () {
                 'total_estimated_time_minutes' => $quote->total_estimated_time_minutes,
                 'actual_time_minutes' => $quote->actual_time_minutes,
                 'invoiced_at' => $quote->invoiced_at?->toISOString(),
+                'client_notified' => $quote->client_notified,
+                'client_notified_at' => $quote->client_notified_at?->format('Y-m-d'),
+                'work_completed_notified' => $quote->work_completed_notified,
+                'work_completed_notified_at' => $quote->work_completed_notified_at?->format('Y-m-d'),
                 'created_at' => $quote->created_at->toISOString(),
                 'updated_at' => $quote->updated_at->toISOString(),
                 'status' => $quote->status?->value,
                 'is_invoice' => $quote->isInvoice(),
+                'is_archived' => $quote->is_archived,
                 'can_edit' => $quote->canEdit(),
                 'can_delete' => $quote->canDelete(),
                 'lines' => $quote->lines->map(fn ($line) => [

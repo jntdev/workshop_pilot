@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useLayoutEffect, useEffect } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Quote, QuoteStatusSlug } from '@/types';
+import { Quote, QuoteStatusSlug, QuoteCommentRecipient } from '@/types';
+import { EyeIcon, ArchiveIcon, TrashIcon } from './QuotesTableIcons';
 
 type TabType = 'quotes' | 'invoices' | 'clients' | 'archives';
 
@@ -54,6 +55,12 @@ const STATUS_FILTER_LABELS: Record<string, string> = {
     done: 'Terminé',
 };
 
+const RECIPIENT_FILTER_LABELS: Record<'all' | QuoteCommentRecipient, string> = {
+    all: 'Tous',
+    nikal: 'Pour Nikal',
+    jal: 'Pour Jal',
+};
+
 const getCsrfToken = (): string => {
     const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
     return match ? decodeURIComponent(match[1]) : '';
@@ -64,6 +71,13 @@ const STATUS_FILTER_STORAGE_KEY = 'atelier.quotes.statusFilter';
 function getStoredStatusFilter(): string {
     const stored = localStorage.getItem(STATUS_FILTER_STORAGE_KEY);
     return stored && (stored === 'all' || stored in STATUS_FILTER_LABELS) ? stored : 'all';
+}
+
+const RECIPIENT_FILTER_STORAGE_KEY = 'atelier.quotes.recipientFilter';
+
+function getStoredRecipientFilter(): 'all' | QuoteCommentRecipient {
+    const stored = localStorage.getItem(RECIPIENT_FILTER_STORAGE_KEY);
+    return stored && stored in RECIPIENT_FILTER_LABELS ? (stored as 'all' | QuoteCommentRecipient) : 'all';
 }
 
 const SCROLL_Y_STORAGE_KEY = 'atelier.quotes.scrollY';
@@ -93,6 +107,7 @@ interface QuotesTableProps {
 function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlightedId, onRowVisit }: QuotesTableProps) {
     const [paidAtMap, setPaidAtMap] = useState<Record<number, string>>({});
     const [clientNotifiedMap, setClientNotifiedMap] = useState<Record<number, { notified: boolean; date: string }>>({});
+    const [workCompletedNotifiedMap, setWorkCompletedNotifiedMap] = useState<Record<number, { notified: boolean; date: string }>>({});
 
     const handleDelete = (quoteId: number, e: React.FormEvent) => {
         e.preventDefault();
@@ -140,7 +155,7 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
         const ok = await persistClientNotified(quoteId, checked, previous.date);
         if (!ok) {
             setClientNotifiedMap(prev => ({ ...prev, [quoteId]: previous }));
-            alert('Erreur lors de l\'enregistrement de l\'information "client prévenu".');
+            alert('Erreur lors de l\'enregistrement de l\'information "devis envoyé".');
         }
     }, [persistClientNotified]);
 
@@ -151,9 +166,47 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
         const ok = await persistClientNotified(quoteId, true, date);
         if (!ok) {
             setClientNotifiedMap(prev => ({ ...prev, [quoteId]: previous }));
-            alert('Erreur lors de l\'enregistrement de l\'information "client prévenu".');
+            alert('Erreur lors de l\'enregistrement de l\'information "devis envoyé".');
         }
     }, [persistClientNotified]);
+
+    const persistWorkCompletedNotified = useCallback(async (quoteId: number, notified: boolean, date: string): Promise<boolean> => {
+        try {
+            const response = await fetch(`/api/quotes/${quoteId}/work-completed-notified`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-XSRF-TOKEN': getCsrfToken(),
+                },
+                body: JSON.stringify({ work_completed_notified: notified, work_completed_notified_at: notified ? date : null }),
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Work completed notified update error:', error);
+            return false;
+        }
+    }, []);
+
+    const handleWorkCompletedNotifiedToggle = useCallback(async (quoteId: number, previous: { notified: boolean; date: string }, checked: boolean) => {
+        setWorkCompletedNotifiedMap(prev => ({ ...prev, [quoteId]: { notified: checked, date: previous.date } }));
+        const ok = await persistWorkCompletedNotified(quoteId, checked, previous.date);
+        if (!ok) {
+            setWorkCompletedNotifiedMap(prev => ({ ...prev, [quoteId]: previous }));
+            alert('Erreur lors de l\'enregistrement de l\'information "client prévenu".');
+        }
+    }, [persistWorkCompletedNotified]);
+
+    const handleWorkCompletedNotifiedDateChange = useCallback(async (quoteId: number, previous: { notified: boolean; date: string }, date: string) => {
+        setWorkCompletedNotifiedMap(prev => ({ ...prev, [quoteId]: { notified: previous.notified, date } }));
+        if (!previous.notified) return;
+
+        const ok = await persistWorkCompletedNotified(quoteId, true, date);
+        if (!ok) {
+            setWorkCompletedNotifiedMap(prev => ({ ...prev, [quoteId]: previous }));
+            alert('Erreur lors de l\'enregistrement de l\'information "client prévenu".');
+        }
+    }, [persistWorkCompletedNotified]);
 
     if (items.length === 0) {
         return (
@@ -179,6 +232,7 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                     <th>Total TTC</th>
                     <th>{type === 'invoices' ? 'Date de facturation' : 'Date'}</th>
                     {type === 'invoices' && <th>Payé le</th>}
+                    {type === 'quotes' && <th>Devis envoyé</th>}
                     {type === 'quotes' && <th>Client prévenu</th>}
                     {type === 'quotes' && <th>Statut</th>}
                     {type === 'archives' && <th>Type</th>}
@@ -237,6 +291,33 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                                 </td>
                             );
                         })()}
+                        {type === 'quotes' && (() => {
+                            const state = workCompletedNotifiedMap[item.id] ?? {
+                                notified: item.work_completed_notified,
+                                date: item.work_completed_notified_at ?? new Date().toISOString().split('T')[0],
+                            };
+                            const isDone = item.status === 'done';
+                            return (
+                                <td className="quotes-list__client-notified">
+                                    <label className="quotes-list__client-notified-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={state.notified}
+                                            disabled={!isDone}
+                                            onChange={(e) => handleWorkCompletedNotifiedToggle(item.id, state, e.target.checked)}
+                                        />
+                                    </label>
+                                    {isDone && state.notified && (
+                                        <input
+                                            type="date"
+                                            value={state.date}
+                                            onChange={(e) => handleWorkCompletedNotifiedDateChange(item.id, state, e.target.value)}
+                                            className="quotes-list__client-notified-date-input"
+                                        />
+                                    )}
+                                </td>
+                            );
+                        })()}
                         {type === 'quotes' && (
                             <td>
                                 <select
@@ -266,27 +347,33 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                                         ? `/atelier/devis/${item.id}`
                                         : `/atelier/devis/${item.id}/modifier`
                                 }
-                                className="quotes-list__link"
+                                className="quotes-list__icon-link"
                                 onClick={() => onRowVisit?.(item.id)}
+                                title="Consulter"
+                                aria-label="Consulter"
                             >
-                                Consulter
+                                <EyeIcon />
                             </Link>
                             {type === 'quotes' && (
                                 <button
                                     type="button"
-                                    className="quotes-list__link quotes-list__link--muted"
+                                    className="quotes-list__icon-link quotes-list__icon-link--muted"
                                     onClick={() => onArchiveToggle?.(item.id)}
+                                    title="Archiver"
+                                    aria-label="Archiver"
                                 >
-                                    Archiver
+                                    <ArchiveIcon />
                                 </button>
                             )}
                             {type === 'archives' && (
                                 <button
                                     type="button"
-                                    className="quotes-list__link quotes-list__link--muted"
+                                    className="quotes-list__icon-link quotes-list__icon-link--muted"
                                     onClick={() => onArchiveToggle?.(item.id)}
+                                    title="Désarchiver"
+                                    aria-label="Désarchiver"
                                 >
-                                    Désarchiver
+                                    <ArchiveIcon />
                                 </button>
                             )}
                             {type === 'quotes' && item.can_delete && (
@@ -296,9 +383,11 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                                 >
                                     <button
                                         type="submit"
-                                        className="quotes-list__link quotes-list__link--danger"
+                                        className="quotes-list__icon-link quotes-list__icon-link--danger"
+                                        title="Supprimer"
+                                        aria-label="Supprimer"
                                     >
-                                        Supprimer
+                                        <TrashIcon />
                                     </button>
                                 </form>
                             )}
@@ -427,9 +516,11 @@ function ClientSearchTab({ onSearch, searchQuery, results, isSearching }: Client
                                                                 ? `/atelier/devis/${quote.id}`
                                                                 : `/atelier/devis/${quote.id}/modifier`
                                                         }
-                                                        className="quotes-list__link"
+                                                        className="quotes-list__icon-link"
+                                                        title="Consulter"
+                                                        aria-label="Consulter"
                                                     >
-                                                        Consulter
+                                                        <EyeIcon />
                                                     </Link>
                                                     {quote.can_delete && (
                                                         <form
@@ -438,9 +529,11 @@ function ClientSearchTab({ onSearch, searchQuery, results, isSearching }: Client
                                                         >
                                                             <button
                                                                 type="submit"
-                                                                className="quotes-list__link quotes-list__link--danger"
+                                                                className="quotes-list__icon-link quotes-list__icon-link--danger"
+                                                                title="Supprimer"
+                                                                aria-label="Supprimer"
                                                             >
-                                                                Supprimer
+                                                                <TrashIcon />
                                                             </button>
                                                         </form>
                                                     )}
@@ -475,10 +568,16 @@ export default function QuotesTabs({
     onTabChange,
 }: QuotesTabsProps) {
     const [statusFilter, setStatusFilter] = useState<string>(getStoredStatusFilter);
+    const [recipientFilter, setRecipientFilter] = useState<'all' | QuoteCommentRecipient>(getStoredRecipientFilter);
 
     const handleStatusFilterChange = useCallback((slug: string) => {
         setStatusFilter(slug);
         localStorage.setItem(STATUS_FILTER_STORAGE_KEY, slug);
+    }, []);
+
+    const handleRecipientFilterChange = useCallback((recipient: 'all' | QuoteCommentRecipient) => {
+        setRecipientFilter(recipient);
+        localStorage.setItem(RECIPIENT_FILTER_STORAGE_KEY, recipient);
     }, []);
     const [quotes, setQuotes] = useState<Quote[]>(initialQuotes);
     const [archivedQuotes, setArchivedQuotes] = useState<Quote[]>(initialArchivedQuotes);
@@ -562,7 +661,7 @@ export default function QuotesTabs({
             if (response.ok) {
                 const data = await response.json();
                 setQuotes(prev =>
-                    prev.map(q => q.id === quoteId ? { ...q, status: data.status } : q)
+                    prev.map(q => q.id === quoteId ? { ...q, status: data.status, work_completed_notified: data.work_completed_notified } : q)
                 );
             }
         } catch (error) {
@@ -607,9 +706,10 @@ export default function QuotesTabs({
     };
 
     const filteredQuotes = useMemo(() => {
-        if (statusFilter === 'all') return quotes;
-        return quotes.filter(q => q.status === statusFilter);
-    }, [quotes, statusFilter]);
+        return quotes
+            .filter(q => statusFilter === 'all' || q.status === statusFilter)
+            .filter(q => recipientFilter === 'all' || q.open_comment_recipients.includes(recipientFilter));
+    }, [quotes, statusFilter, recipientFilter]);
 
     const handleClientSearch = async (query: string) => {
         setClientSearch(query);
@@ -686,6 +786,23 @@ export default function QuotesTabs({
                             {slug !== 'all' && (
                                 <span className="quotes-status-filter__count">
                                     {quotes.filter(q => q.status === slug).length}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+                <div className="quotes-status-filters">
+                    {Object.entries(RECIPIENT_FILTER_LABELS).map(([slug, label]) => (
+                        <button
+                            key={slug}
+                            type="button"
+                            onClick={() => handleRecipientFilterChange(slug as 'all' | QuoteCommentRecipient)}
+                            className={`quotes-status-filter ${recipientFilter === slug ? 'quotes-status-filter--active' : ''}`}
+                        >
+                            {label}
+                            {slug !== 'all' && (
+                                <span className="quotes-status-filter__count">
+                                    {quotes.filter(q => q.open_comment_recipients.includes(slug as QuoteCommentRecipient)).length}
                                 </span>
                             )}
                         </button>

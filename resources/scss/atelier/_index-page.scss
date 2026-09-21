@@ -262,6 +262,38 @@
   }
 }
 
+.quotes-list__icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: $color-primary-blue;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.15s;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  &--danger {
+    color: $color-danger-red;
+  }
+
+  &--muted {
+    color: #6c757d;
+  }
+}
+
 .quotes-list__delete-form {
   display: inline;
 }

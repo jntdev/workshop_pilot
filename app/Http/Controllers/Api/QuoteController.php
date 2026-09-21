@@ -225,6 +225,32 @@ class QuoteController extends Controller
         ]);
     }
 
+    public function updateWorkCompletedNotified(Request $request, Quote $quote): JsonResponse
+    {
+        if ($quote->status !== QuoteStatus::Done) {
+            return response()->json(['message' => 'Le devis doit être au statut "Terminé".'], 422);
+        }
+
+        $validated = $request->validate([
+            'work_completed_notified' => 'required|boolean',
+            'work_completed_notified_at' => 'nullable|date',
+        ]);
+
+        $quote->update([
+            'work_completed_notified' => $validated['work_completed_notified'],
+            'work_completed_notified_at' => $validated['work_completed_notified']
+                ? \Carbon\Carbon::parse($validated['work_completed_notified_at'] ?? now())
+                : null,
+        ]);
+
+        $quote->refresh();
+
+        return response()->json([
+            'work_completed_notified' => $quote->work_completed_notified,
+            'work_completed_notified_at' => $quote->work_completed_notified_at?->format('Y-m-d'),
+        ]);
+    }
+
     public function sendEmail(Request $request, Quote $quote): JsonResponse
     {
         $validated = $request->validate([
@@ -342,9 +368,19 @@ class QuoteController extends Controller
             'status' => 'required|string|in:'.$allowedValues,
         ]);
 
-        $quote->update(['status' => $validated['status']]);
+        $attributes = ['status' => $validated['status']];
 
-        return response()->json(['status' => $quote->fresh()->status?->value]);
+        if ($validated['status'] !== QuoteStatus::Done->value) {
+            $attributes['work_completed_notified'] = false;
+            $attributes['work_completed_notified_at'] = null;
+        }
+
+        $quote->update($attributes);
+
+        return response()->json([
+            'status' => $quote->fresh()->status?->value,
+            'work_completed_notified' => $quote->fresh()->work_completed_notified,
+        ]);
     }
 
     public function toggleArchive(Quote $quote): JsonResponse

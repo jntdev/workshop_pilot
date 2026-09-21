@@ -8,9 +8,10 @@ interface Props {
     onSelect: (article: Article) => void;
     onDetach: () => void;
     placeholder?: string;
+    hasStock?: boolean;
 }
 
-export default function ArticleAutocomplete({ value, articleId, onChange, onSelect, onDetach, placeholder }: Props) {
+export default function ArticleAutocomplete({ value, articleId, onChange, onSelect, onDetach, placeholder, hasStock }: Props) {
     const [results, setResults] = useState<Article[]>([]);
     const [open, setOpen] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
@@ -20,12 +21,14 @@ export default function ArticleAutocomplete({ value, articleId, onChange, onSele
     const search = useCallback(async (q: string) => {
         if (q.length < 3) { setResults([]); setOpen(false); return; }
         setIsSearching(true);
-        const res = await fetch(`/api/articles/search?q=${encodeURIComponent(q)}`, { headers: { Accept: 'application/json' } });
+        const params = new URLSearchParams({ q });
+        if (hasStock) { params.set('has_stock', '1'); }
+        const res = await fetch(`/api/articles/search?${params}`, { headers: { Accept: 'application/json' } });
         const data = await res.json();
         setResults(data);
         setOpen(data.length > 0);
         setIsSearching(false);
-    }, []);
+    }, [hasStock]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const v = e.target.value;

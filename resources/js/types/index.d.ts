@@ -112,6 +112,8 @@ export interface QuoteDetail {
     paid_at: string | null;
     client_notified: boolean;
     client_notified_at: string | null;
+    work_completed_notified: boolean;
+    work_completed_notified_at: string | null;
     created_at: string;
     updated_at: string;
     is_invoice: boolean;
@@ -120,6 +122,17 @@ export interface QuoteDetail {
     is_archived: boolean;
     status: QuoteStatusSlug | null;
     lines: QuoteLine[];
+}
+
+export type QuoteCommentRecipient = 'nikal' | 'jal';
+
+export interface QuoteComment {
+    id: number;
+    quote_id: number;
+    recipient_label: QuoteCommentRecipient;
+    recipient_display: string;
+    content: string;
+    created_at: string;
 }
 
 export interface QuoteFieldConflict {
@@ -172,10 +185,13 @@ export interface Quote {
     paid_at: string | null;
     client_notified: boolean;
     client_notified_at: string | null;
+    work_completed_notified: boolean;
+    work_completed_notified_at: string | null;
     created_at: string;
     can_delete: boolean;
     is_invoice: boolean;
     is_archived: boolean;
+    open_comment_recipients: QuoteCommentRecipient[];
 }
 
 export interface KpiStats {

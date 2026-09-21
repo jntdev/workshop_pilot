@@ -978,12 +978,14 @@
     }
 }
 
-// Colonne "Client prévenu" inline dans la liste des devis
+// Colonnes "Devis envoyé" / "Client prévenu" inline dans la liste des devis
 .quotes-list__client-notified {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     white-space: nowrap;
+
+    > * {
+        display: inline-flex;
+        vertical-align: middle;
+    }
 }
 
 .quotes-list__client-notified-label {
@@ -999,6 +1001,7 @@
 }
 
 .quotes-list__client-notified-date-input {
+    margin-left: 0.5rem;
     padding: 0.2rem 0.4rem;
     font-size: 0.82rem;
     border: 1px solid $color-border-medium;

@@ -17,6 +17,8 @@ class StoreArticleRequest extends FormRequest
             'article_subcategory_id' => ['nullable', 'integer', 'exists:article_subcategories,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
+            'lot_article_id' => ['nullable', 'integer', 'exists:articles,id'],
+            'lot_quantity' => ['nullable', 'integer', 'min:1'],
             'reference' => ['required', 'string', 'max:100', 'unique:articles,reference'],
             'designation' => ['required', 'string', 'max:255'],
             'purchase_price_ht' => ['required', 'integer', 'min:0'],

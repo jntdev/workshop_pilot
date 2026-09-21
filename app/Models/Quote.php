@@ -27,6 +27,8 @@ class Quote extends Model
         'remarks',
         'client_notified',
         'client_notified_at',
+        'work_completed_notified',
+        'work_completed_notified_at',
         'metier',
         'reference',
         'status',
@@ -43,6 +45,7 @@ class Quote extends Model
         'actual_time_minutes',
         'is_archived',
         'email_note',
+        'comments_resolved_at',
     ];
 
     protected function casts(): array
@@ -54,6 +57,8 @@ class Quote extends Model
             'paid_at' => 'datetime',
             'client_notified' => 'boolean',
             'client_notified_at' => 'date',
+            'work_completed_notified' => 'boolean',
+            'work_completed_notified_at' => 'date',
             'valid_until' => 'date',
             'discount_value' => 'decimal:2',
             'total_ht' => 'decimal:2',
@@ -63,6 +68,7 @@ class Quote extends Model
             'total_estimated_time_minutes' => 'integer',
             'actual_time_minutes' => 'integer',
             'is_archived' => 'boolean',
+            'comments_resolved_at' => 'datetime',
         ];
     }
 
@@ -144,6 +150,42 @@ class Quote extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(QuoteLine::class)->orderBy('position');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(QuoteComment::class)->orderBy('created_at')->orderBy('id');
+    }
+
+    public function hasOpenComments(): bool
+    {
+        return $this->comments_resolved_at === null && $this->comments()->exists();
+    }
+
+    public function markCommentsAsResolved(): void
+    {
+        $this->update(['comments_resolved_at' => now()]);
+    }
+
+    public function reopenComments(): void
+    {
+        $this->update(['comments_resolved_at' => null]);
+    }
+
+    /**
+     * @return array<int, list<string>> quote_id => destinataires concernés, pour les devis ayant un fil de commentaires ouvert
+     */
+    public static function openCommentRecipientsByQuote(): array
+    {
+        return self::query()
+            ->whereNull('comments_resolved_at')
+            ->whereHas('comments')
+            ->with('comments:id,quote_id,recipient_label')
+            ->get()
+            ->mapWithKeys(fn (Quote $quote) => [
+                $quote->id => $quote->comments->pluck('recipient_label')->unique()->map(fn ($r) => $r->value)->values()->toArray(),
+            ])
+            ->toArray();
     }
 
     // Méthodes de validation

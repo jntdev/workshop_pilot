@@ -19,6 +19,8 @@ class UpdateArticleRequest extends FormRequest
             'article_subcategory_id' => ['nullable', 'integer', 'exists:article_subcategories,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
+            'lot_article_id' => ['nullable', 'integer', 'exists:articles,id', "not_in:{$id}"],
+            'lot_quantity' => ['nullable', 'integer', 'min:1'],
             'reference' => ['sometimes', 'string', 'max:100', "unique:articles,reference,{$id}"],
             'designation' => ['sometimes', 'string', 'max:255'],
             'purchase_price_ht' => ['sometimes', 'integer', 'min:0'],

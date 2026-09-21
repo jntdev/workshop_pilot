@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { QuoteTotals as QuoteTotalsType } from '@/types';
+import { QuoteTotals as QuoteTotalsType, QuoteStatusSlug } from '@/types';
 
 interface QuoteTotalsProps {
     totals: QuoteTotalsType;
@@ -18,6 +18,12 @@ interface QuoteTotalsProps {
     onClientNotifiedChange?: (notified: boolean) => void;
     onClientNotifiedAtChange?: (date: string) => void;
     isSavingClientNotified?: boolean;
+    status?: QuoteStatusSlug | null;
+    workCompletedNotified?: boolean;
+    workCompletedNotifiedAt?: string;
+    onWorkCompletedNotifiedChange?: (notified: boolean) => void;
+    onWorkCompletedNotifiedAtChange?: (date: string) => void;
+    isSavingWorkCompletedNotified?: boolean;
     disabled?: boolean;
     isInvoice?: boolean;
 }
@@ -53,6 +59,12 @@ export default function QuoteTotals({
     onClientNotifiedChange,
     onClientNotifiedAtChange,
     isSavingClientNotified,
+    status,
+    workCompletedNotified,
+    workCompletedNotifiedAt,
+    onWorkCompletedNotifiedChange,
+    onWorkCompletedNotifiedAtChange,
+    isSavingWorkCompletedNotified,
     disabled,
     isInvoice,
 }: QuoteTotalsProps) {
@@ -188,7 +200,7 @@ export default function QuoteTotals({
                                 onChange={(e) => onClientNotifiedChange(e.target.checked)}
                                 disabled={disabled || isSavingClientNotified}
                             />
-                            Client prévenu
+                            Devis envoyé
                         </label>
                         {clientNotified && (
                             <input
@@ -197,6 +209,29 @@ export default function QuoteTotals({
                                 onChange={(e) => onClientNotifiedAtChange(e.target.value)}
                                 className="quote-form__input quote-form__client-notified-date"
                                 disabled={disabled || isSavingClientNotified}
+                            />
+                        )}
+                    </div>
+                )}
+
+                {status === 'done' && onWorkCompletedNotifiedChange && onWorkCompletedNotifiedAtChange && (
+                    <div className="quote-form__field quote-form__field--full quote-form__client-notified">
+                        <label className="quote-form__checkbox-label">
+                            <input
+                                type="checkbox"
+                                checked={workCompletedNotified ?? false}
+                                onChange={(e) => onWorkCompletedNotifiedChange(e.target.checked)}
+                                disabled={disabled || isSavingWorkCompletedNotified}
+                            />
+                            Client prévenu
+                        </label>
+                        {workCompletedNotified && (
+                            <input
+                                type="date"
+                                value={workCompletedNotifiedAt ?? ''}
+                                onChange={(e) => onWorkCompletedNotifiedAtChange(e.target.value)}
+                                className="quote-form__input quote-form__client-notified-date"
+                                disabled={disabled || isSavingWorkCompletedNotified}
                             />
                         )}
                     </div>

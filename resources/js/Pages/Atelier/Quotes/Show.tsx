@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
+import QuoteCommentsPanel from '@/Components/Atelier/QuoteCommentsPanel';
 import { QuoteShowPageProps } from '@/types';
 
 function formatCurrency(value: string | number): string {
@@ -248,6 +249,8 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                         )}
                     </div>
                 </section>
+
+                <QuoteCommentsPanel quoteId={quote.id} />
 
                 <div className="quote-show__actions">
                     <Link href="/atelier" className="quote-show__btn quote-show__btn--secondary">
