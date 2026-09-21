@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\MessageCategoryController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OrderLineController;
 use App\Http\Controllers\Api\PhotoController;
+use App\Http\Controllers\Api\QuoteAppointmentController;
 use App\Http\Controllers\Api\QuoteCommentController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\QuotePaymentController;
@@ -51,6 +52,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/quotes/order-lines', [OrderLineController::class, 'index']);
     Route::patch('/quote-lines/{quoteLine}/order-status', [OrderLineController::class, 'updateOrderStatus']);
     Route::get('/quotes/{quote}', [QuoteController::class, 'show']);
+    Route::get('/quotes/{quote}/tasks', [QuoteController::class, 'tasks']);
     Route::post('/quotes', [QuoteController::class, 'store']);
     Route::put('/quotes/{quote}', [QuoteController::class, 'update']);
     Route::delete('/quotes/{quote}', [QuoteController::class, 'destroy']);
@@ -75,6 +77,13 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/quotes/{quote}/payments', [QuotePaymentController::class, 'index']);
     Route::post('/quotes/{quote}/payments', [QuotePaymentController::class, 'store']);
     Route::delete('/quote-payments/{payment}', [QuotePaymentController::class, 'destroy']);
+
+    // Quote appointments (agenda atelier) API routes
+    Route::get('/quote-appointments', [QuoteAppointmentController::class, 'index']);
+    Route::get('/quote-appointments/unscheduled', [QuoteAppointmentController::class, 'unscheduled']);
+    Route::post('/quotes/{quote}/appointments', [QuoteAppointmentController::class, 'store']);
+    Route::put('/quote-appointments/{appointment}', [QuoteAppointmentController::class, 'update']);
+    Route::delete('/quote-appointments/{appointment}', [QuoteAppointmentController::class, 'destroy']);
 
     // Reservations API routes
     Route::get('/reservations', [ReservationController::class, 'index']);

@@ -137,6 +137,24 @@
     min-height: 0;
     overflow: hidden;
   }
+
+  // Exception pour le mode planification (atelier) : le contenu doit coller à
+  // gauche de l'écran, pas rester centré dans les 1800px du layout, pour que
+  // le panneau agenda (1/3 droit) ait toute la place sans chevauchement.
+  &:has(.atelier-index--planning) {
+    max-width: none;
+    margin: 0;
+  }
+
+  // Exception pour la page agenda atelier : la grille doit occuper toute la
+  // largeur de l'écran pour que le nombre de jours affichés (calculé depuis
+  // la largeur disponible) ne soit pas limité par les 1800px du layout.
+  &:has(.agenda) {
+    max-width: none;
+    padding-left: $spacing-md;
+    padding-right: $spacing-md;
+    margin: 0;
+  }
 }
 
 // Privacy Toggle (Mode Atelier / Comptoir)

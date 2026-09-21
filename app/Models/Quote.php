@@ -162,6 +162,11 @@ class Quote extends Model
         return $this->hasMany(QuotePayment::class)->orderBy('paid_at');
     }
 
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(QuoteAppointment::class)->orderBy('starts_at');
+    }
+
     public function totalPaid(): float
     {
         return (float) $this->payments()->sum('amount');

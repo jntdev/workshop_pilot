@@ -1,7 +1,9 @@
-import { useState, useMemo, useCallback, useLayoutEffect, useEffect } from 'react';
+import { Fragment, useState, useMemo, useCallback, useLayoutEffect, useEffect } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Quote, QuoteStatusSlug, QuoteCommentRecipient } from '@/types';
-import { EyeIcon, ArchiveIcon, TrashIcon } from './QuotesTableIcons';
+import { Quote, QuoteStatusSlug, QuoteCommentRecipient, QuoteTask } from '@/types';
+import { EyeIcon, ArchiveIcon, TrashIcon, ChevronIcon } from './QuotesTableIcons';
+import PlanningSidePanel from './Agenda/PlanningSidePanel';
+import type { DragQuotePayload } from './Agenda/agendaShared';
 
 type TabType = 'quotes' | 'invoices' | 'clients' | 'archives';
 
@@ -13,6 +15,8 @@ interface QuotesTabsProps {
     invoicesLoaded: boolean;
     activeTab: TabType;
     onTabChange: (tab: TabType) => void;
+    planningMode?: boolean;
+    onClosePlanningMode?: () => void;
 }
 
 const STATUS_LABELS: Record<QuoteStatusSlug, string> = {
@@ -102,9 +106,10 @@ interface QuotesTableProps {
     onArchiveToggle?: (quoteId: number) => void;
     highlightedId?: number | null;
     onRowVisit?: (quoteId: number) => void;
+    planningMode?: boolean;
 }
 
-function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlightedId, onRowVisit }: QuotesTableProps) {
+function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlightedId, onRowVisit, planningMode }: QuotesTableProps) {
     const [clientNotifiedMap, setClientNotifiedMap] = useState<Record<number, { notified: boolean; date: string }>>({});
     const [workCompletedNotifiedMap, setWorkCompletedNotifiedMap] = useState<Record<number, { notified: boolean; date: string }>>({});
 
@@ -208,6 +213,10 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
         );
     }
 
+    if (planningMode && type === 'quotes') {
+        return <PlanningQuotesTable items={items} />;
+    }
+
     return (
         <table className="quotes-list__table">
             <thead>
@@ -229,7 +238,10 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                 {items.map((item) => (
                     <tr
                         key={item.id}
-                        className={item.id === highlightedId ? 'quotes-list__row--highlighted' : undefined}
+                        className={[
+                            item.id === highlightedId ? 'quotes-list__row--highlighted' : '',
+                            type === 'quotes' && item.is_scheduled ? 'quotes-list__row--scheduled' : '',
+                        ].filter(Boolean).join(' ') || undefined}
                     >
                         <td>{item.reference}</td>
                         <td>{item.client.prenom} {item.client.nom}</td>
@@ -375,6 +387,115 @@ function QuotesTable({ items, type, onStatusChange, onArchiveToggle, highlighted
                         </td>
                     </tr>
                 ))}
+            </tbody>
+        </table>
+    );
+}
+
+interface PlanningQuotesTableProps {
+    items: Quote[];
+}
+
+function PlanningQuotesTable({ items }: PlanningQuotesTableProps) {
+    const [expandedId, setExpandedId] = useState<number | null>(null);
+    const [tasksByQuote, setTasksByQuote] = useState<Record<number, QuoteTask[]>>({});
+    const [loadingId, setLoadingId] = useState<number | null>(null);
+
+    const handleDragStart = (e: React.DragEvent, quoteId: number, estimatedMinutes: number | null) => {
+        const payload: DragQuotePayload = { kind: 'unscheduled', quoteId, durationMinutes: estimatedMinutes ?? 30 };
+        e.dataTransfer.setData('application/json', JSON.stringify(payload));
+        e.dataTransfer.effectAllowed = 'copy';
+    };
+
+    const toggleExpanded = useCallback(async (quoteId: number) => {
+        if (expandedId === quoteId) {
+            setExpandedId(null);
+            return;
+        }
+
+        setExpandedId(quoteId);
+
+        if (tasksByQuote[quoteId]) {
+            return;
+        }
+
+        setLoadingId(quoteId);
+        try {
+            const response = await fetch(`/api/quotes/${quoteId}/tasks`, { headers: { Accept: 'application/json' } });
+            const data: QuoteTask[] = response.ok ? await response.json() : [];
+            setTasksByQuote(prev => ({ ...prev, [quoteId]: data }));
+        } catch {
+            setTasksByQuote(prev => ({ ...prev, [quoteId]: [] }));
+        } finally {
+            setLoadingId(null);
+        }
+    }, [expandedId, tasksByQuote]);
+
+    return (
+        <table className="quotes-list__table quotes-list__table--planning">
+            <thead>
+                <tr>
+                    <th />
+                    <th>Client</th>
+                    <th>Vélo</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {items.map((item) => {
+                    const isExpanded = expandedId === item.id;
+                    return (
+                        <Fragment key={item.id}>
+                            <tr
+                                className={`quotes-list__row--draggable ${item.is_scheduled ? 'quotes-list__row--scheduled' : ''}`}
+                                draggable
+                                onDragStart={e => handleDragStart(e, item.id, item.total_estimated_time_minutes ?? null)}
+                                title="Glisser sur l'agenda pour planifier"
+                            >
+                                <td className="quotes-list__expand-cell">
+                                    <button
+                                        type="button"
+                                        className={`quotes-list__expand-btn ${isExpanded ? 'quotes-list__expand-btn--open' : ''}`}
+                                        onClick={() => toggleExpanded(item.id)}
+                                        aria-label={isExpanded ? 'Masquer les travaux' : 'Voir les travaux'}
+                                        aria-expanded={isExpanded}
+                                    >
+                                        <ChevronIcon />
+                                    </button>
+                                </td>
+                                <td>{item.client.prenom} {item.client.nom}</td>
+                                <td>{item.bike_description || '-'}</td>
+                                <td>{formatDate(item.created_at)}</td>
+                                <td>
+                                    <span className={`quotes-list__status-badge quotes-list__status-badge--${item.status ?? 'reception'}`}>
+                                        {STATUS_LABELS[item.status ?? 'reception']}
+                                    </span>
+                                </td>
+                            </tr>
+                            {isExpanded && (
+                                <tr className="quotes-list__tasks-row">
+                                    <td colSpan={5}>
+                                        {loadingId === item.id ? (
+                                            <p className="quotes-list__tasks-loading">Chargement des travaux...</p>
+                                        ) : (tasksByQuote[item.id]?.length ?? 0) === 0 ? (
+                                            <p className="quotes-list__tasks-empty">Aucun travail renseigné.</p>
+                                        ) : (
+                                            <ul className="quotes-list__tasks-list">
+                                                {tasksByQuote[item.id].map((task) => (
+                                                    <li key={task.id}>
+                                                        {task.title}
+                                                        {task.quantity > 1 && ` (x${task.quantity})`}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </td>
+                                </tr>
+                            )}
+                        </Fragment>
+                    );
+                })}
             </tbody>
         </table>
     );
@@ -547,6 +668,8 @@ export default function QuotesTabs({
     invoicesLoaded,
     activeTab,
     onTabChange,
+    planningMode,
+    onClosePlanningMode,
 }: QuotesTabsProps) {
     const [statusFilter, setStatusFilter] = useState<string>(getStoredStatusFilter);
     const [recipientFilter, setRecipientFilter] = useState<'all' | QuoteCommentRecipient>(getStoredRecipientFilter);
@@ -576,6 +699,11 @@ export default function QuotesTabs({
 
     const handleRowVisit = useCallback((quoteId: number) => {
         sessionStorage.setItem(HIGHLIGHTED_QUOTE_STORAGE_KEY, String(quoteId));
+    }, []);
+
+    const handleQuoteScheduledChange = useCallback((quoteId: number, isScheduled: boolean) => {
+        setQuotes(prev => prev.map(q => q.id === quoteId ? { ...q, is_scheduled: isScheduled } : q));
+        setArchivedQuotes(prev => prev.map(q => q.id === quoteId ? { ...q, is_scheduled: isScheduled } : q));
     }, []);
 
     useLayoutEffect(() => {
@@ -796,6 +924,7 @@ export default function QuotesTabs({
                     onArchiveToggle={handleArchiveToggle}
                     highlightedId={highlightedId}
                     onRowVisit={handleRowVisit}
+                    planningMode={planningMode}
                 />
             </div>
 
@@ -819,6 +948,12 @@ export default function QuotesTabs({
                     onArchiveToggle={handleArchiveToggle}
                 />
             </div>
+
+            <PlanningSidePanel
+                isOpen={!!planningMode}
+                onClose={() => onClosePlanningMode?.()}
+                onQuoteScheduledChange={handleQuoteScheduledChange}
+            />
         </div>
     );
 }

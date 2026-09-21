@@ -5,6 +5,8 @@
 // Page Atelier Index
 
 .atelier-index {
+  transition: max-width 0.2s ease-out;
+
   &__placeholder {
     color: $color-neutral-medium;
   }
@@ -19,6 +21,12 @@
 
   &__quotes {
     margin-top: 2rem;
+  }
+
+  // Le panneau de planification occupe 1/3 de l'écran (voir .agenda-planning-panel) :
+  // on resserre le reste du contenu sur les 2/3 restants pour qu'il ne soit plus masqué.
+  &--planning {
+    max-width: calc(66.667vw - 2rem);
   }
 }
 

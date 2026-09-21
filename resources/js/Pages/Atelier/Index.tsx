@@ -35,6 +35,7 @@ export default function AtelierIndex({
     const [invoicesLoaded, setInvoicesLoaded] = useState(false);
     const [isRebuilding, setIsRebuilding] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>(getStoredActiveTab);
+    const [planningMode, setPlanningMode] = useState(false);
 
     const handleTabChange = useCallback((tab: TabType) => {
         setActiveTab(tab);
@@ -126,7 +127,7 @@ export default function AtelierIndex({
                 <h1>Atelier</h1>
             </div>
 
-            <div className="atelier-index">
+            <div className={`atelier-index ${planningMode ? 'atelier-index--planning' : ''}`}>
                 <div className="atelier-index__dashboard">
                     <DashboardMetrics
                         stats={currentStats}
@@ -154,6 +155,19 @@ export default function AtelierIndex({
                     >
                         Pièces à commander
                     </Link>
+                    <Link
+                        href="/atelier/agenda"
+                        className="atelier-index__btn atelier-index__btn--secondary"
+                    >
+                        Agenda
+                    </Link>
+                    <button
+                        type="button"
+                        className={`atelier-index__btn ${planningMode ? 'atelier-index__btn--primary' : 'atelier-index__btn--secondary'}`}
+                        onClick={() => setPlanningMode(prev => !prev)}
+                    >
+                        {planningMode ? 'Fermer la planification' : 'Planification'}
+                    </button>
                 </div>
 
                 <div className="atelier-index__quotes">
@@ -165,6 +179,8 @@ export default function AtelierIndex({
                         invoicesLoaded={invoicesLoaded}
                         activeTab={activeTab}
                         onTabChange={handleTabChange}
+                        planningMode={planningMode}
+                        onClosePlanningMode={() => setPlanningMode(false)}
                     />
                 </div>
             </div>

@@ -164,14 +164,17 @@ Route::middleware(['auth'])->group(function () {
             'client_notified_at' => $q->client_notified_at?->format('Y-m-d'),
             'work_completed_notified' => $q->work_completed_notified,
             'work_completed_notified_at' => $q->work_completed_notified_at?->format('Y-m-d'),
+            'total_estimated_time_minutes' => $q->total_estimated_time_minutes,
             'created_at' => $q->created_at->toISOString(),
             'can_delete' => $q->canDelete(),
             'is_invoice' => $q->isInvoice(),
             'is_archived' => $q->is_archived,
             'open_comment_recipients' => $openCommentRecipientsByQuote[$q->id] ?? [],
+            'is_scheduled' => (bool) $q->appointments_exists,
         ];
 
         $quotes = \App\Models\Quote::with('client')
+            ->withExists('appointments')
             ->whereNull('invoiced_at')
             ->notArchived()
             ->latest()
@@ -179,6 +182,7 @@ Route::middleware(['auth'])->group(function () {
             ->map($mapQuote);
 
         $archivedQuotes = \App\Models\Quote::with('client')
+            ->withExists('appointments')
             ->archived()
             ->latest()
             ->get()
@@ -351,6 +355,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/atelier/pieces-a-commander', function () {
         return Inertia::render('Atelier/OrderLines/Index');
     })->name('atelier.order-lines.index');
+
+    Route::get('/atelier/agenda', function () {
+        return Inertia::render('Atelier/Agenda/Index');
+    })->name('atelier.agenda.index');
 
     Route::delete('/atelier/devis/{quote}', function (\App\Models\Quote $quote) {
         if (! $quote->canDelete()) {

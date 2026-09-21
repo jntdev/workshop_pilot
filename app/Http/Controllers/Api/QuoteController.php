@@ -30,6 +30,24 @@ class QuoteController extends Controller
         return response()->json($this->formatQuote($quote));
     }
 
+    /**
+     * Liste simplifiée des travaux à faire (sans tarifs ni marges), pour l'affichage
+     * en mode planification.
+     */
+    public function tasks(Quote $quote): JsonResponse
+    {
+        $tasks = $quote->lines()
+            ->get(['id', 'title', 'quantity', 'estimated_time_minutes'])
+            ->map(fn (QuoteLine $line) => [
+                'id' => $line->id,
+                'title' => $line->title,
+                'quantity' => (float) $line->quantity,
+                'estimated_time_minutes' => $line->estimated_time_minutes,
+            ]);
+
+        return response()->json($tasks);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $this->validateQuoteRequest($request);

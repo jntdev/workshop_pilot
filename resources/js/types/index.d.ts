@@ -135,6 +135,37 @@ export interface QuoteComment {
     created_at: string;
 }
 
+export interface QuoteAppointment {
+    id: number;
+    quote_id: number;
+    quote_reference: string;
+    client_name: string;
+    bike_description: string | null;
+    status: QuoteStatusSlug | null;
+    status_label: string | null;
+    starts_at: string;
+    ends_at: string;
+    notes: string | null;
+}
+
+export interface QuoteTask {
+    id: number;
+    title: string;
+    quantity: number;
+    estimated_time_minutes: number | null;
+}
+
+export interface UnscheduledQuote {
+    id: number;
+    reference: string;
+    client_name: string;
+    bike_description: string | null;
+    status: QuoteStatusSlug | null;
+    status_label: string | null;
+    total_estimated_time_minutes: number | null;
+    default_duration_minutes: number;
+}
+
 export interface QuoteFieldConflict {
     path: string;
     base: string | number | null;
@@ -187,11 +218,13 @@ export interface Quote {
     client_notified_at: string | null;
     work_completed_notified: boolean;
     work_completed_notified_at: string | null;
+    total_estimated_time_minutes: number | null;
     created_at: string;
     can_delete: boolean;
     is_invoice: boolean;
     is_archived: boolean;
     open_comment_recipients: QuoteCommentRecipient[];
+    is_scheduled: boolean;
 }
 
 export interface KpiStats {
