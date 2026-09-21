@@ -5,18 +5,24 @@ namespace App\Http\Controllers\Api;
 use App\Enums\Metier;
 use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
+use App\Models\BikeMaintenanceLog;
 use App\Models\MonthlyKpi;
 use App\Models\Quote;
 use App\Models\QuotePayment;
 use App\Models\Reservation;
 use App\Models\ReservationPayment;
 use App\Models\Sale;
+use App\Services\Kpis\MonthlyKpiUpdater;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AtelierController extends Controller
 {
+    public function __construct(
+        private MonthlyKpiUpdater $kpiUpdater,
+    ) {}
+
     /**
      * Historique complet des encaissements, groupés par jour / source / mode de paiement.
      * Pensé pour être chargé une seule fois côté client puis gardé en cache local.
@@ -258,79 +264,35 @@ class AtelierController extends Controller
     {
         MonthlyKpi::where('metier', Metier::Location->value)->delete();
 
-        // Taux de TVA pour conversion TTC -> HT
-        $tvaRate = config('location.tva_rate', 20);
-
-        // Agréger les paiements par année/mois
-        $paymentAggregates = ReservationPayment::select(
-            DB::raw('YEAR(paid_at) as year'),
-            DB::raw('MONTH(paid_at) as month'),
-            DB::raw('SUM(amount) as total_amount')
-        )
+        // Mois avec au moins un paiement
+        $paymentMonths = ReservationPayment::select(DB::raw('YEAR(paid_at) as year'), DB::raw('MONTH(paid_at) as month'))
             ->groupBy(DB::raw('YEAR(paid_at)'), DB::raw('MONTH(paid_at)'))
             ->get()
-            ->keyBy(fn ($row) => $row->year.'-'.$row->month);
+            ->map(fn ($row) => $row->year.'-'.$row->month);
 
-        // Agréger les acomptes par année/mois
-        $acompteAggregates = Reservation::whereNotNull('acompte_paye_le')
+        // Mois avec au moins un acompte payé
+        $acompteMonths = Reservation::whereNotNull('acompte_paye_le')
             ->where('acompte_montant', '>', 0)
-            ->select(
-                DB::raw('YEAR(acompte_paye_le) as year'),
-                DB::raw('MONTH(acompte_paye_le) as month'),
-                DB::raw('SUM(acompte_montant) as total_acompte')
-            )
+            ->select(DB::raw('YEAR(acompte_paye_le) as year'), DB::raw('MONTH(acompte_paye_le) as month'))
             ->groupBy(DB::raw('YEAR(acompte_paye_le)'), DB::raw('MONTH(acompte_paye_le)'))
             ->get()
-            ->keyBy(fn ($row) => $row->year.'-'.$row->month);
+            ->map(fn ($row) => $row->year.'-'.$row->month);
 
-        $allMonths = $paymentAggregates->keys()->merge($acompteAggregates->keys())->unique();
+        // Mois avec des travaux de maintenance réalisés sur les vélos de location
+        $maintenanceMonths = BikeMaintenanceLog::where('status', 'done')
+            ->select(DB::raw('YEAR(date) as year'), DB::raw('MONTH(date) as month'))
+            ->groupBy(DB::raw('YEAR(date)'), DB::raw('MONTH(date)'))
+            ->get()
+            ->map(fn ($row) => $row->year.'-'.$row->month);
 
-        $created = 0;
+        $allMonths = $paymentMonths->merge($acompteMonths)->merge($maintenanceMonths)->unique();
+
         foreach ($allMonths as $key) {
-            $payment = $paymentAggregates->get($key);
-            $acompte = $acompteAggregates->get($key);
-
-            $year = $payment?->year ?? $acompte->year;
-            $month = $payment?->month ?? $acompte->month;
-
-            // Total TTC (les paiements et acomptes sont en TTC)
-            $totalTtc = ($payment->total_amount ?? 0) + ($acompte->total_acompte ?? 0);
-
-            // Convertir TTC en HT
-            $totalHt = $totalTtc / (1 + $tvaRate / 100);
-
-            // Compter les réservations uniques
-            $reservationIdsFromPayments = $payment
-                ? ReservationPayment::whereYear('paid_at', $year)
-                    ->whereMonth('paid_at', $month)
-                    ->distinct()
-                    ->pluck('reservation_id')
-                : collect();
-
-            $reservationIdsFromAcomptes = $acompte
-                ? Reservation::whereYear('acompte_paye_le', $year)
-                    ->whereMonth('acompte_paye_le', $month)
-                    ->pluck('id')
-                : collect();
-
-            $uniqueReservations = $reservationIdsFromPayments
-                ->merge($reservationIdsFromAcomptes)
-                ->unique()
-                ->count();
-
-            MonthlyKpi::create([
-                'metier' => Metier::Location->value,
-                'year' => $year,
-                'month' => $month,
-                'invoice_count' => $uniqueReservations,
-                'revenue_ht' => round($totalHt, 2),
-                'revenue_ttc' => round($totalTtc, 2),
-                'margin_ht' => 0,
-            ]);
-            $created++;
+            [$year, $month] = explode('-', $key);
+            $this->kpiUpdater->rebuildLocationKpiForMonth((int) $year, (int) $month);
         }
 
-        return $created;
+        return $allMonths->count();
     }
 
     protected function formatQuote(Quote $quote): array

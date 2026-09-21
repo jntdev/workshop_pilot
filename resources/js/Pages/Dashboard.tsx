@@ -37,7 +37,7 @@ interface DashboardProps {
 const METIERS = [
     { key: 'vente', label: 'Vente', href: '/atelier' },
     { key: 'atelier', label: 'Atelier', href: '/atelier' },
-    { key: 'location', label: 'Location', href: '/location', marginUnavailable: true },
+    { key: 'location', label: 'Location', href: '/location' },
 ] as const;
 
 const METRICS = [
@@ -70,7 +70,6 @@ function RangeTable({ rangeKpis }: { rangeKpis: Record<string, RangeKpi> }) {
                                 <RangeCell
                                     kpi={rangeKpis[metier.key]}
                                     metric={metric.key}
-                                    marginUnavailable={metier.marginUnavailable}
                                     total={total ?? undefined}
                                 />
                             </a>
@@ -199,7 +198,6 @@ export default function Dashboard({ kpis, period, season_kpis, season, yearly_kp
                                                 <KpiCell
                                                     kpi={kpis[metier.key]}
                                                     metric={metric.key}
-                                                    marginUnavailable={metier.marginUnavailable}
                                                     total={total ?? undefined}
                                                 />
                                             </a>

@@ -73,17 +73,38 @@ function sourceTotal(row: Record<PaymentMethod, number> | undefined): number {
     return METHODS.reduce((sum, m) => sum + (row[m.key] ?? 0), 0);
 }
 
+const LOAD_TIMEOUT_MS = 10000;
+
 export default function DailyPaymentsPanel() {
     const [date, setDate] = useState(todayIso());
     const [history, setHistory] = useState<Record<string, DayData> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setIsLoading(true);
-        const res = await fetch('/api/dashboard/payments-history', { headers: { Accept: 'application/json' } });
-        const json: PaymentsHistoryResponse = await res.json();
-        setHistory(json.days);
-        setIsLoading(false);
+        setError(null);
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), LOAD_TIMEOUT_MS);
+
+        try {
+            const res = await fetch('/api/dashboard/payments-history', {
+                headers: { Accept: 'application/json' },
+                signal: controller.signal,
+            });
+            if (!res.ok) {
+                throw new Error('Le serveur a répondu avec une erreur.');
+            }
+            const json: PaymentsHistoryResponse = await res.json();
+            setHistory(json.days);
+        } catch (err) {
+            const timedOut = err instanceof DOMException && err.name === 'AbortError';
+            setError(timedOut ? 'Le chargement prend trop de temps.' : 'Impossible de charger les encaissements.');
+        } finally {
+            clearTimeout(timeout);
+            setIsLoading(false);
+        }
     }, []);
 
     useEffect(() => {
@@ -120,8 +141,18 @@ export default function DailyPaymentsPanel() {
                 </div>
             </div>
 
-            {isLoading || !history ? (
-                <div className="daily-payments__loading">Chargement de l'historique...</div>
+            {isLoading ? (
+                <div className="daily-payments__loading">
+                    <span className="daily-payments__spinner" aria-hidden="true" />
+                    Chargement de l'historique...
+                </div>
+            ) : error ? (
+                <div className="daily-payments__error">
+                    <span>{error}</span>
+                    <button type="button" className="daily-payments__retry-btn" onClick={load}>
+                        Réessayer
+                    </button>
+                </div>
             ) : (
                 <div className="daily-payments__table-wrap">
                     <table className="daily-payments__table">

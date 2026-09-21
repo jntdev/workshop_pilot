@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Bike;
 use App\Models\BikeMaintenanceLog;
+use App\Services\Kpis\MonthlyKpiUpdater;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BikeMaintenanceLogController extends Controller
 {
+    public function __construct(
+        private MonthlyKpiUpdater $kpiUpdater,
+    ) {}
+
     public function orderLines(Request $request): JsonResponse
     {
         $includeReceived = $request->boolean('include_received', false);
@@ -79,6 +84,8 @@ class BikeMaintenanceLogController extends Controller
 
         $log = $bike->maintenanceLogs()->create($validated);
 
+        $this->kpiUpdater->rebuildLocationKpiForMonth($log->date->year, $log->date->month);
+
         return response()->json($log->fresh(), 201);
     }
 
@@ -97,16 +104,26 @@ class BikeMaintenanceLogController extends Controller
             'needs_order' => ['boolean'],
         ]);
 
+        $previousDate = $log->date;
         $log->update($validated);
+        $log->refresh();
 
-        return response()->json($log->fresh());
+        $this->kpiUpdater->rebuildLocationKpiForMonth($log->date->year, $log->date->month);
+        if (! $log->date->isSameMonth($previousDate)) {
+            $this->kpiUpdater->rebuildLocationKpiForMonth($previousDate->year, $previousDate->month);
+        }
+
+        return response()->json($log);
     }
 
     public function destroy(Bike $bike, BikeMaintenanceLog $log): JsonResponse
     {
         abort_if($log->bike_id !== $bike->id, 404);
 
+        $date = $log->date;
         $log->delete();
+
+        $this->kpiUpdater->rebuildLocationKpiForMonth($date->year, $date->month);
 
         return response()->json(null, 204);
     }

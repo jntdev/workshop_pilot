@@ -118,6 +118,12 @@ class MonthlyKpiUpdater
 
             $uniqueReservations = $reservationIds->merge($reservationsWithAcompte)->unique()->count();
 
+            // Coût des travaux réalisés ce mois sur les vélos de location (en centimes -> euros)
+            $maintenanceCostHt = \App\Models\BikeMaintenanceLog::whereYear('date', $year)
+                ->whereMonth('date', $month)
+                ->where('status', 'done')
+                ->sum('cost') / 100;
+
             $kpi = MonthlyKpi::lockForUpdate()
                 ->firstOrCreate(
                     [
@@ -137,7 +143,7 @@ class MonthlyKpiUpdater
                 'revenue_ht' => round($totalHt, 2),
                 'revenue_ttc' => round($totalTtc, 2),
                 'invoice_count' => $uniqueReservations,
-                'margin_ht' => 0, // Marge non disponible pour Location
+                'margin_ht' => round($totalHt - $maintenanceCostHt, 2),
             ]);
         });
     }
