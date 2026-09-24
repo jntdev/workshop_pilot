@@ -36,16 +36,35 @@ class QuoteController extends Controller
      */
     public function tasks(Quote $quote): JsonResponse
     {
-        $tasks = $quote->lines()
+        return response()->json($this->formatTasks($quote));
+    }
+
+    /**
+     * Résumé simplifié d'un devis (commentaire de réception + travaux à faire),
+     * pour l'affichage dans la modale de détail d'un créneau planifié.
+     */
+    public function planningSummary(Quote $quote): JsonResponse
+    {
+        return response()->json([
+            'reception_comment' => $quote->reception_comment,
+            'tasks' => $this->formatTasks($quote),
+        ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function formatTasks(Quote $quote): array
+    {
+        return $quote->lines()
             ->get(['id', 'title', 'quantity', 'estimated_time_minutes'])
             ->map(fn (QuoteLine $line) => [
                 'id' => $line->id,
                 'title' => $line->title,
                 'quantity' => (float) $line->quantity,
                 'estimated_time_minutes' => $line->estimated_time_minutes,
-            ]);
-
-        return response()->json($tasks);
+            ])
+            ->all();
     }
 
     public function store(Request $request): JsonResponse

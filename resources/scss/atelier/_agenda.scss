@@ -79,6 +79,7 @@
         display: grid;
         grid-template-columns: 48px repeat(7, 1fr);
         overflow-x: auto;
+        overflow-y: visible;
     }
 
     &__week-hours {
@@ -87,7 +88,11 @@
     }
 
     &__week-corner {
+        position: sticky;
+        top: 0;
+        z-index: 2;
         height: 44px;
+        background: $color-bg-white;
     }
 
     &__hour-label {
@@ -110,11 +115,15 @@
     }
 
     &__week-day-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
         height: 44px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        background: $color-bg-white;
         border-bottom: 1px solid $color-border-light;
     }
 
@@ -160,6 +169,13 @@
 
         &:active {
             cursor: grabbing;
+        }
+
+        &--event {
+            background: rgba($color-agenda-event, 0.14);
+            border: 1px solid rgba($color-agenda-event, 0.4);
+            border-left: 3px solid $color-agenda-event;
+            cursor: pointer;
         }
     }
 
@@ -285,7 +301,9 @@
     box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
     z-index: 60;
     padding: 1.25rem;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     transform: translateX(100%);
     transition: transform 0.2s ease-out;
 
@@ -298,6 +316,7 @@
         align-items: center;
         justify-content: space-between;
         margin-bottom: 1rem;
+        flex-shrink: 0;
     }
 
     &__title {
@@ -328,11 +347,14 @@
         align-items: center;
         gap: 0.5rem;
         margin-bottom: 1rem;
+        flex-shrink: 0;
     }
 
     &__grid {
-        // La grille agenda__week s'adapte naturellement à la largeur du panneau
-        // via son overflow-x: auto déjà défini.
+        // Seule cette zone scrolle : header et nav restent fixes au-dessus.
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
     }
 }
 
@@ -394,5 +416,157 @@
         &:hover {
             background: darken($color-primary-blue, 8%);
         }
+    }
+
+    &__event-detail {
+        font-size: 0.85rem;
+        color: $color-neutral-dark;
+        white-space: pre-wrap;
+        margin: 0;
+    }
+}
+
+// --- Popover de création d'un événement libre (clic sur un créneau vide) ---
+
+.agenda__new-event-popover {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    z-index: 20;
+    background: $color-bg-white;
+    border: 1px solid $color-border-medium;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    padding: 0.6rem;
+
+    &-input,
+    &-textarea {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid $color-border-medium;
+        border-radius: 4px;
+        padding: 0.35rem 0.5rem;
+        font-size: 0.8rem;
+        font-family: inherit;
+        margin-bottom: 0.4rem;
+
+        &:focus {
+            outline: none;
+            border-color: $color-agenda-event;
+        }
+    }
+
+    &-textarea {
+        resize: vertical;
+    }
+
+    &-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.4rem;
+    }
+
+    &-btn {
+        border: none;
+        border-radius: 4px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &--cancel {
+            background: $color-bg-light;
+            color: $color-neutral-medium;
+
+            &:hover {
+                background: $color-border-light;
+            }
+        }
+
+        &--submit {
+            background: $color-agenda-event;
+            color: $color-bg-white;
+
+            &:hover:not(:disabled) {
+                background: darken($color-agenda-event, 8%);
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+    }
+}
+
+// --- Modale de détail au clic sur une carte, en mode planification ---
+// Positionnée juste à gauche du panneau de planification (voir .agenda-planning-panel,
+// width: 33.333vw, right: 0), pour ne pas le recouvrir.
+
+.agenda-planning-item-popover {
+    // top/right/width sont calculés dynamiquement en JS (accolés à la carte
+    // cliquée) — voir PlanningItemPopover.tsx.
+    position: fixed;
+    z-index: 61;
+    max-width: 90vw;
+    max-height: calc(100vh - 2.5rem);
+    overflow-y: auto;
+    background: $color-bg-white;
+    border: 1px solid $color-border-light;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    padding: 1.25rem;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+
+    &__title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin: 0;
+    }
+
+    &__close {
+        background: none;
+        border: none;
+        font-size: 1.4rem;
+        line-height: 1;
+        color: $color-neutral-medium;
+        cursor: pointer;
+        padding: 0.2rem 0.4rem;
+        border-radius: 6px;
+
+        &:hover {
+            background: $color-bg-light;
+            color: $color-neutral-dark;
+        }
+    }
+
+    &__section {
+        margin-bottom: 1rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__section-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        margin: 0 0 0.35rem;
+    }
+
+    &__text {
+        font-size: 0.85rem;
+        color: $color-neutral-dark;
+        white-space: pre-wrap;
+        margin: 0;
     }
 }

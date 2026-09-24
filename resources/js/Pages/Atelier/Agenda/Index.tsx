@@ -2,17 +2,17 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import WeekAgendaGrid from '@/Components/Atelier/Agenda/WeekAgendaGrid';
-import AppointmentDetailPanel from '@/Components/Atelier/Agenda/AppointmentDetailPanel';
+import AgendaItemDetailPanel from '@/Components/Atelier/Agenda/AgendaItemDetailPanel';
 import { addDays, startOfWeek, todayIso, daysFrom, formatDateRangeLabel, AGENDA_HOURS_COL_PX, AGENDA_MIN_DAY_COL_PX } from '@/Components/Atelier/Agenda/agendaShared';
-import type { QuoteAppointment } from '@/types';
+import type { AgendaItem } from '@/types';
 
 export default function AgendaIndex() {
     const [weekStart, setWeekStart] = useState(startOfWeek(todayIso()));
-    const [appointments, setAppointments] = useState<QuoteAppointment[]>([]);
+    const [items, setItems] = useState<AgendaItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [dayCount, setDayCount] = useState(7);
-    const [selectedAppointment, setSelectedAppointment] = useState<QuoteAppointment | null>(null);
+    const [selectedItem, setSelectedItem] = useState<AgendaItem | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -39,17 +39,17 @@ export default function AgendaIndex() {
     const days = useMemo(() => daysFrom(weekStart, dayCount), [weekStart, dayCount]);
 
     useEffect(() => {
-        setSelectedAppointment(prev => {
+        setSelectedItem(prev => {
             if (!prev) return prev;
-            const updated = appointments.find(a => a.id === prev.id);
+            const updated = items.find(i => i.kind === prev.kind && i.id === prev.id);
             return updated ?? null;
         });
-    }, [appointments]);
+    }, [items]);
 
-    const loadAppointments = useCallback(async (mondayIso: string, count: number) => {
+    const loadItems = useCallback(async (mondayIso: string, count: number) => {
         const start = `${mondayIso}T00:00:00`;
         const end = `${addDays(mondayIso, count - 1)}T23:59:59`;
-        const res = await fetch(`/api/quote-appointments?start=${start}&end=${end}`, { headers: { Accept: 'application/json' } });
+        const res = await fetch(`/api/agenda/items?start=${start}&end=${end}`, { headers: { Accept: 'application/json' } });
         return res.ok ? res.json() : [];
     }, []);
 
@@ -57,13 +57,13 @@ export default function AgendaIndex() {
         setIsLoading(true);
         setError(null);
         try {
-            setAppointments(await loadAppointments(mondayIso, count));
+            setItems(await loadItems(mondayIso, count));
         } catch {
             setError('Impossible de charger l\'agenda.');
         } finally {
             setIsLoading(false);
         }
-    }, [loadAppointments]);
+    }, [loadItems]);
 
     useEffect(() => {
         load(weekStart, dayCount);
@@ -102,16 +102,16 @@ export default function AgendaIndex() {
                     ) : (
                         <WeekAgendaGrid
                             days={days}
-                            appointments={appointments}
-                            onAppointmentsChange={setAppointments}
+                            items={items}
+                            onItemsChange={setItems}
                             onError={setError}
-                            onAppointmentClick={setSelectedAppointment}
+                            onItemClick={setSelectedItem}
                         />
                     )}
                 </div>
             </div>
 
-            <AppointmentDetailPanel appointment={selectedAppointment} onClose={() => setSelectedAppointment(null)} />
+            <AgendaItemDetailPanel item={selectedItem} onClose={() => setSelectedItem(null)} />
         </MainLayout>
     );
 }

@@ -136,6 +136,7 @@ export interface QuoteComment {
 }
 
 export interface QuoteAppointment {
+    kind: 'quote';
     id: number;
     quote_id: number;
     quote_reference: string;
@@ -147,6 +148,17 @@ export interface QuoteAppointment {
     ends_at: string;
     notes: string | null;
 }
+
+export interface AgendaEvent {
+    kind: 'event';
+    id: number;
+    title: string;
+    detail: string | null;
+    starts_at: string;
+    ends_at: string;
+}
+
+export type AgendaItem = QuoteAppointment | AgendaEvent;
 
 export interface QuoteTask {
     id: number;

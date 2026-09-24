@@ -81,6 +81,7 @@ class QuoteAppointmentController extends Controller
     protected function formatAppointment(QuoteAppointment $appointment): array
     {
         return [
+            'kind' => 'quote',
             'id' => $appointment->id,
             'quote_id' => $appointment->quote_id,
             'quote_reference' => $appointment->quote->reference,

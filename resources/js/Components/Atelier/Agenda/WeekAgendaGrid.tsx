@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import type { QuoteAppointment } from '@/types';
+import type { AgendaItem, QuoteAppointment } from '@/types';
 import {
     DAY_START_HOUR,
     DAY_END_HOUR,
@@ -16,49 +16,53 @@ import {
     type DragPayload,
     type ResizeState,
 } from './agendaShared';
+import NewEventPopover from './NewEventPopover';
 
 interface Props {
     days: string[];
-    appointments: QuoteAppointment[];
-    onAppointmentsChange: (appointments: QuoteAppointment[]) => void;
+    items: AgendaItem[];
+    onItemsChange: (items: AgendaItem[]) => void;
     onError: (message: string) => void;
     onQuoteScheduledChange?: (quoteId: number, isScheduled: boolean) => void;
-    onAppointmentClick?: (appointment: QuoteAppointment) => void;
+    onItemClick?: (item: AgendaItem, cardRect: DOMRect) => void;
 }
 
-export default function WeekAgendaGrid({ days, appointments, onAppointmentsChange, onError, onQuoteScheduledChange, onAppointmentClick }: Props) {
+export default function WeekAgendaGrid({ days, items, onItemsChange, onError, onQuoteScheduledChange, onItemClick }: Props) {
     const [resize, setResize] = useState<ResizeState | null>(null);
+    const [newEventSlot, setNewEventSlot] = useState<{ dayIso: string; slotIndex: number } | null>(null);
     const gridRef = useRef<HTMLDivElement>(null);
     const wasDraggedRef = useRef(false);
     const wasResizedRef = useRef(false);
-    const resizeOriginalRef = useRef<QuoteAppointment | null>(null);
-    const appointmentsRef = useRef(appointments);
-    appointmentsRef.current = appointments;
+    const resizeOriginalRef = useRef<AgendaItem | null>(null);
+    const itemsRef = useRef(items);
+    itemsRef.current = items;
 
-    const appointmentsByDay = useMemo(() => {
-        const map = new Map<string, QuoteAppointment[]>();
-        for (const appt of appointments) {
-            const key = dateIsoOf(new Date(appt.starts_at));
+    const itemsByDay = useMemo(() => {
+        const map = new Map<string, AgendaItem[]>();
+        for (const item of items) {
+            const key = dateIsoOf(new Date(item.starts_at));
             if (!map.has(key)) map.set(key, []);
-            map.get(key)!.push(appt);
+            map.get(key)!.push(item);
         }
         return map;
-    }, [appointments]);
+    }, [items]);
 
-    const handleDragStartAppointment = (e: React.DragEvent, appointmentId: number, durationMinutes: number) => {
+    const handleDragStartItem = (e: React.DragEvent, item: AgendaItem, durationMinutes: number) => {
         wasDraggedRef.current = true;
-        const payload: DragPayload = { kind: 'appointment', appointmentId, durationMinutes };
+        const payload: DragPayload = item.kind === 'quote'
+            ? { kind: 'appointment', appointmentId: item.id, durationMinutes }
+            : { kind: 'event', eventId: item.id, durationMinutes };
         e.dataTransfer.setData('application/json', JSON.stringify(payload));
         e.dataTransfer.effectAllowed = 'move';
     };
 
-    const handleAppointmentClick = (appt: QuoteAppointment) => {
+    const handleItemClick = (item: AgendaItem, cardEl: HTMLElement) => {
         if (wasDraggedRef.current || wasResizedRef.current) {
             wasDraggedRef.current = false;
             wasResizedRef.current = false;
             return;
         }
-        onAppointmentClick?.(appt);
+        onItemClick?.(item, cardEl.getBoundingClientRect());
     };
 
     const createAppointment = async (quoteId: number, startsAt: Date, durationMinutes: number) => {
@@ -71,7 +75,7 @@ export default function WeekAgendaGrid({ days, appointments, onAppointmentsChang
         });
         if (res.ok) {
             const created: QuoteAppointment = await res.json();
-            onAppointmentsChange([...appointments, created]);
+            onItemsChange([...items, created]);
             onQuoteScheduledChange?.(quoteId, true);
         } else {
             const data = await res.json().catch(() => null);
@@ -79,17 +83,20 @@ export default function WeekAgendaGrid({ days, appointments, onAppointmentsChang
         }
     };
 
-    const moveAppointment = async (appointmentId: number, startsAt: Date, durationMinutes: number) => {
-        const previous = appointments;
+    const moveItem = async (item: AgendaItem, startsAt: Date, durationMinutes: number) => {
+        const previous = items;
         const endsAt = new Date(startsAt.getTime() + durationMinutes * 60000);
 
         // Mise à jour optimiste : on déplace le créneau immédiatement à l'écran,
         // sans attendre la réponse du serveur ni recharger toute la liste.
-        onAppointmentsChange(appointments.map(a => (
-            a.id === appointmentId ? { ...a, starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString() } : a
+        onItemsChange(items.map(i => (
+            i.kind === item.kind && i.id === item.id
+                ? { ...i, starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString() }
+                : i
         )));
 
-        const res = await fetch(`/api/quote-appointments/${appointmentId}`, {
+        const url = item.kind === 'quote' ? `/api/quote-appointments/${item.id}` : `/api/agenda-events/${item.id}`;
+        const res = await fetch(url, {
             method: 'PUT',
             headers: apiHeaders(),
             credentials: 'same-origin',
@@ -98,7 +105,7 @@ export default function WeekAgendaGrid({ days, appointments, onAppointmentsChang
         if (!res.ok) {
             const data = await res.json().catch(() => null);
             onError(data?.message || 'Impossible de déplacer ce créneau.');
-            onAppointmentsChange(previous);
+            onItemsChange(previous);
         }
     };
 
@@ -113,8 +120,48 @@ export default function WeekAgendaGrid({ days, appointments, onAppointmentsChang
 
         if (payload.kind === 'unscheduled') {
             createAppointment(payload.quoteId, startsAt, payload.durationMinutes);
+        } else if (payload.kind === 'appointment') {
+            const item = itemsRef.current.find(i => i.kind === 'quote' && i.id === payload.appointmentId);
+            if (item) {
+                moveItem(item, startsAt, payload.durationMinutes);
+            }
         } else {
-            moveAppointment(payload.appointmentId, startsAt, payload.durationMinutes);
+            const item = itemsRef.current.find(i => i.kind === 'event' && i.id === payload.eventId);
+            if (item) {
+                moveItem(item, startsAt, payload.durationMinutes);
+            }
+        }
+    };
+
+    const handleSlotClick = (dayIso: string, slotIndex: number) => {
+        if (wasDraggedRef.current || wasResizedRef.current) {
+            wasDraggedRef.current = false;
+            wasResizedRef.current = false;
+            return;
+        }
+        setNewEventSlot({ dayIso, slotIndex });
+    };
+
+    const createEvent = async (title: string, detail: string) => {
+        if (!newEventSlot) return;
+
+        const startsAt = new Date(`${newEventSlot.dayIso}T${String(DAY_START_HOUR).padStart(2, '0')}:00:00`);
+        startsAt.setMinutes(startsAt.getMinutes() + newEventSlot.slotIndex * SLOT_MINUTES);
+        const endsAt = new Date(startsAt.getTime() + SLOT_MINUTES * 60000);
+
+        const res = await fetch('/api/agenda-events', {
+            method: 'POST',
+            headers: apiHeaders(),
+            credentials: 'same-origin',
+            body: JSON.stringify({ title, detail: detail || null, starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString() }),
+        });
+        if (res.ok) {
+            const created = await res.json();
+            onItemsChange([...itemsRef.current, created]);
+            setNewEventSlot(null);
+        } else {
+            const data = await res.json().catch(() => null);
+            onError(data?.message || 'Impossible de créer cet événement.');
         }
     };
 
@@ -135,45 +182,46 @@ export default function WeekAgendaGrid({ days, appointments, onAppointmentsChang
             const rawSlot = Math.round(offsetY / SLOT_HEIGHT_PX);
             const clampedSlot = Math.max(0, Math.min(TOTAL_SLOTS, rawSlot));
 
-            const current = appointmentsRef.current;
-            const appt = current.find(a => a.id === resize.appointmentId);
-            if (!appt) return;
+            const current = itemsRef.current;
+            const item = current.find(i => i.kind === resize.kind && i.id === resize.itemId);
+            if (!item) return;
 
             const newTime = new Date(`${resize.dayIso}T${String(DAY_START_HOUR).padStart(2, '0')}:00:00`);
             newTime.setMinutes(newTime.getMinutes() + clampedSlot * SLOT_MINUTES);
 
-            const next = current.map(a => {
-                if (a.id !== resize.appointmentId) return a;
-                if (resize.edge === 'start' && newTime.getTime() <= new Date(a.ends_at).getTime() - SLOT_MINUTES * 60000) {
-                    return { ...a, starts_at: newTime.toISOString() };
+            const next = current.map(i => {
+                if (!(i.kind === resize.kind && i.id === resize.itemId)) return i;
+                if (resize.edge === 'start' && newTime.getTime() <= new Date(i.ends_at).getTime() - SLOT_MINUTES * 60000) {
+                    return { ...i, starts_at: newTime.toISOString() };
                 }
-                if (resize.edge === 'end' && newTime.getTime() >= new Date(a.starts_at).getTime() + SLOT_MINUTES * 60000) {
-                    return { ...a, ends_at: newTime.toISOString() };
+                if (resize.edge === 'end' && newTime.getTime() >= new Date(i.starts_at).getTime() + SLOT_MINUTES * 60000) {
+                    return { ...i, ends_at: newTime.toISOString() };
                 }
-                return a;
+                return i;
             });
-            appointmentsRef.current = next;
-            onAppointmentsChange(next);
+            itemsRef.current = next;
+            onItemsChange(next);
         };
 
         const handleMouseUp = async () => {
-            const appt = appointmentsRef.current.find(a => a.id === resize.appointmentId);
+            const item = itemsRef.current.find(i => i.kind === resize.kind && i.id === resize.itemId);
             const original = resizeOriginalRef.current;
             setResize(null);
             resizeOriginalRef.current = null;
-            if (!appt) return;
+            if (!item) return;
 
-            const res = await fetch(`/api/quote-appointments/${appt.id}`, {
+            const url = item.kind === 'quote' ? `/api/quote-appointments/${item.id}` : `/api/agenda-events/${item.id}`;
+            const res = await fetch(url, {
                 method: 'PUT',
                 headers: apiHeaders(),
                 credentials: 'same-origin',
-                body: JSON.stringify({ starts_at: appt.starts_at, ends_at: appt.ends_at }),
+                body: JSON.stringify({ starts_at: item.starts_at, ends_at: item.ends_at }),
             });
             if (!res.ok) {
                 const data = await res.json().catch(() => null);
                 onError(data?.message || 'Impossible de redimensionner ce créneau.');
                 if (original) {
-                    onAppointmentsChange(appointmentsRef.current.map(a => (a.id === original.id ? original : a)));
+                    onItemsChange(itemsRef.current.map(i => (i.kind === original.kind && i.id === original.id ? original : i)));
                 }
             }
         };
@@ -187,21 +235,20 @@ export default function WeekAgendaGrid({ days, appointments, onAppointmentsChang
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resize]);
 
-    const handleDelete = async (appointmentId: number) => {
+    const handleDelete = async (item: AgendaItem) => {
         if (!confirm('Supprimer ce créneau ?')) return;
 
-        const appt = appointments.find(a => a.id === appointmentId);
-
-        const res = await fetch(`/api/quote-appointments/${appointmentId}`, {
+        const url = item.kind === 'quote' ? `/api/quote-appointments/${item.id}` : `/api/agenda-events/${item.id}`;
+        const res = await fetch(url, {
             method: 'DELETE',
             headers: apiHeaders(),
             credentials: 'same-origin',
         });
 
         if (res.ok) {
-            onAppointmentsChange(appointments.filter(a => a.id !== appointmentId));
-            if (appt) {
-                onQuoteScheduledChange?.(appt.quote_id, false);
+            onItemsChange(items.filter(i => !(i.kind === item.kind && i.id === item.id)));
+            if (item.kind === 'quote') {
+                onQuoteScheduledChange?.(item.quote_id, false);
             }
         }
     };
@@ -238,56 +285,72 @@ export default function WeekAgendaGrid({ days, appointments, onAppointmentsChang
                                     style={{ height: SLOT_HEIGHT_PX }}
                                     onDragOver={e => e.preventDefault()}
                                     onDrop={e => handleDrop(e, dayIso, slotIndex)}
+                                    onClick={() => handleSlotClick(dayIso, slotIndex)}
                                 />
                             ))}
 
-                            {(appointmentsByDay.get(dayIso) ?? []).map(appt => {
-                                const start = new Date(appt.starts_at);
-                                const end = new Date(appt.ends_at);
+                            {(itemsByDay.get(dayIso) ?? []).map(item => {
+                                const start = new Date(item.starts_at);
+                                const end = new Date(item.ends_at);
                                 const top = slotIndexOf(start) * SLOT_HEIGHT_PX;
                                 const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
                                 const height = Math.max(SLOT_HEIGHT_PX, (durationMinutes / SLOT_MINUTES) * SLOT_HEIGHT_PX);
+                                const itemKey = `${item.kind}-${item.id}`;
 
                                 return (
                                     <div
-                                        key={appt.id}
-                                        className="agenda__appointment"
+                                        key={itemKey}
+                                        className={`agenda__appointment ${item.kind === 'event' ? 'agenda__appointment--event' : ''}`}
                                         style={{ top, height }}
                                         draggable={!resize}
-                                        onDragStart={e => handleDragStartAppointment(e, appt.id, durationMinutes)}
-                                        onClick={() => handleAppointmentClick(appt)}
+                                        onDragStart={e => handleDragStartItem(e, item, durationMinutes)}
+                                        onClick={e => { e.stopPropagation(); handleItemClick(item, e.currentTarget); }}
                                     >
                                         <div
                                             className="agenda__appointment-handle agenda__appointment-handle--top"
-                                            onMouseDown={e => { e.stopPropagation(); e.preventDefault(); resizeOriginalRef.current = appt; setResize({ appointmentId: appt.id, edge: 'start', dayIso }); }}
+                                            onMouseDown={e => { e.stopPropagation(); e.preventDefault(); resizeOriginalRef.current = item; setResize({ itemId: item.id, kind: item.kind, edge: 'start', dayIso }); }}
                                         />
                                         <div className="agenda__appointment-content">
                                             <div className="agenda__appointment-line">
                                                 <span className="agenda__appointment-time">
-                                                    {formatTime(appt.starts_at)}–{formatTime(appt.ends_at)}
+                                                    {formatTime(item.starts_at)}–{formatTime(item.ends_at)}
                                                 </span>
-                                                <span className="agenda__appointment-title">{appt.client_name}</span>
-                                                <span className="agenda__appointment-bike">{appt.bike_description ?? appt.quote_reference}</span>
+                                                {item.kind === 'quote' ? (
+                                                    <>
+                                                        <span className="agenda__appointment-title">{item.client_name}</span>
+                                                        <span className="agenda__appointment-bike">{item.bike_description ?? item.quote_reference}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="agenda__appointment-title">{item.title}</span>
+                                                )}
                                             </div>
-                                            {appt.status_label && (
-                                                <span className="agenda__appointment-status">{appt.status_label}</span>
+                                            {item.kind === 'quote' && item.status_label && (
+                                                <span className="agenda__appointment-status">{item.status_label}</span>
                                             )}
                                         </div>
                                         <button
                                             type="button"
                                             className="agenda__appointment-remove"
-                                            onClick={e => { e.stopPropagation(); handleDelete(appt.id); }}
+                                            onClick={e => { e.stopPropagation(); handleDelete(item); }}
                                             title="Supprimer ce créneau"
                                         >
                                             ×
                                         </button>
                                         <div
                                             className="agenda__appointment-handle agenda__appointment-handle--bottom"
-                                            onMouseDown={e => { e.stopPropagation(); e.preventDefault(); resizeOriginalRef.current = appt; setResize({ appointmentId: appt.id, edge: 'end', dayIso }); }}
+                                            onMouseDown={e => { e.stopPropagation(); e.preventDefault(); resizeOriginalRef.current = item; setResize({ itemId: item.id, kind: item.kind, edge: 'end', dayIso }); }}
                                         />
                                     </div>
                                 );
                             })}
+
+                            {newEventSlot && newEventSlot.dayIso === dayIso && (
+                                <NewEventPopover
+                                    top={newEventSlot.slotIndex * SLOT_HEIGHT_PX}
+                                    onCancel={() => setNewEventSlot(null)}
+                                    onSubmit={createEvent}
+                                />
+                            )}
                         </div>
                     </div>
                 );

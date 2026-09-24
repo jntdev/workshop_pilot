@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { formatDayFullLabel, formatTime } from './agendaShared';
-import type { QuoteAppointment, QuoteTask } from '@/types';
+import type { AgendaItem, QuoteTask } from '@/types';
 
 interface Props {
-    appointment: QuoteAppointment | null;
+    item: AgendaItem | null;
     onClose: () => void;
 }
 
-export default function AppointmentDetailPanel({ appointment, onClose }: Props) {
+export default function AgendaItemDetailPanel({ item, onClose }: Props) {
     const [tasks, setTasks] = useState<QuoteTask[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -26,34 +26,34 @@ export default function AppointmentDetailPanel({ appointment, onClose }: Props) 
     }, []);
 
     useEffect(() => {
-        if (appointment) {
-            load(appointment.quote_id);
+        if (item?.kind === 'quote') {
+            load(item.quote_id);
         }
-    }, [appointment, load]);
+    }, [item, load]);
 
-    const isOpen = appointment !== null;
+    const isOpen = item !== null;
 
     return (
         <div className={`agenda-planning-panel ${isOpen ? 'agenda-planning-panel--open' : ''}`}>
-            {appointment && (
+            {item && item.kind === 'quote' && (
                 <>
                     <div className="agenda-planning-panel__header">
-                        <h2 className="agenda-planning-panel__title">{appointment.quote_reference}</h2>
+                        <h2 className="agenda-planning-panel__title">{item.quote_reference}</h2>
                         <button type="button" className="agenda-planning-panel__close" onClick={onClose} aria-label="Fermer">
                             ×
                         </button>
                     </div>
 
                     <div className="agenda-appointment-detail__meta">
-                        <p className="agenda-appointment-detail__client">{appointment.client_name}</p>
-                        {appointment.bike_description && (
-                            <p className="agenda-appointment-detail__bike">{appointment.bike_description}</p>
+                        <p className="agenda-appointment-detail__client">{item.client_name}</p>
+                        {item.bike_description && (
+                            <p className="agenda-appointment-detail__bike">{item.bike_description}</p>
                         )}
                         <p className="agenda-appointment-detail__time">
-                            {formatDayFullLabel(appointment.starts_at.slice(0, 10))} · {formatTime(appointment.starts_at)}–{formatTime(appointment.ends_at)}
+                            {formatDayFullLabel(item.starts_at.slice(0, 10))} · {formatTime(item.starts_at)}–{formatTime(item.ends_at)}
                         </p>
-                        {appointment.status_label && (
-                            <span className="agenda__appointment-status">{appointment.status_label}</span>
+                        {item.status_label && (
+                            <span className="agenda__appointment-status">{item.status_label}</span>
                         )}
                     </div>
 
@@ -78,13 +78,37 @@ export default function AppointmentDetailPanel({ appointment, onClose }: Props) 
                     </div>
 
                     <a
-                        href={`/atelier/devis/${appointment.quote_id}/pdf?print=1`}
+                        href={`/atelier/devis/${item.quote_id}/pdf?print=1`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="agenda-appointment-detail__print-btn"
                     >
                         Imprimer le devis complet
                     </a>
+                </>
+            )}
+
+            {item && item.kind === 'event' && (
+                <>
+                    <div className="agenda-planning-panel__header">
+                        <h2 className="agenda-planning-panel__title">{item.title}</h2>
+                        <button type="button" className="agenda-planning-panel__close" onClick={onClose} aria-label="Fermer">
+                            ×
+                        </button>
+                    </div>
+
+                    <div className="agenda-appointment-detail__meta">
+                        <p className="agenda-appointment-detail__time">
+                            {formatDayFullLabel(item.starts_at.slice(0, 10))} · {formatTime(item.starts_at)}–{formatTime(item.ends_at)}
+                        </p>
+                    </div>
+
+                    {item.detail && (
+                        <div className="agenda-appointment-detail__tasks">
+                            <h3 className="agenda-appointment-detail__tasks-title">Détail</h3>
+                            <p className="agenda-appointment-detail__event-detail">{item.detail}</p>
+                        </div>
+                    )}
                 </>
             )}
         </div>

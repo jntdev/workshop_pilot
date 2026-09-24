@@ -108,12 +108,19 @@ export interface DragAppointmentPayload {
     durationMinutes: number;
 }
 
-export type DragPayload = DragQuotePayload | DragAppointmentPayload;
+export interface DragEventPayload {
+    kind: 'event';
+    eventId: number;
+    durationMinutes: number;
+}
+
+export type DragPayload = DragQuotePayload | DragAppointmentPayload | DragEventPayload;
 
 export type ResizeEdge = 'start' | 'end';
 
 export interface ResizeState {
-    appointmentId: number;
+    itemId: number;
+    kind: 'quote' | 'event';
     edge: ResizeEdge;
     dayIso: string;
 }
