@@ -19,6 +19,15 @@ Crée 12 clients dont :
 - Thomas Petit (Nantes) - Avantage 15%
 - Claire Robert (Toulouse) - Sans avantage
 
+### CgnCatalogueSeeder
+Réimporte le catalogue fournisseur CGN depuis le CSV commis dans le repo (`StockNouveautesCgn022252.csv`), en réutilisant la commande `catalogue:import-cgn` — sans connexion FTP. Utile pour repeupler rapidement le catalogue après un `php artisan test` (qui vide la base).
+
+```bash
+php artisan db:seed --class=CgnCatalogueSeeder
+```
+
+Non inclus dans `DatabaseSeeder` (import volumineux, ~15 000 articles) — à lancer manuellement au besoin.
+
 ### QuoteSeeder
 Crée 5 devis réalistes avec leurs lignes :
 

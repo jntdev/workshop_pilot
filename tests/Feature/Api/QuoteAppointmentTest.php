@@ -193,4 +193,141 @@ class QuoteAppointmentTest extends TestCase
             'ends_at' => '2026-10-01 09:30:00',
         ])->assertStatus(401);
     }
+
+    #[Test]
+    public function it_marks_an_appointment_as_completed(): void
+    {
+        $quote = Quote::factory()->create();
+        $appointment = QuoteAppointment::factory()->create(['quote_id' => $quote->id]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/quote-appointments/{$appointment->id}/flags", [
+            'completed' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('completed'));
+        $this->assertDatabaseHas('quote_appointments', ['id' => $appointment->id, 'completed' => true]);
+    }
+
+    #[Test]
+    public function it_unmarks_an_appointment_as_completed(): void
+    {
+        $quote = Quote::factory()->create();
+        $appointment = QuoteAppointment::factory()->completed()->create(['quote_id' => $quote->id]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/quote-appointments/{$appointment->id}/flags", [
+            'completed' => false,
+        ]);
+
+        $response->assertOk();
+        $this->assertFalse($response->json('completed'));
+    }
+
+    #[Test]
+    public function it_defaults_new_appointments_to_not_completed(): void
+    {
+        $quote = Quote::factory()->create(['status' => 'reception']);
+
+        $response = $this->actingAs($this->user)->postJson("/api/quotes/{$quote->id}/appointments", [
+            'starts_at' => '2026-10-01 09:00:00',
+            'ends_at' => '2026-10-01 09:30:00',
+        ]);
+
+        $response->assertCreated();
+        $this->assertFalse($response->json('completed'));
+        $this->assertFalse($response->json('is_appointment'));
+        $this->assertFalse($response->json('is_commitment'));
+    }
+
+    #[Test]
+    public function it_marks_an_appointment_as_a_physical_appointment(): void
+    {
+        $quote = Quote::factory()->create();
+        $appointment = QuoteAppointment::factory()->create(['quote_id' => $quote->id]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/quote-appointments/{$appointment->id}/flags", [
+            'is_appointment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_appointment'));
+        $this->assertFalse($response->json('is_commitment'));
+        $this->assertFalse($response->json('completed'));
+    }
+
+    #[Test]
+    public function it_marks_an_appointment_as_a_commitment(): void
+    {
+        $quote = Quote::factory()->create();
+        $appointment = QuoteAppointment::factory()->create(['quote_id' => $quote->id]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/quote-appointments/{$appointment->id}/flags", [
+            'is_commitment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_commitment'));
+        $this->assertDatabaseHas('quote_appointments', ['id' => $appointment->id, 'is_commitment' => true]);
+    }
+
+    #[Test]
+    public function it_updates_flags_independently_without_affecting_others(): void
+    {
+        $quote = Quote::factory()->create();
+        $appointment = QuoteAppointment::factory()->create(['quote_id' => $quote->id, 'is_appointment' => true]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/quote-appointments/{$appointment->id}/flags", [
+            'completed' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('completed'));
+        $this->assertTrue($response->json('is_appointment'));
+    }
+
+    #[Test]
+    public function it_disables_commitment_when_marking_as_appointment(): void
+    {
+        $quote = Quote::factory()->create();
+        $appointment = QuoteAppointment::factory()->create(['quote_id' => $quote->id, 'is_commitment' => true]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/quote-appointments/{$appointment->id}/flags", [
+            'is_appointment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_appointment'));
+        $this->assertFalse($response->json('is_commitment'));
+    }
+
+    #[Test]
+    public function it_disables_appointment_when_marking_as_commitment(): void
+    {
+        $quote = Quote::factory()->create();
+        $appointment = QuoteAppointment::factory()->create(['quote_id' => $quote->id, 'is_appointment' => true]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/quote-appointments/{$appointment->id}/flags", [
+            'is_commitment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_commitment'));
+        $this->assertFalse($response->json('is_appointment'));
+    }
+
+    #[Test]
+    public function it_ignores_client_attempt_to_set_both_appointment_and_commitment(): void
+    {
+        $quote = Quote::factory()->create();
+        $appointment = QuoteAppointment::factory()->create(['quote_id' => $quote->id]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/quote-appointments/{$appointment->id}/flags", [
+            'is_appointment' => true,
+            'is_commitment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_appointment'));
+        $this->assertFalse($response->json('is_commitment'));
+    }
 }

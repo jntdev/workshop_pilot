@@ -58,7 +58,7 @@ class QuoteAppointmentController extends Controller
     public function store(StoreQuoteAppointmentRequest $request, Quote $quote): JsonResponse
     {
         $appointment = $quote->appointments()->create($request->validated());
-        $appointment->load('quote.client');
+        $appointment->refresh()->load('quote.client');
 
         return response()->json($this->formatAppointment($appointment), 201);
     }
@@ -78,6 +78,38 @@ class QuoteAppointmentController extends Controller
         return response()->json(null, 204);
     }
 
+    public function updateFlags(Request $request, QuoteAppointment $appointment): JsonResponse
+    {
+        $validated = $request->validate([
+            'completed' => ['sometimes', 'boolean'],
+            'is_appointment' => ['sometimes', 'boolean'],
+            'is_commitment' => ['sometimes', 'boolean'],
+        ]);
+
+        $appointment->update($this->applyMutuallyExclusiveFlags($validated));
+        $appointment->load('quote.client');
+
+        return response()->json($this->formatAppointment($appointment));
+    }
+
+    /**
+     * Rendez-vous et Engagement sont mutuellement exclusifs : activer l'un
+     * désactive l'autre, quelle que soit la combinaison envoyée par le client.
+     *
+     * @param  array<string, bool>  $flags
+     * @return array<string, bool>
+     */
+    private function applyMutuallyExclusiveFlags(array $flags): array
+    {
+        if (($flags['is_appointment'] ?? false) === true) {
+            $flags['is_commitment'] = false;
+        } elseif (($flags['is_commitment'] ?? false) === true) {
+            $flags['is_appointment'] = false;
+        }
+
+        return $flags;
+    }
+
     protected function formatAppointment(QuoteAppointment $appointment): array
     {
         return [
@@ -86,12 +118,16 @@ class QuoteAppointmentController extends Controller
             'quote_id' => $appointment->quote_id,
             'quote_reference' => $appointment->quote->reference,
             'client_name' => trim($appointment->quote->client->prenom.' '.$appointment->quote->client->nom),
+            'client_last_name' => $appointment->quote->client->nom,
             'bike_description' => $appointment->quote->bike_description,
             'status' => $appointment->quote->status?->value,
             'status_label' => $appointment->quote->status?->label(),
             'starts_at' => $appointment->starts_at->toISOString(),
             'ends_at' => $appointment->ends_at->toISOString(),
             'notes' => $appointment->notes,
+            'completed' => $appointment->completed,
+            'is_appointment' => $appointment->is_appointment,
+            'is_commitment' => $appointment->is_commitment,
         ];
     }
 }

@@ -107,7 +107,7 @@
     &__week-col {
         position: relative;
         border-left: 1px solid $color-border-light;
-        min-width: 130px;
+        min-width: 250px;
 
         &--today {
             background: rgba($color-primary-blue, 0.03);
@@ -177,6 +177,27 @@
             border-left: 3px solid $color-agenda-event;
             cursor: pointer;
         }
+
+        &--is-appointment {
+            background: rgba($color-toggle-mango, 0.18);
+            border: 1px solid rgba($color-toggle-mango, 0.5);
+            border-left: 3px solid $color-toggle-mango;
+        }
+
+        &--is-commitment {
+            background: rgba($color-danger-red, 0.18);
+            border: 1px solid rgba($color-danger-red, 0.5);
+            border-left: 3px solid $color-danger-red;
+        }
+
+        &--completed {
+            opacity: 0.55;
+
+            .agenda__appointment-title,
+            .agenda__appointment-bike {
+                text-decoration: line-through;
+            }
+        }
     }
 
     &__appointment-content {
@@ -189,22 +210,14 @@
     &__appointment-line {
         display: flex;
         align-items: baseline;
-        gap: 0.3rem;
+        gap: 0.35rem;
         min-width: 0;
-    }
-
-    &__appointment-time {
-        flex: 0 0 auto;
-        font-size: 0.65rem;
-        font-weight: 600;
-        color: $color-neutral-dark;
-        white-space: nowrap;
     }
 
     &__appointment-title {
         flex: 0 1 auto;
         min-width: 0;
-        font-size: 0.75rem;
+        font-size: 0.78rem;
         font-weight: 600;
         color: $color-neutral-dark;
         text-decoration: none;
@@ -220,7 +233,7 @@
     &__appointment-bike {
         flex: 1 1 auto;
         min-width: 0;
-        font-size: 0.65rem;
+        font-size: 0.7rem;
         color: $color-neutral-medium;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -264,6 +277,48 @@
 
     &__appointment:hover &__appointment-remove {
         opacity: 1;
+    }
+
+    &__appointment-flags {
+        display: flex;
+        gap: 0.25rem;
+        margin-top: 0.2rem;
+        flex-wrap: wrap;
+    }
+
+    &__appointment-flag {
+        border: 1px solid transparent;
+        border-radius: 999px;
+        padding: 0.05rem 0.45rem;
+        font-size: 0.55rem;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+        cursor: pointer;
+        background: rgba($color-neutral-medium, 0.1);
+        color: $color-neutral-medium;
+        transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+
+        &:hover {
+            background: rgba($color-neutral-medium, 0.18);
+            border-color: rgba($color-neutral-medium, 0.25);
+            color: $color-neutral-dark;
+        }
+
+        &--appointment.agenda__appointment-flag--active {
+            background: $color-toggle-mango;
+            color: $color-neutral-dark;
+        }
+
+        &--commitment.agenda__appointment-flag--active {
+            background: $color-danger-red;
+            color: $color-bg-white;
+        }
+
+        &--completed.agenda__appointment-flag--active {
+            background: $color-success-green;
+            color: $color-bg-white;
+        }
     }
 
     &__appointment-handle {
@@ -346,6 +401,41 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+
+    &__reschedule-btn {
+        margin-left: auto;
+        background: none;
+        border: 1px solid $color-border-medium;
+        border-radius: 6px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: $color-neutral-dark;
+        cursor: pointer;
+        transition: background-color 0.15s, border-color 0.15s;
+
+        &:hover:not(:disabled) {
+            background: $color-bg-light;
+            border-color: $color-neutral-medium;
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
+    &__reschedule-summary {
+        background: rgba($color-success-green, 0.1);
+        color: darken($color-success-green, 10%);
+        border: 1px solid rgba($color-success-green, 0.3);
+        border-radius: 4px;
+        padding: 0.6rem 0.9rem;
+        font-size: 0.8rem;
         margin-bottom: 1rem;
         flex-shrink: 0;
     }

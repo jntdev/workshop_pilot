@@ -9,8 +9,8 @@ export const DEFAULT_APPOINTMENT_DURATION_MINUTES = 30;
 /** Largeur de la colonne des heures (agenda__week-hours) dans la grille semaine. */
 export const AGENDA_HOURS_COL_PX = 48;
 
-/** Largeur minimale d'une colonne jour (voir .agenda__week-col min-width), utilisée pour calculer combien de jours tiennent dans la largeur disponible. */
-export const AGENDA_MIN_DAY_COL_PX = 130;
+/** Largeur minimale d'une colonne jour (voir .agenda__week-col min-width), utilisée pour calculer combien de jours tiennent dans la largeur disponible. Doit rester assez large pour que les 3 boutons de statut (Rendez-vous/Engagement/Travail terminé) tiennent sur une seule ligne sans repasser à la ligne. */
+export const AGENDA_MIN_DAY_COL_PX = 250;
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -56,9 +56,20 @@ export function startOfWeek(dateIso: string): string {
     return toIso(d.getFullYear(), d.getMonth() + 1, d.getDate());
 }
 
-/** `count` jours consécutifs à partir de startIso (inclus). */
-export function daysFrom(startIso: string, count: number): string[] {
-    return Array.from({ length: count }, (_, i) => addDays(startIso, i));
+/** `count` jours à partir de startIso (inclus), en sautant les dimanches (jamais affichés dans l'agenda semaine). */
+export function weekdaysFrom(startIso: string, count: number): string[] {
+    const days: string[] = [];
+    let cursor = startIso;
+
+    while (days.length < count) {
+        const isSunday = new Date(cursor + 'T12:00:00').getDay() === 0;
+        if (!isSunday) {
+            days.push(cursor);
+        }
+        cursor = addDays(cursor, 1);
+    }
+
+    return days;
 }
 
 export function formatDayLabel(dateIso: string): { weekday: string; day: number } {

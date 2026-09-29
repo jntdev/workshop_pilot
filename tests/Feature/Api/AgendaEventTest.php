@@ -166,4 +166,147 @@ class AgendaEventTest extends TestCase
         $response->assertOk();
         $this->assertCount(0, $response->json());
     }
+
+    #[Test]
+    public function it_marks_an_agenda_event_as_completed(): void
+    {
+        $event = AgendaEvent::factory()->create();
+
+        $response = $this->actingAs($this->user)->patchJson("/api/agenda-events/{$event->id}/flags", [
+            'completed' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('completed'));
+        $this->assertDatabaseHas('agenda_events', ['id' => $event->id, 'completed' => true]);
+    }
+
+    #[Test]
+    public function it_unmarks_an_agenda_event_as_completed(): void
+    {
+        $event = AgendaEvent::factory()->completed()->create();
+
+        $response = $this->actingAs($this->user)->patchJson("/api/agenda-events/{$event->id}/flags", [
+            'completed' => false,
+        ]);
+
+        $response->assertOk();
+        $this->assertFalse($response->json('completed'));
+    }
+
+    #[Test]
+    public function it_defaults_new_agenda_events_to_not_completed(): void
+    {
+        $response = $this->actingAs($this->user)->postJson('/api/agenda-events', [
+            'title' => 'Test',
+            'starts_at' => '2026-10-01 09:00:00',
+            'ends_at' => '2026-10-01 09:30:00',
+        ]);
+
+        $response->assertCreated();
+        $this->assertFalse($response->json('completed'));
+        $this->assertFalse($response->json('is_appointment'));
+        $this->assertFalse($response->json('is_commitment'));
+    }
+
+    #[Test]
+    public function it_marks_an_agenda_event_as_a_physical_appointment(): void
+    {
+        $event = AgendaEvent::factory()->create();
+
+        $response = $this->actingAs($this->user)->patchJson("/api/agenda-events/{$event->id}/flags", [
+            'is_appointment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_appointment'));
+    }
+
+    #[Test]
+    public function it_marks_an_agenda_event_as_a_commitment(): void
+    {
+        $event = AgendaEvent::factory()->create();
+
+        $response = $this->actingAs($this->user)->patchJson("/api/agenda-events/{$event->id}/flags", [
+            'is_commitment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_commitment'));
+        $this->assertDatabaseHas('agenda_events', ['id' => $event->id, 'is_commitment' => true]);
+    }
+
+    #[Test]
+    public function it_includes_the_completed_flag_in_the_merged_agenda_list(): void
+    {
+        AgendaEvent::factory()->completed()->create([
+            'starts_at' => '2026-10-01 09:00:00',
+            'ends_at' => '2026-10-01 09:30:00',
+        ]);
+
+        $response = $this->actingAs($this->user)->getJson('/api/agenda/items?start=2026-10-01T00:00:00&end=2026-10-01T23:59:59');
+
+        $response->assertOk();
+        $this->assertTrue($response->json('0.completed'));
+    }
+
+    #[Test]
+    public function it_includes_the_appointment_and_commitment_flags_in_the_merged_agenda_list(): void
+    {
+        AgendaEvent::factory()->create([
+            'is_appointment' => true,
+            'is_commitment' => true,
+            'starts_at' => '2026-10-01 09:00:00',
+            'ends_at' => '2026-10-01 09:30:00',
+        ]);
+
+        $response = $this->actingAs($this->user)->getJson('/api/agenda/items?start=2026-10-01T00:00:00&end=2026-10-01T23:59:59');
+
+        $response->assertOk();
+        $this->assertTrue($response->json('0.is_appointment'));
+        $this->assertTrue($response->json('0.is_commitment'));
+    }
+
+    #[Test]
+    public function it_disables_commitment_when_marking_an_agenda_event_as_appointment(): void
+    {
+        $event = AgendaEvent::factory()->create(['is_commitment' => true]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/agenda-events/{$event->id}/flags", [
+            'is_appointment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_appointment'));
+        $this->assertFalse($response->json('is_commitment'));
+    }
+
+    #[Test]
+    public function it_disables_appointment_when_marking_an_agenda_event_as_commitment(): void
+    {
+        $event = AgendaEvent::factory()->create(['is_appointment' => true]);
+
+        $response = $this->actingAs($this->user)->patchJson("/api/agenda-events/{$event->id}/flags", [
+            'is_commitment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_commitment'));
+        $this->assertFalse($response->json('is_appointment'));
+    }
+
+    #[Test]
+    public function it_ignores_client_attempt_to_set_both_flags_on_an_agenda_event(): void
+    {
+        $event = AgendaEvent::factory()->create();
+
+        $response = $this->actingAs($this->user)->patchJson("/api/agenda-events/{$event->id}/flags", [
+            'is_appointment' => true,
+            'is_commitment' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('is_appointment'));
+        $this->assertFalse($response->json('is_commitment'));
+    }
 }

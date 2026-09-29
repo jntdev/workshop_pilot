@@ -10,7 +10,6 @@ import {
     apiHeaders,
     todayIso,
     formatDayLabel,
-    formatTime,
     slotIndexOf,
     dateIsoOf,
     type DragPayload,
@@ -235,6 +234,35 @@ export default function WeekAgendaGrid({ days, items, onItemsChange, onError, on
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resize]);
 
+    const toggleFlag = async (item: AgendaItem, flag: 'completed' | 'is_appointment' | 'is_commitment', value: boolean) => {
+        const previous = items;
+
+        // Rendez-vous et Engagement s'excluent mutuellement : activer l'un désactive l'autre.
+        const changes: Partial<Record<'is_appointment' | 'is_commitment', boolean>> = {};
+        if (flag === 'is_appointment' && value) {
+            changes.is_commitment = false;
+        } else if (flag === 'is_commitment' && value) {
+            changes.is_appointment = false;
+        }
+        const payload = { [flag]: value, ...changes };
+
+        onItemsChange(items.map(i => (
+            i.kind === item.kind && i.id === item.id ? { ...i, ...payload } : i
+        )));
+
+        const url = item.kind === 'quote' ? `/api/quote-appointments/${item.id}/flags` : `/api/agenda-events/${item.id}/flags`;
+        const res = await fetch(url, {
+            method: 'PATCH',
+            headers: apiHeaders(),
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+            onError('Impossible de mettre à jour ce créneau.');
+            onItemsChange(previous);
+        }
+    };
+
     const handleDelete = async (item: AgendaItem) => {
         if (!confirm('Supprimer ce créneau ?')) return;
 
@@ -300,7 +328,7 @@ export default function WeekAgendaGrid({ days, items, onItemsChange, onError, on
                                 return (
                                     <div
                                         key={itemKey}
-                                        className={`agenda__appointment ${item.kind === 'event' ? 'agenda__appointment--event' : ''}`}
+                                        className={`agenda__appointment ${item.kind === 'event' ? 'agenda__appointment--event' : ''} ${item.is_appointment ? 'agenda__appointment--is-appointment' : ''} ${item.completed ? 'agenda__appointment--completed' : ''}`}
                                         style={{ top, height }}
                                         draggable={!resize}
                                         onDragStart={e => handleDragStartItem(e, item, durationMinutes)}
@@ -312,21 +340,45 @@ export default function WeekAgendaGrid({ days, items, onItemsChange, onError, on
                                         />
                                         <div className="agenda__appointment-content">
                                             <div className="agenda__appointment-line">
-                                                <span className="agenda__appointment-time">
-                                                    {formatTime(item.starts_at)}–{formatTime(item.ends_at)}
-                                                </span>
                                                 {item.kind === 'quote' ? (
                                                     <>
-                                                        <span className="agenda__appointment-title">{item.client_name}</span>
+                                                        <span className="agenda__appointment-title">{item.client_last_name}</span>
                                                         <span className="agenda__appointment-bike">{item.bike_description ?? item.quote_reference}</span>
                                                     </>
                                                 ) : (
                                                     <span className="agenda__appointment-title">{item.title}</span>
                                                 )}
                                             </div>
-                                            {item.kind === 'quote' && item.status_label && (
-                                                <span className="agenda__appointment-status">{item.status_label}</span>
-                                            )}
+                                            <div
+                                                className="agenda__appointment-flags"
+                                                onMouseDown={e => e.stopPropagation()}
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                <button
+                                                    type="button"
+                                                    className={`agenda__appointment-flag agenda__appointment-flag--appointment ${item.is_appointment ? 'agenda__appointment-flag--active' : ''}`}
+                                                    onClick={() => toggleFlag(item, 'is_appointment', !item.is_appointment)}
+                                                    title="Rendez-vous"
+                                                >
+                                                    Rendez-vous
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`agenda__appointment-flag agenda__appointment-flag--commitment ${item.is_commitment ? 'agenda__appointment-flag--active' : ''}`}
+                                                    onClick={() => toggleFlag(item, 'is_commitment', !item.is_commitment)}
+                                                    title="Engagement"
+                                                >
+                                                    Engagement
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`agenda__appointment-flag agenda__appointment-flag--completed ${item.completed ? 'agenda__appointment-flag--active' : ''}`}
+                                                    onClick={() => toggleFlag(item, 'completed', !item.completed)}
+                                                    title="Travail terminé"
+                                                >
+                                                    Travail terminé
+                                                </button>
+                                            </div>
                                         </div>
                                         <button
                                             type="button"

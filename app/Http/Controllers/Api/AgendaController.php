@@ -30,12 +30,16 @@ class AgendaController extends Controller
                 'quote_id' => $appointment->quote_id,
                 'quote_reference' => $appointment->quote->reference,
                 'client_name' => trim($appointment->quote->client->prenom.' '.$appointment->quote->client->nom),
+                'client_last_name' => $appointment->quote->client->nom,
                 'bike_description' => $appointment->quote->bike_description,
                 'status' => $appointment->quote->status?->value,
                 'status_label' => $appointment->quote->status?->label(),
                 'starts_at' => $appointment->starts_at->toISOString(),
                 'ends_at' => $appointment->ends_at->toISOString(),
                 'notes' => $appointment->notes,
+                'completed' => $appointment->completed,
+                'is_appointment' => $appointment->is_appointment,
+                'is_commitment' => $appointment->is_commitment,
             ]);
 
         $events = AgendaEvent::whereBetween('starts_at', [$validated['start'], $validated['end']])
@@ -47,6 +51,9 @@ class AgendaController extends Controller
                 'detail' => $event->detail,
                 'starts_at' => $event->starts_at->toISOString(),
                 'ends_at' => $event->ends_at->toISOString(),
+                'completed' => $event->completed,
+                'is_appointment' => $event->is_appointment,
+                'is_commitment' => $event->is_commitment,
             ]);
 
         $items = $appointments->concat($events)->sortBy('starts_at')->values();

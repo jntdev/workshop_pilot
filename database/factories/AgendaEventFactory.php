@@ -25,4 +25,9 @@ class AgendaEventFactory extends Factory
             'ends_at' => (clone $start)->modify('+30 minutes'),
         ];
     }
+
+    public function completed(): static
+    {
+        return $this->state(fn (array $attributes) => ['completed' => true]);
+    }
 }

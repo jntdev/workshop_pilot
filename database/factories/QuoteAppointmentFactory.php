@@ -29,4 +29,9 @@ class QuoteAppointmentFactory extends Factory
             'notes' => $this->faker->optional()->sentence(),
         ];
     }
+
+    public function completed(): static
+    {
+        return $this->state(fn (array $attributes) => ['completed' => true]);
+    }
 }

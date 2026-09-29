@@ -14,6 +14,9 @@ class AgendaEvent extends Model
         'detail',
         'starts_at',
         'ends_at',
+        'completed',
+        'is_appointment',
+        'is_commitment',
     ];
 
     protected function casts(): array
@@ -21,6 +24,9 @@ class AgendaEvent extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'completed' => 'boolean',
+            'is_appointment' => 'boolean',
+            'is_commitment' => 'boolean',
         ];
     }
 }

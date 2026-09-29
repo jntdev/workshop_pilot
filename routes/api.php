@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AgendaController;
 use App\Http\Controllers\Api\AgendaEventController;
+use App\Http\Controllers\Api\AgendaRescheduleController;
 use App\Http\Controllers\Api\ArticleCategoryController;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\ArticleSubcategoryController;
@@ -86,15 +87,18 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/quote-appointments/unscheduled', [QuoteAppointmentController::class, 'unscheduled']);
     Route::post('/quotes/{quote}/appointments', [QuoteAppointmentController::class, 'store']);
     Route::put('/quote-appointments/{appointment}', [QuoteAppointmentController::class, 'update']);
+    Route::patch('/quote-appointments/{appointment}/flags', [QuoteAppointmentController::class, 'updateFlags']);
     Route::delete('/quote-appointments/{appointment}', [QuoteAppointmentController::class, 'destroy']);
 
     // Agenda events (créneaux libres, sans devis) API routes
     Route::post('/agenda-events', [AgendaEventController::class, 'store']);
     Route::put('/agenda-events/{agendaEvent}', [AgendaEventController::class, 'update']);
+    Route::patch('/agenda-events/{agendaEvent}/flags', [AgendaEventController::class, 'updateFlags']);
     Route::delete('/agenda-events/{agendaEvent}', [AgendaEventController::class, 'destroy']);
 
     // Agenda items (vue fusionnée devis + événements libres)
     Route::get('/agenda/items', [AgendaController::class, 'items']);
+    Route::post('/agenda/reschedule', AgendaRescheduleController::class);
 
     // Reservations API routes
     Route::get('/reservations', [ReservationController::class, 'index']);

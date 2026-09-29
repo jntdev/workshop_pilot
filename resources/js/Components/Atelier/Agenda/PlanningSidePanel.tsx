@@ -1,13 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import WeekAgendaGrid from './WeekAgendaGrid';
 import PlanningItemPopover from './PlanningItemPopover';
-import { addDays, todayIso, formatDayFullLabel } from './agendaShared';
+import { addDays, todayIso, formatDayFullLabel, apiHeaders } from './agendaShared';
 import type { AgendaItem } from '@/types';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     onQuoteScheduledChange?: (quoteId: number, isScheduled: boolean) => void;
+}
+
+interface RescheduleSummary {
+    moved_count: number;
+    days_touched: number;
+    max_cascade_depth: number;
 }
 
 export default function PlanningSidePanel({ isOpen, onClose, onQuoteScheduledChange }: Props) {
@@ -17,6 +23,8 @@ export default function PlanningSidePanel({ isOpen, onClose, onQuoteScheduledCha
     const [error, setError] = useState<string | null>(null);
     const [selectedItem, setSelectedItem] = useState<AgendaItem | null>(null);
     const [selectedItemRect, setSelectedItemRect] = useState<DOMRect | null>(null);
+    const [isRescheduling, setIsRescheduling] = useState(false);
+    const [rescheduleMessage, setRescheduleMessage] = useState<string | null>(null);
 
     const handleItemClick = useCallback((item: AgendaItem, rect: DOMRect) => {
         setSelectedItem(item);
@@ -38,9 +46,44 @@ export default function PlanningSidePanel({ isOpen, onClose, onQuoteScheduledCha
         }
     }, []);
 
+    const handleReschedule = useCallback(async () => {
+        if (!window.confirm(`Reporter tous les éléments non terminés du ${formatDayFullLabel(date)} au prochain jour ouvré ?`)) {
+            return;
+        }
+
+        setIsRescheduling(true);
+        setError(null);
+        setRescheduleMessage(null);
+        try {
+            const res = await fetch('/api/agenda/reschedule', {
+                method: 'POST',
+                headers: apiHeaders(),
+                credentials: 'same-origin',
+                body: JSON.stringify({ day: date }),
+            });
+            if (res.ok) {
+                const summary: RescheduleSummary = await res.json();
+                await load(date);
+                setRescheduleMessage(
+                    summary.moved_count === 0
+                        ? 'Rien à reporter sur cette journée.'
+                        : `${summary.moved_count} élément(s) reporté(s) sur ${summary.days_touched} jour(s).`
+                );
+            } else {
+                const data = await res.json().catch(() => null);
+                setError(data?.message || 'Impossible de reporter cette journée.');
+            }
+        } catch {
+            setError('Impossible de reporter cette journée.');
+        } finally {
+            setIsRescheduling(false);
+        }
+    }, [date, load]);
+
     useEffect(() => {
         if (isOpen) {
             load(date);
+            setRescheduleMessage(null);
         } else {
             setSelectedItem(null);
         }
@@ -74,9 +117,18 @@ export default function PlanningSidePanel({ isOpen, onClose, onQuoteScheduledCha
                     <button type="button" className="agenda__nav-btn" onClick={() => setDate(prev => addDays(prev, -1))} aria-label="Jour précédent">‹</button>
                     <span className="agenda__date">{formatDayFullLabel(date)}</span>
                     <button type="button" className="agenda__nav-btn" onClick={() => setDate(prev => addDays(prev, 1))} aria-label="Jour suivant">›</button>
+                    <button
+                        type="button"
+                        className="agenda-planning-panel__reschedule-btn"
+                        onClick={handleReschedule}
+                        disabled={isRescheduling || isLoading}
+                    >
+                        {isRescheduling ? 'Report en cours...' : 'Reporter au lendemain'}
+                    </button>
                 </div>
 
                 {error && <div className="agenda__error">{error}</div>}
+                {rescheduleMessage && <div className="agenda-planning-panel__reschedule-summary">{rescheduleMessage}</div>}
 
                 <div className="agenda-planning-panel__grid">
                     {isLoading ? (

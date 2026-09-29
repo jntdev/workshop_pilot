@@ -141,12 +141,16 @@ export interface QuoteAppointment {
     quote_id: number;
     quote_reference: string;
     client_name: string;
+    client_last_name: string;
     bike_description: string | null;
     status: QuoteStatusSlug | null;
     status_label: string | null;
     starts_at: string;
     ends_at: string;
     notes: string | null;
+    completed: boolean;
+    is_appointment: boolean;
+    is_commitment: boolean;
 }
 
 export interface AgendaEvent {
@@ -156,6 +160,9 @@ export interface AgendaEvent {
     detail: string | null;
     starts_at: string;
     ends_at: string;
+    completed: boolean;
+    is_appointment: boolean;
+    is_commitment: boolean;
 }
 
 export type AgendaItem = QuoteAppointment | AgendaEvent;

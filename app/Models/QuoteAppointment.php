@@ -15,6 +15,9 @@ class QuoteAppointment extends Model
         'starts_at',
         'ends_at',
         'notes',
+        'completed',
+        'is_appointment',
+        'is_commitment',
     ];
 
     protected function casts(): array
@@ -22,6 +25,9 @@ class QuoteAppointment extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'completed' => 'boolean',
+            'is_appointment' => 'boolean',
+            'is_commitment' => 'boolean',
         ];
     }
 

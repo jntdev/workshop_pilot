@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import WeekAgendaGrid from '@/Components/Atelier/Agenda/WeekAgendaGrid';
 import AgendaItemDetailPanel from '@/Components/Atelier/Agenda/AgendaItemDetailPanel';
-import { addDays, startOfWeek, todayIso, daysFrom, formatDateRangeLabel, AGENDA_HOURS_COL_PX, AGENDA_MIN_DAY_COL_PX } from '@/Components/Atelier/Agenda/agendaShared';
+import { addDays, startOfWeek, todayIso, weekdaysFrom, formatDateRangeLabel, AGENDA_HOURS_COL_PX, AGENDA_MIN_DAY_COL_PX } from '@/Components/Atelier/Agenda/agendaShared';
 import type { AgendaItem } from '@/types';
 
 export default function AgendaIndex() {
@@ -36,7 +36,7 @@ export default function AgendaIndex() {
         return () => observer.disconnect();
     }, []);
 
-    const days = useMemo(() => daysFrom(weekStart, dayCount), [weekStart, dayCount]);
+    const days = useMemo(() => weekdaysFrom(weekStart, dayCount), [weekStart, dayCount]);
 
     useEffect(() => {
         setSelectedItem(prev => {
@@ -46,18 +46,18 @@ export default function AgendaIndex() {
         });
     }, [items]);
 
-    const loadItems = useCallback(async (mondayIso: string, count: number) => {
-        const start = `${mondayIso}T00:00:00`;
-        const end = `${addDays(mondayIso, count - 1)}T23:59:59`;
+    const loadItems = useCallback(async (visibleDays: string[]) => {
+        const start = `${visibleDays[0]}T00:00:00`;
+        const end = `${visibleDays[visibleDays.length - 1]}T23:59:59`;
         const res = await fetch(`/api/agenda/items?start=${start}&end=${end}`, { headers: { Accept: 'application/json' } });
         return res.ok ? res.json() : [];
     }, []);
 
-    const load = useCallback(async (mondayIso: string, count: number) => {
+    const load = useCallback(async (visibleDays: string[]) => {
         setIsLoading(true);
         setError(null);
         try {
-            setItems(await loadItems(mondayIso, count));
+            setItems(await loadItems(visibleDays));
         } catch {
             setError('Impossible de charger l\'agenda.');
         } finally {
@@ -66,8 +66,8 @@ export default function AgendaIndex() {
     }, [loadItems]);
 
     useEffect(() => {
-        load(weekStart, dayCount);
-    }, [weekStart, dayCount, load]);
+        load(days);
+    }, [days, load]);
 
     const isCurrentWeek = weekStart === startOfWeek(todayIso());
 
