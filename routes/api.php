@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\UploadTokenController;
+use App\Http\Controllers\Api\WebsiteVisitsController;
 use Illuminate\Support\Facades\Route;
 
 // Health check endpoint (sans auth) pour warmup serveur mutualisé
@@ -37,6 +38,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // Dashboard API routes
     Route::post('/dashboard/kpis/rebuild', [AtelierController::class, 'rebuildAllKpis']);
     Route::get('/dashboard/payments-history', [AtelierController::class, 'paymentsHistory']);
+    Route::get('/dashboard/website-visits', WebsiteVisitsController::class);
 
     // Atelier API routes
     Route::get('/atelier/stats', [AtelierController::class, 'stats']);

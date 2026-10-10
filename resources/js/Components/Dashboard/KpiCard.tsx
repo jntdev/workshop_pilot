@@ -30,7 +30,7 @@ export function formatPercent(value: number): string {
     }).format(value) + '%';
 }
 
-function formatShare(value: number): string {
+export function formatShare(value: number): string {
     return new Intl.NumberFormat('fr-FR', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,

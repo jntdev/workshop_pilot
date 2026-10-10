@@ -63,6 +63,26 @@ return [
             ]) : [],
         ],
 
+        'tracking' => [
+            'driver' => 'mysql',
+            'host' => env('DB_TRACKING_HOST', '127.0.0.1'),
+            'port' => env('DB_TRACKING_PORT', '3306'),
+            'database' => env('DB_TRACKING_DATABASE'),
+            'username' => env('DB_TRACKING_USERNAME'),
+            'password' => env('DB_TRACKING_PASSWORD', ''),
+            'unix_socket' => env('DB_TRACKING_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('DB_TRACKING_SSL_CA'),
+                PDO::ATTR_TIMEOUT => 5,
+            ]) : [],
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
