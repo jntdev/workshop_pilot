@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AgendaController;
 use App\Http\Controllers\Api\AgendaEventController;
 use App\Http\Controllers\Api\AgendaRescheduleController;
+use App\Http\Controllers\Api\Ai\AiQuoteController;
 use App\Http\Controllers\Api\ArticleCategoryController;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\ArticleSubcategoryController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\BikeCategoryController;
 use App\Http\Controllers\Api\BikeController;
 use App\Http\Controllers\Api\BikeMaintenanceLogController;
 use App\Http\Controllers\Api\BikeSizeController;
+use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CatalogueSyncController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ContractController;
@@ -27,12 +29,58 @@ use App\Http\Controllers\Api\QuotePaymentController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\StockMovementController;
+use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UploadTokenController;
 use App\Http\Controllers\Api\WebsiteVisitsController;
 use Illuminate\Support\Facades\Route;
 
 // Health check endpoint (sans auth) pour warmup serveur mutualisé
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
+// API AI : accès par jeton (AI_API_TOKEN), sans suppression ni facturation.
+Route::prefix('ai')->middleware('ai.token')->group(function () {
+    // Clients
+    Route::get('/clients', [ClientController::class, 'index']);
+    Route::get('/clients/{id}', [ClientController::class, 'show']);
+    Route::post('/clients', [ClientController::class, 'store']);
+    Route::put('/clients/{id}', [ClientController::class, 'update']);
+
+    // Devis
+    Route::get('/quotes', [AiQuoteController::class, 'index']);
+    Route::post('/quotes', [AiQuoteController::class, 'storeSimple']);
+    Route::get('/quotes/{quote}', [AiQuoteController::class, 'show']);
+    Route::get('/quotes/{quote}/tasks', [AiQuoteController::class, 'tasks']);
+    Route::patch('/quotes/{quote}/status', [AiQuoteController::class, 'updateStatus']);
+    Route::get('/quotes/{quote}/comments', [QuoteCommentController::class, 'index']);
+    Route::post('/quotes/{quote}/comments', [QuoteCommentController::class, 'store']);
+
+    // Agenda
+    Route::get('/agenda/items', [AgendaController::class, 'items']);
+    Route::post('/agenda/reschedule', AgendaRescheduleController::class);
+    Route::get('/quote-appointments/unscheduled', [QuoteAppointmentController::class, 'unscheduled']);
+    Route::post('/quotes/{quote}/appointments', [QuoteAppointmentController::class, 'store']);
+    Route::put('/quote-appointments/{appointment}', [QuoteAppointmentController::class, 'update']);
+    Route::patch('/quote-appointments/{appointment}/flags', [QuoteAppointmentController::class, 'updateFlags']);
+    Route::post('/agenda-events', [AgendaEventController::class, 'store']);
+    Route::put('/agenda-events/{agendaEvent}', [AgendaEventController::class, 'update']);
+    Route::patch('/agenda-events/{agendaEvent}/flags', [AgendaEventController::class, 'updateFlags']);
+
+    // Stock : articles (prix en centimes), référentiels et mouvements, sans suppression
+    Route::get('/articles', [ArticleController::class, 'index']);
+    Route::get('/articles/search', [ArticleController::class, 'search']);
+    Route::get('/articles/{id}', [ArticleController::class, 'show']);
+    Route::post('/articles', [ArticleController::class, 'store']);
+    Route::put('/articles/{id}', [ArticleController::class, 'update']);
+    Route::get('/article-categories', [ArticleCategoryController::class, 'index']);
+    Route::post('/article-categories', [ArticleCategoryController::class, 'store']);
+    Route::post('/article-subcategories', [ArticleSubcategoryController::class, 'store']);
+    Route::get('/brands', [BrandController::class, 'index']);
+    Route::post('/brands', [BrandController::class, 'store']);
+    Route::get('/suppliers', [SupplierController::class, 'index']);
+    Route::post('/suppliers', [SupplierController::class, 'store']);
+    Route::get('/articles/{article}/stock-movements', [StockMovementController::class, 'index']);
+    Route::post('/articles/{article}/stock-movements', [StockMovementController::class, 'store']);
+});
 
 Route::middleware(['web', 'auth'])->group(function () {
     // Dashboard API routes

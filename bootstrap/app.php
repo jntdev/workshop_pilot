@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
+
+        $middleware->alias([
+            'ai.token' => \App\Http\Middleware\AuthenticateAiToken::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
