@@ -69,9 +69,10 @@ class ArticleController extends Controller
         }
 
         if ($request->filled('has_movements')) {
+            // Les forfaits atelier n'ont pas de mouvements de stock : ils font partie du stock « manuel »
             $request->boolean('has_movements')
-                ? $query->whereHas('stockMovements')
-                : $query->whereDoesntHave('stockMovements');
+                ? $query->where(fn ($q) => $q->whereHas('stockMovements')->orWhere('unit', 'forfait'))
+                : $query->whereDoesntHave('stockMovements')->where(fn ($q) => $q->whereNull('unit')->orWhere('unit', '!=', 'forfait'));
         }
 
         $this->applyAttributeFilters($query, $request->array('attribute'));
@@ -155,9 +156,10 @@ class ArticleController extends Controller
             ->search($term);
 
         if ($request->filled('has_movements')) {
+            // Les forfaits atelier n'ont pas de mouvements de stock : ils font partie du stock « manuel »
             $request->boolean('has_movements')
-                ? $query->whereHas('stockMovements')
-                : $query->whereDoesntHave('stockMovements');
+                ? $query->where(fn ($q) => $q->whereHas('stockMovements')->orWhere('unit', 'forfait'))
+                : $query->whereDoesntHave('stockMovements')->where(fn ($q) => $q->whereNull('unit')->orWhere('unit', '!=', 'forfait'));
         }
 
         if ($request->boolean('has_stock')) {

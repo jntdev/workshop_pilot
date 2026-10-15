@@ -25,6 +25,9 @@ return [
     'rcs' => env('COMPANY_RCS', 'RCS Saint-Brieuc 984 374 736'),
     'capital' => env('COMPANY_CAPITAL', '1 000'),
 
+    // Tarif horaire de la main d'œuvre atelier, en centimes TTC (60 €/h, indiqué par le gérant le 2026-10-14)
+    'hourly_rate_ttc' => (int) env('COMPANY_HOURLY_RATE_TTC', 6000),
+
     /*
     |--------------------------------------------------------------------------
     | Payment Terms
