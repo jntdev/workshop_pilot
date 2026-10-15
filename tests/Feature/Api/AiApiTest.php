@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Article;
 use App\Models\Client;
 use App\Models\Quote;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -246,5 +247,20 @@ class AiApiTest extends TestCase
 
         $this->assertEquals(3.0, (float) $this->getJson("/api/ai/articles/{$article['id']}", $this->auth())->json('stock_quantity'));
         $this->deleteJson("/api/ai/articles/{$article['id']}", [], $this->auth())->assertStatus(405);
+    }
+
+    #[Test]
+    public function a_unit_article_inherits_the_photo_of_its_lot(): void
+    {
+        $lot = Article::factory()->create(['image_url' => 'https://exemple.test/lot.jpg']);
+        $unit = Article::factory()->create(['lot_article_id' => $lot->id, 'image_url' => null]);
+        $ownPhoto = Article::factory()->create(['lot_article_id' => $lot->id, 'image_url' => 'https://exemple.test/propre.jpg']);
+
+        $this->getJson("/api/ai/articles/{$unit->id}", $this->auth())
+            ->assertOk()
+            ->assertJsonPath('image_url', 'https://exemple.test/lot.jpg');
+
+        $this->assertSame('https://exemple.test/propre.jpg', $ownPhoto->fresh()->image_url);
+        $this->assertNull(Article::factory()->create(['image_url' => null])->image_url);
     }
 }
