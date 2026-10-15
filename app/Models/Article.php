@@ -95,6 +95,18 @@ class Article extends Model
         return $this->attributeValue('supplier_status') === 'discontinued';
     }
 
+    /**
+     * Les références à l'unité (« -U ») n'ont pas de photo propre : elles héritent de celle du lot.
+     */
+    public function getImageUrlAttribute(?string $value): ?string
+    {
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        return $this->lot_article_id !== null ? $this->lot?->image_url : null;
+    }
+
     public function getIsEditableAttribute(): bool
     {
         return $this->subcategory === null || $this->subcategory->isManual();

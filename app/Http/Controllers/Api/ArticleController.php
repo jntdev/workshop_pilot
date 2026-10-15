@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ArticleCategorySource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreArticleRequest;
 use App\Http\Requests\Api\UpdateArticleRequest;
@@ -69,10 +70,15 @@ class ArticleController extends Controller
         }
 
         if ($request->filled('has_movements')) {
-            // Les forfaits atelier n'ont pas de mouvements de stock : ils font partie du stock « manuel »
+            // Le stock « manuel » regroupe les articles avec mouvements, les forfaits atelier et tout
+            // article rangé dans une catégorie manuelle (références à l'unité, sans mouvement de stock).
             $request->boolean('has_movements')
-                ? $query->where(fn ($q) => $q->whereHas('stockMovements')->orWhere('unit', 'forfait'))
-                : $query->whereDoesntHave('stockMovements')->where(fn ($q) => $q->whereNull('unit')->orWhere('unit', '!=', 'forfait'));
+                ? $query->where(fn ($q) => $q->whereHas('stockMovements')
+                    ->orWhere('unit', 'forfait')
+                    ->orWhereHas('subcategory.category', fn ($c) => $c->where('source', ArticleCategorySource::Manual)))
+                : $query->whereDoesntHave('stockMovements')
+                    ->where(fn ($q) => $q->whereNull('unit')->orWhere('unit', '!=', 'forfait'))
+                    ->whereDoesntHave('subcategory.category', fn ($c) => $c->where('source', ArticleCategorySource::Manual));
         }
 
         $this->applyAttributeFilters($query, $request->array('attribute'));
@@ -156,10 +162,15 @@ class ArticleController extends Controller
             ->search($term);
 
         if ($request->filled('has_movements')) {
-            // Les forfaits atelier n'ont pas de mouvements de stock : ils font partie du stock « manuel »
+            // Le stock « manuel » regroupe les articles avec mouvements, les forfaits atelier et tout
+            // article rangé dans une catégorie manuelle (références à l'unité, sans mouvement de stock).
             $request->boolean('has_movements')
-                ? $query->where(fn ($q) => $q->whereHas('stockMovements')->orWhere('unit', 'forfait'))
-                : $query->whereDoesntHave('stockMovements')->where(fn ($q) => $q->whereNull('unit')->orWhere('unit', '!=', 'forfait'));
+                ? $query->where(fn ($q) => $q->whereHas('stockMovements')
+                    ->orWhere('unit', 'forfait')
+                    ->orWhereHas('subcategory.category', fn ($c) => $c->where('source', ArticleCategorySource::Manual)))
+                : $query->whereDoesntHave('stockMovements')
+                    ->where(fn ($q) => $q->whereNull('unit')->orWhere('unit', '!=', 'forfait'))
+                    ->whereDoesntHave('subcategory.category', fn ($c) => $c->where('source', ArticleCategorySource::Manual));
         }
 
         if ($request->boolean('has_stock')) {
