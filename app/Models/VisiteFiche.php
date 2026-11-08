@@ -21,6 +21,14 @@ class VisiteFiche extends Model
 
     protected $table = 'visites_fiches';
 
+    protected function casts(): array
+    {
+        return [
+            'promo_blackfriday' => 'boolean',
+            'visible_magasin' => 'boolean',
+        ];
+    }
+
     public function scopeBetweenDays(Builder $query, CarbonInterface $start, CarbonInterface $end): Builder
     {
         return $query->whereBetween('jour', [$start->toDateString(), $end->toDateString()]);

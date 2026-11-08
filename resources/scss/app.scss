@@ -24,6 +24,7 @@
 @use 'home/dashboard';
 @use 'home/daily-payments';
 @use 'home/website-visits';
+@use 'home/website-clicks';
 @use 'clients/index-page' as clients-page;
 @use 'atelier/index-page' as atelier-page;
 @use 'location/index-page' as location-page;

@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UploadTokenController;
+use App\Http\Controllers\Api\WebsiteClicksController;
 use App\Http\Controllers\Api\WebsiteVisitsController;
 use Illuminate\Support\Facades\Route;
 
@@ -87,6 +88,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/dashboard/kpis/rebuild', [AtelierController::class, 'rebuildAllKpis']);
     Route::get('/dashboard/payments-history', [AtelierController::class, 'paymentsHistory']);
     Route::get('/dashboard/website-visits', WebsiteVisitsController::class);
+    Route::get('/dashboard/website-clicks', WebsiteClicksController::class);
 
     // Atelier API routes
     Route::get('/atelier/stats', [AtelierController::class, 'stats']);

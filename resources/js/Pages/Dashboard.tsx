@@ -4,6 +4,7 @@ import MainLayout from '@/Layouts/MainLayout';
 import { Head } from '@inertiajs/react';
 import { KpiCell, RangeCell, type MetierKpi, type RangeKpi, formatCurrency } from '@/Components/Dashboard/KpiCard';
 import DailyPaymentsPanel from '@/Components/Dashboard/DailyPaymentsPanel';
+import WebsiteClicksPanel from '@/Components/Dashboard/WebsiteClicksPanel';
 import WebsiteVisitsPanel from '@/Components/Dashboard/WebsiteVisitsPanel';
 
 type DashboardTab = 'activite' | 'visites';
@@ -200,7 +201,10 @@ export default function Dashboard({ kpis, period, season_kpis, season, yearly_kp
                 </div>
 
                 {activeTab === 'visites' ? (
-                    <WebsiteVisitsPanel />
+                    <>
+                        <WebsiteVisitsPanel />
+                        <WebsiteClicksPanel />
+                    </>
                 ) : (
                     <>
                         <DailyPaymentsPanel />
