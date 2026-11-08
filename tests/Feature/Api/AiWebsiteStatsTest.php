@@ -1,0 +1,116 @@
+<?php
+
+namespace Tests\Feature\Api;
+
+use App\Models\ClicSite;
+use App\Models\VisiteFiche;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+/**
+ * La base de suivi est simulée en SQLite mémoire : ces tests ne touchent jamais la base de l'application.
+ */
+class AiWebsiteStatsTest extends TestCase
+{
+    private const TOKEN = 'secret-ai-token';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['ai.token' => self::TOKEN, 'database.connections.tracking' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
+        DB::purge('tracking');
+
+        Schema::connection('tracking')->create('visites_fiches', function (Blueprint $table) {
+            $table->id();
+            $table->date('jour');
+            $table->string('slug', 120);
+            $table->string('marque', 40);
+            $table->boolean('promo_blackfriday')->default(false);
+            $table->boolean('visible_magasin')->default(false);
+            $table->unsignedInteger('visiteurs')->default(0);
+            $table->unsignedInteger('vues')->default(0);
+            $table->timestamps();
+            $table->unique(['jour', 'slug']);
+        });
+        Schema::connection('tracking')->create('clics_site', function (Blueprint $table) {
+            $table->id();
+            $table->date('jour');
+            $table->string('categorie', 20);
+            $table->string('cle', 60);
+            $table->string('contexte', 120)->default('');
+            $table->unsignedInteger('visiteurs')->default(0);
+            $table->unsignedInteger('clics')->default(0);
+            $table->timestamps();
+            $table->unique(['jour', 'categorie', 'cle', 'contexte']);
+        });
+        Schema::connection('tracking')->create('parcours_site', function (Blueprint $table) {
+            $table->id();
+            $table->date('jour');
+            $table->string('parcours', 30);
+            $table->unsignedTinyInteger('rang');
+            $table->string('etape', 120);
+            $table->unsignedInteger('visites')->default(0);
+            $table->timestamps();
+        });
+        Schema::connection('tracking')->create('demandes_recontact', function (Blueprint $table) {
+            $table->id();
+            $table->string('slug', 120);
+            $table->timestamps();
+        });
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-20 15:00:00'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function auth(): array
+    {
+        return ['Authorization' => 'Bearer '.self::TOKEN];
+    }
+
+    #[Test]
+    public function it_requires_the_ai_token_for_the_website_statistics(): void
+    {
+        $this->getJson('/api/ai/website/visits')->assertUnauthorized();
+        $this->getJson('/api/ai/website/clicks')->assertUnauthorized();
+        $this->getJson('/api/ai/website/clicks', ['Authorization' => 'Bearer nope'])->assertUnauthorized();
+    }
+
+    #[Test]
+    public function it_serves_the_visits_statistics_like_the_dashboard(): void
+    {
+        VisiteFiche::factory()->create(['jour' => '2026-11-19', 'slug' => 'ncm-cg7', 'marque' => 'ncm', 'visiteurs' => 5, 'vues' => 8]);
+
+        $this->getJson('/api/ai/website/visits?period=7d', $this->auth())
+            ->assertOk()
+            ->assertJsonPath('configured', true)
+            ->assertJsonPath('kpis.visitors.value', 5)
+            ->assertJsonPath('fiches.0.slug', 'ncm-cg7');
+    }
+
+    #[Test]
+    public function it_serves_the_clicks_statistics_like_the_dashboard(): void
+    {
+        ClicSite::factory()->create(['jour' => '2026-11-19', 'categorie' => 'page', 'cle' => 'accueil', 'contexte' => '', 'visiteurs' => 10, 'clics' => 12]);
+        ClicSite::factory()->create(['jour' => '2026-11-19', 'categorie' => 'accueil', 'cle' => 'acheter', 'contexte' => '', 'visiteurs' => 4, 'clics' => 4]);
+
+        $this->getJson('/api/ai/website/clicks?period=7d', $this->auth())
+            ->assertOk()
+            ->assertJsonPath('home.visitors', 10)
+            ->assertJsonPath('home.buttons.0.visitors', 4);
+    }
+
+    #[Test]
+    public function it_validates_the_period_and_stays_read_only(): void
+    {
+        $this->getJson('/api/ai/website/clicks?period=2y', $this->auth())->assertUnprocessable();
+        $this->postJson('/api/ai/website/clicks', [], $this->auth())->assertStatus(405);
+        $this->deleteJson('/api/ai/website/visits', [], $this->auth())->assertStatus(405);
+    }
+}
