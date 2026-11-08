@@ -6,6 +6,7 @@ use App\Models\ClicSite;
 use App\Models\ParcoursSite;
 use App\Models\User;
 use App\Models\VisiteFiche;
+use App\Models\VisiteSource;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
@@ -64,6 +65,16 @@ class WebsiteClicksTest extends TestCase
             $table->timestamps();
             $table->unique(['jour', 'parcours', 'rang', 'etape']);
         });
+        Schema::connection('tracking')->create('visites_sources', function (Blueprint $table) {
+            $table->id();
+            $table->date('jour');
+            $table->string('cible', 120);
+            $table->string('source', 20);
+            $table->unsignedInteger('visiteurs')->default(0);
+            $table->unsignedInteger('vues')->default(0);
+            $table->timestamps();
+            $table->unique(['jour', 'cible', 'source']);
+        });
         Schema::connection('tracking')->create('demandes_recontact', function (Blueprint $table) {
             $table->id();
             $table->string('slug', 120);
@@ -104,6 +115,11 @@ class WebsiteClicksTest extends TestCase
     private function recordTunnelStep(string $jour, string $parcours, int $rang, string $etape, int $visites): void
     {
         ParcoursSite::factory()->create(['jour' => $jour, 'parcours' => $parcours, 'rang' => $rang, 'etape' => $etape, 'visites' => $visites]);
+    }
+
+    private function recordSource(string $jour, string $cible, string $source, int $visiteurs, int $vues): void
+    {
+        VisiteSource::factory()->create(['jour' => $jour, 'cible' => $cible, 'source' => $source, 'visiteurs' => $visiteurs, 'vues' => $vues]);
     }
 
     private function recordRequest(string $slug, string $date): void
@@ -216,6 +232,49 @@ class WebsiteClicksTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('entries', [['step' => 'fiche', 'visits' => 25], ['step' => 'accueil', 'visits' => 20]])
             ->assertJsonPath('tunnels', []);
+    }
+
+    #[Test]
+    public function it_shows_where_the_visits_come_from_for_the_home_page_and_for_the_fiches(): void
+    {
+        $this->recordClicks('2026-11-18', 'page', 'accueil', 1, 1);
+        $this->recordVisits('2026-11-18', 'neomouv-cronos-3', 12, 15);
+        $this->recordVisits('2026-11-19', 'neomouv-cronos-3', 8, 9);
+        $this->recordVisits('2026-11-19', 'mmr-rakish', 5, 5);
+        $this->recordSource('2026-11-18', 'accueil', 'direct', 6, 7);
+        $this->recordSource('2026-11-19', 'accueil', 'moteur', 3, 3);
+        $this->recordSource('2026-11-18', 'neomouv-cronos-3', 'moteur', 9, 11);
+        $this->recordSource('2026-11-19', 'neomouv-cronos-3', 'moteur', 6, 7);
+        $this->recordSource('2026-11-19', 'neomouv-cronos-3', 'qr', 2, 2);
+        $this->recordSource('2026-11-19', 'mmr-rakish', 'direct', 5, 5);
+        $this->recordSource('2026-09-01', 'neomouv-cronos-3', 'direct', 99, 99);
+
+        $response = $this->actingAs($this->user)->getJson('/api/dashboard/website-clicks?period=7d');
+
+        $response->assertOk()
+            ->assertJsonPath('sources.home', [['source' => 'direct', 'visitors' => 6, 'views' => 7], ['source' => 'moteur', 'visitors' => 3, 'views' => 3]])
+            ->assertJsonPath('sources.fiches', [
+                ['source' => 'moteur', 'visitors' => 15, 'views' => 18],
+                ['source' => 'direct', 'visitors' => 5, 'views' => 5],
+                ['source' => 'qr', 'visitors' => 2, 'views' => 2],
+            ])
+            ->assertJsonPath('sources.top_fiches.0', [
+                'slug' => 'neomouv-cronos-3',
+                'marque' => 'neomouv',
+                'visitors' => 17,
+                'sources' => [['source' => 'moteur', 'visitors' => 15], ['source' => 'qr', 'visitors' => 2]],
+            ])
+            ->assertJsonPath('sources.top_fiches.1.slug', 'mmr-rakish');
+    }
+
+    #[Test]
+    public function it_has_no_sources_before_any_visit_origin_is_tracked(): void
+    {
+        $this->recordClicks('2026-11-19', 'page', 'accueil', 1, 1);
+
+        $this->actingAs($this->user)->getJson('/api/dashboard/website-clicks?period=7d')
+            ->assertOk()
+            ->assertJsonPath('sources', ['home' => [], 'fiches' => [], 'top_fiches' => []]);
     }
 
     #[Test]

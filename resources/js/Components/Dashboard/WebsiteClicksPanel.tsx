@@ -67,6 +67,19 @@ interface ColorRow {
     visitors: number;
 }
 
+interface SourceRow {
+    source: string;
+    visitors: number;
+    views: number;
+}
+
+interface TopFicheSources {
+    slug: string;
+    marque: string;
+    visitors: number;
+    sources: { source: string; visitors: number }[];
+}
+
 interface ClicksStatistics {
     configured: true;
     has_data: true;
@@ -76,6 +89,7 @@ interface ClicksStatistics {
     filters: FilterRow[];
     tunnels: Tunnel[];
     entries: TunnelStep[];
+    sources: { home: SourceRow[]; fiches: SourceRow[]; top_fiches: TopFicheSources[] };
     blackfriday: { fiches: BlackFridayFiche[] };
     magasin: { with: MagasinStats; without: MagasinStats };
     contacts: { types: ContactType[]; places: ContactPlace[] };
@@ -129,6 +143,18 @@ const STEP_LABELS: Record<string, string> = {
     contact_itineraire: 'Itinéraire',
     demande: 'Demande de contact',
     demande_blackfriday: 'Demande sur un vélo en promo',
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+    direct: 'Accès direct',
+    interne: 'Navigation sur le site',
+    moteur: 'Moteur de recherche',
+    reseau_social: 'Réseau social',
+    autre_site: 'Autre site',
+    qr: 'QR code (affichettes)',
+    mail: 'E-mail',
+    fiche_google: 'Fiche Google',
+    pub: 'Publicité',
 };
 
 const PAGE_LABELS: Record<string, string> = { accueil: 'Accueil', fiche: 'Fiche vélo' };
@@ -299,6 +325,8 @@ export default function WebsiteClicksPanel() {
 
                     <TunnelsCard tunnels={stats.tunnels} entries={stats.entries} />
 
+                    <SourcesCard sources={stats.sources} />
+
                     <div className="website-visits__rankings">
                         <FiltersCard filters={stats.filters} />
                         <BlackFridayCard fiches={stats.blackfriday.fiches} />
@@ -441,6 +469,78 @@ function TunnelsCard({ tunnels, entries }: { tunnels: Tunnel[]; entries: TunnelS
                             </li>
                         ))}
                     </ol>
+                </>
+            )}
+        </Card>
+    );
+}
+
+function SourceRanking({ title, rows }: { title: string; rows: SourceRow[] }) {
+    const total = rows.reduce((sum, row) => sum + row.visitors, 0);
+    const max = Math.max(1, ...rows.map(row => row.visitors));
+
+    return (
+        <div>
+            <p className="website-clicks__subtitle">{title}</p>
+            {rows.length === 0 ? (
+                <div className="website-visits__empty">Pas encore de données.</div>
+            ) : (
+                <ol className="website-visits__ranking">
+                    {rows.map((row, index) => (
+                        <li key={row.source} className="website-visits__rank-row">
+                            <span className="website-visits__rank-position">{index + 1}</span>
+                            <span className="website-visits__rank-label">{SOURCE_LABELS[row.source] ?? humanize(row.source)}</span>
+                            <span className="website-visits__rank-bar">
+                                <span style={{ width: `${(row.visitors / max) * 100}%` }} />
+                            </span>
+                            <span className="website-visits__rank-value">{formatInteger(row.visitors)}</span>
+                            <span className="website-visits__rank-secondary">{total > 0 ? formatShare((row.visitors / total) * 100) : '—'}</span>
+                        </li>
+                    ))}
+                </ol>
+            )}
+        </div>
+    );
+}
+
+function SourcesCard({ sources }: { sources: ClicksStatistics['sources'] }) {
+    const isEmpty = sources.home.length === 0 && sources.fiches.length === 0;
+    const maxFiche = Math.max(1, ...sources.top_fiches.map(fiche => fiche.visitors));
+
+    return (
+        <Card title="D'où viennent les visites" hint="Visiteurs par catégorie d'origine · jamais l'adresse du site d'origine">
+            {isEmpty ? (
+                <div className="website-visits__empty">Les origines s'enregistrent depuis la mise en ligne du suivi : pas encore de données.</div>
+            ) : (
+                <>
+                    <div className="website-visits__rankings">
+                        <SourceRanking title="Page d'accueil" rows={sources.home} />
+                        <SourceRanking title="Fiches vélos" rows={sources.fiches} />
+                    </div>
+                    {sources.top_fiches.length > 0 && (
+                        <>
+                            <p className="website-clicks__subtitle">Origine des fiches les plus visitées</p>
+                            <ol className="website-visits__ranking">
+                                {sources.top_fiches.map((fiche, index) => (
+                                    <li key={fiche.slug} className="website-visits__rank-row website-visits__rank-row--fiche" title={fiche.slug}>
+                                        <span className="website-visits__rank-position">{index + 1}</span>
+                                        <span className="website-visits__rank-label">{formatSlug(fiche.slug, fiche.marque)}</span>
+                                        <span className="website-visits__brand-tag">{fiche.marque.toUpperCase()}</span>
+                                        <span className="website-visits__rank-bar">
+                                            <span style={{ width: `${(fiche.visitors / maxFiche) * 100}%` }} />
+                                        </span>
+                                        <span className="website-visits__rank-value">{formatInteger(fiche.visitors)}</span>
+                                        <span className="website-visits__rank-secondary">
+                                            {fiche.sources
+                                                .slice(0, 2)
+                                                .map(row => `${SOURCE_LABELS[row.source] ?? humanize(row.source)} ${formatShare((row.visitors / Math.max(1, fiche.visitors)) * 100)}`)
+                                                .join(' · ')}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </>
+                    )}
                 </>
             )}
         </Card>

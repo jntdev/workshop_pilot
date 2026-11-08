@@ -6,6 +6,7 @@ use App\Enums\VisitsPeriod;
 use App\Models\ClicSite;
 use App\Models\ParcoursSite;
 use App\Models\VisiteFiche;
+use App\Models\VisiteSource;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +38,7 @@ class WebsiteClicksReport
      *     filters: list<array{univers: string, key: string, visitors: int, clicks: int}>,
      *     tunnels: list<array{key: string, steps: list<array{step: string, visits: int}>}>,
      *     entries: list<array{step: string, visits: int}>,
+     *     sources: array{home: list<array{source: string, visitors: int, views: int}>, fiches: list<array{source: string, visitors: int, views: int}>, top_fiches: list<array{slug: string, marque: string, visitors: int, sources: list<array{source: string, visitors: int}>}>},
      *     blackfriday: array{fiches: list<array{slug: string, marque: string, visitors: int, views: int}>},
      *     magasin: array{with: array<string, int|float|null>, without: array<string, int|float|null>},
      *     contacts: array{types: list<array{key: string, visitors: int, clicks: int}>, places: list<array{page: string, zone: string, key: string, visitors: int, clicks: int}>},
@@ -69,6 +71,7 @@ class WebsiteClicksReport
             'filters' => $this->filters($rows),
             'tunnels' => $this->tunnels($range),
             'entries' => $this->entries($range),
+            'sources' => $this->sources($range),
             'blackfriday' => $this->blackfriday($range),
             'magasin' => $this->magasin($range),
             'contacts' => $this->contacts($rows),
@@ -159,6 +162,46 @@ class WebsiteClicksReport
             ->get()
             ->map(fn (object $row) => ['step' => $row->etape, 'visits' => (int) $row->visits])
             ->all();
+    }
+
+    /**
+     * D'où viennent les visites : l'accueil, l'ensemble des fiches, et l'origine des fiches les plus visitées.
+     *
+     * @return array{home: list<array{source: string, visitors: int, views: int}>, fiches: list<array{source: string, visitors: int, views: int}>, top_fiches: list<array{slug: string, marque: string, visitors: int, sources: list<array{source: string, visitors: int}>}>}
+     */
+    private function sources(VisitsRange $range): array
+    {
+        $rows = VisiteSource::query()
+            ->betweenDays($range->start, $range->end)
+            ->groupBy('cible', 'source')
+            ->selectRaw('cible, source, SUM(visiteurs) AS visitors, SUM(vues) AS views')
+            ->toBase()
+            ->get();
+
+        $bySource = fn (Collection $group): array => $group
+            ->groupBy('source')
+            ->map(fn (Collection $items, string $source) => ['source' => $source, 'visitors' => (int) $items->sum('visitors'), 'views' => (int) $items->sum('views')])
+            ->sortByDesc('visitors')
+            ->values()
+            ->all();
+
+        $fiches = $rows->where('cible', '!=', VisiteSource::HOME_TARGET);
+        $topSlugs = $fiches->groupBy('cible')
+            ->map(fn (Collection $items) => (int) $items->sum('visitors'))
+            ->sortDesc()
+            ->take(8);
+        $marques = VisiteFiche::query()->whereIn('slug', $topSlugs->keys()->all())->pluck('marque', 'slug');
+
+        return [
+            'home' => $bySource($rows->where('cible', VisiteSource::HOME_TARGET)),
+            'fiches' => $bySource($fiches),
+            'top_fiches' => $topSlugs->map(fn (int $visitors, string $slug) => [
+                'slug' => $slug,
+                'marque' => $marques[$slug] ?? Str::before($slug, '-'),
+                'visitors' => $visitors,
+                'sources' => array_map(fn (array $row) => ['source' => $row['source'], 'visitors' => $row['visitors']], $bySource($fiches->where('cible', $slug))),
+            ])->values()->all(),
+        ];
     }
 
     /**

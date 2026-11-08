@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UploadTokenController;
 use App\Http\Controllers\Api\WebsiteClicksController;
+use App\Http\Controllers\Api\WebsiteFicheController;
 use App\Http\Controllers\Api\WebsiteVisitsController;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +59,7 @@ Route::prefix('ai')->middleware('ai.token')->group(function () {
     // Statistiques du site public (lecture seule) : les mêmes chiffres que l'onglet « Visites du site » du tableau de bord
     Route::get('/website/visits', WebsiteVisitsController::class);
     Route::get('/website/clicks', WebsiteClicksController::class);
+    Route::get('/website/fiches/{slug}', WebsiteFicheController::class)->where('slug', '[a-z0-9\-]+');
 
     // Agenda
     Route::get('/agenda/items', [AgendaController::class, 'items']);
