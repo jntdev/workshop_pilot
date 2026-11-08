@@ -1,0 +1,209 @@
+@use '../base/colors' as *;
+@use '../base/typos' as *;
+@use '../base/rules' as *;
+
+// Clics du site : réutilise les cartes, classements et boutons de période de .website-visits
+.website-clicks {
+  margin-top: $spacing-xl;
+
+  &__subtitle {
+    margin: $spacing-lg 0 $spacing-sm;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__tunnels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: $spacing-lg;
+  }
+
+  &__tunnel {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+    min-width: 0;
+  }
+
+  &__tunnel-title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__tunnel-hint {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+  }
+
+  &__view {
+    align-self: flex-start;
+    margin-bottom: $spacing-md;
+  }
+
+  &__compare {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: $font-size-sm;
+
+    th,
+    td {
+      padding: $spacing-sm 0;
+      border-bottom: 1px solid $color-border-light;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    thead th {
+      font-weight: $font-weight-semibold;
+      color: $color-neutral-medium;
+    }
+
+    tbody th {
+      text-align: left;
+      font-weight: normal;
+      color: $color-neutral-dark;
+    }
+
+    td {
+      font-weight: $font-weight-semibold;
+      color: $color-neutral-dark;
+    }
+
+    tbody tr:last-child {
+      th,
+      td {
+        border-bottom: 0;
+      }
+    }
+  }
+
+  &__types {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: $spacing-md;
+    margin-bottom: $spacing-md;
+  }
+
+  &__type {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: $spacing-md;
+    background: $color-neutral-light;
+    border-radius: $radius-lg;
+  }
+
+  &__type-label,
+  &__type-hint {
+    font-size: $font-size-sm;
+    color: $color-neutral-medium;
+  }
+
+  &__type-value {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+}
+
+// Tunnel en barres : une barre fine par étape, ancrée à gauche, proportionnelle aux visites du début
+.tunnel-chart {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(0, 1.4fr);
+    grid-template-areas:
+      'label label'
+      'track meta';
+    gap: 2px $spacing-md;
+    padding: 2px 0;
+    border-radius: 4px;
+    outline: none;
+
+    &:hover,
+    &:focus-visible {
+      background: $color-neutral-light;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary-blue;
+      outline-offset: 2px;
+    }
+  }
+
+  &__label {
+    grid-area: label;
+    color: $color-neutral-dark;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__track {
+    grid-area: track;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    min-width: 0;
+  }
+
+  &__bar {
+    display: block;
+    flex: none;
+    max-width: calc(100% - 56px);
+    height: 20px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  &__value {
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+    color: $color-neutral-dark;
+  }
+
+  &__meta {
+    grid-area: meta;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: $color-neutral-medium;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__lost {
+    font-size: 12px;
+  }
+
+  &__tooltip {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 260px;
+    padding: $spacing-sm $spacing-md;
+    transform: translate(12px, 12px);
+    pointer-events: none;
+    background: $color-bg-white;
+    border: 1px solid $color-border-light;
+    border-radius: $radius-lg;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    color: $color-neutral-medium;
+  }
+
+  &__tooltip-title {
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+
+  &__tooltip-value {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-neutral-dark;
+  }
+}
