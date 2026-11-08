@@ -126,6 +126,7 @@ const TUNNEL_LABELS: Record<string, { title: string; hint: string }> = {
 
 const STEP_LABELS: Record<string, string> = {
     accueil: 'Page d\'accueil',
+    blackfriday: 'Page Black Friday',
     bouton_acheter: 'Bouton « Acheter un vélo »',
     bouton_reparer: 'Bouton « Faire réparer »',
     bouton_louer: 'Bouton « Louer un vélo »',
