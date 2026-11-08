@@ -55,6 +55,10 @@ Route::prefix('ai')->middleware('ai.token')->group(function () {
     Route::get('/quotes/{quote}/comments', [QuoteCommentController::class, 'index']);
     Route::post('/quotes/{quote}/comments', [QuoteCommentController::class, 'store']);
 
+    // Statistiques du site public (lecture seule) : les mêmes chiffres que l'onglet « Visites du site » du tableau de bord
+    Route::get('/website/visits', WebsiteVisitsController::class);
+    Route::get('/website/clicks', WebsiteClicksController::class);
+
     // Agenda
     Route::get('/agenda/items', [AgendaController::class, 'items']);
     Route::post('/agenda/reschedule', AgendaRescheduleController::class);
