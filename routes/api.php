@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AgendaController;
 use App\Http\Controllers\Api\AgendaEventController;
 use App\Http\Controllers\Api\AgendaRescheduleController;
 use App\Http\Controllers\Api\Ai\AiQuoteController;
+use App\Http\Controllers\Api\Ai\AiReservationController;
 use App\Http\Controllers\Api\ArticleCategoryController;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\ArticleSubcategoryController;
@@ -54,6 +55,10 @@ Route::prefix('ai')->middleware('ai.token')->group(function () {
     Route::patch('/quotes/{quote}/status', [AiQuoteController::class, 'updateStatus']);
     Route::get('/quotes/{quote}/comments', [QuoteCommentController::class, 'index']);
     Route::post('/quotes/{quote}/comments', [QuoteCommentController::class, 'store']);
+
+    // Locations (lecture seule) : réservations par client, période ou statut, et détail d'une réservation
+    Route::get('/reservations', [AiReservationController::class, 'index']);
+    Route::get('/reservations/{id}', [AiReservationController::class, 'show']);
 
     // Statistiques du site public (lecture seule) : les mêmes chiffres que l'onglet « Visites du site » du tableau de bord
     Route::get('/website/visits', WebsiteVisitsController::class);
