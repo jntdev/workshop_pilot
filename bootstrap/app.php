@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'ai.token' => \App\Http\Middleware\AuthenticateAiToken::class,
+            'assistant.token' => \App\Http\Middleware\AuthenticateAssistantToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

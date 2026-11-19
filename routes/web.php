@@ -705,6 +705,10 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('MessagesSettings');
     })->name('messages.settings');
 
+    Route::get('/assistant/journal', function () {
+        return Inertia::render('Assistant/Journal');
+    })->name('assistant.journal');
+
     Route::get('/counter', function () {
         return view('counter-demo');
     })->name('counter');

@@ -1,0 +1,218 @@
+@use '../base/colors' as *;
+
+// Fenêtre de chat de l'assistant de l'atelier
+.assistant-chat {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+
+  &__toggle {
+    padding: 0.6rem 1.1rem;
+    border: none;
+    border-radius: 999px;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+    &:hover {
+      background: lighten($color-primary-blue, 8%);
+    }
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    width: 26rem;
+    max-width: calc(100vw - 2rem);
+    height: 34rem;
+    max-height: calc(100vh - 6rem);
+    background: $color-bg-white;
+    border: 1px solid $color-border-medium;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  &__subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    opacity: 0.85;
+  }
+
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: $color-bg-white;
+    font-size: 0.75rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  &__close {
+    padding: 0 0.25rem;
+    border: none;
+    background: none;
+    color: $color-bg-white;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  &__messages {
+    flex: 1;
+    min-height: 0;
+    padding: 0.75rem;
+    overflow-y: auto;
+    background: $color-bg-light;
+  }
+
+  &__empty {
+    margin: 0;
+    color: $color-neutral-medium;
+    font-size: 0.9rem;
+  }
+
+  &__exchange {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.9rem;
+  }
+
+  &__bubble {
+    max-width: 90%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+
+    &--question {
+      align-self: flex-end;
+      background: $color-primary-blue;
+      color: $color-bg-white;
+    }
+
+    &--answer {
+      align-self: flex-start;
+      background: $color-bg-white;
+      border: 1px solid $color-border-light;
+      color: $color-neutral-dark;
+    }
+
+    &--waiting {
+      align-self: flex-start;
+      background: $color-neutral-light;
+      color: $color-neutral-medium;
+      font-style: italic;
+    }
+
+    &--error {
+      align-self: flex-start;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: $color-danger-red;
+    }
+  }
+
+  &__sources {
+    margin: 0.4rem 0 0;
+    color: $color-neutral-medium;
+    font-size: 0.75rem;
+  }
+
+  &__form {
+    padding: 0.6rem 0.75rem 0.5rem;
+    border-top: 1px solid $color-border-light;
+    background: $color-bg-white;
+  }
+
+  &__form-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  &__form-error {
+    margin: 0 0 0.4rem;
+    color: $color-danger-red;
+    font-size: 0.8rem;
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid $color-border-medium;
+    border-radius: 0.5rem;
+    font: inherit;
+    font-size: 0.9rem;
+    resize: none;
+  }
+
+  &__send {
+    padding: 0 0.9rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__disclaimer {
+    margin: 0.35rem 0 0;
+    color: $color-neutral-medium;
+    font-size: 0.7rem;
+  }
+
+  @media (max-width: 640px) {
+    right: 0.5rem;
+    bottom: 0.5rem;
+
+    &__panel {
+      width: calc(100vw - 1rem);
+      height: calc(100vh - 5rem);
+    }
+  }
+}
+
+// Mode comptoir : des clients peuvent voir l'écran, l'assistant (infos clients, prix) est masqué
+[data-privacy-mode="comptoir"] .assistant-chat {
+  display: none;
+}

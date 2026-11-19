@@ -4,6 +4,7 @@ import { PageProps } from '@/types';
 import { useServerWarmup } from '@/hooks/useServerWarmup';
 import { usePrivacyMode } from '@/hooks/usePrivacyMode';
 import { MessagingButton } from '@/Components/Messaging';
+import { AssistantChat } from '@/Components/Assistant';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -100,6 +101,8 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
             )}
 
             <main className="layout-main">{children}</main>
+
+            <AssistantChat />
         </div>
     );
 }

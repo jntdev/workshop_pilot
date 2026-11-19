@@ -45,6 +45,10 @@
 @use 'messaging/forms' as messaging-forms;
 @use 'messaging/settings' as messaging-settings;
 
+// Assistant de l'atelier
+@use 'assistant/chat';
+@use 'assistant/journal';
+
 // Photos
 @use 'photos/modal' as photos-modal;
 @use 'photos/gallery' as photos-gallery;

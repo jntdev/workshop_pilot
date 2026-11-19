@@ -1,0 +1,81 @@
+@use '../base/colors' as *;
+
+// Journal de l'assistant de l'atelier
+.assistant-journal {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+
+  &__title {
+    margin: 0 0 0.25rem;
+  }
+
+  &__intro {
+    margin: 0 0 1.25rem;
+    color: $color-neutral-medium;
+  }
+
+  &__error {
+    color: $color-danger-red;
+  }
+
+  &__entry {
+    margin-bottom: 0.9rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid $color-border-light;
+    border-left: 4px solid $color-border-medium;
+    border-radius: 0.5rem;
+    background: $color-bg-white;
+
+    &--answered {
+      border-left-color: $color-status-ok;
+    }
+
+    &--failed {
+      border-left-color: $color-status-error;
+    }
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    color: $color-neutral-medium;
+    font-size: 0.8rem;
+  }
+
+  &__status {
+    font-weight: 600;
+  }
+
+  &__question {
+    margin: 0.4rem 0;
+    font-weight: 600;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &__answer {
+    margin: 0.4rem 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &__failure {
+    margin: 0.4rem 0;
+    color: $color-danger-red;
+  }
+
+  &__sources {
+    margin: 0.4rem 0 0;
+    color: $color-neutral-medium;
+    font-size: 0.8rem;
+  }
+
+  &__pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+  }
+}
