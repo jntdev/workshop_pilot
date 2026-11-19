@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Head } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { apiGet } from '@/utils/api';
+import AssistantText from '@/Components/Assistant/AssistantText';
+import type { AssistantAction } from '@/Components/Assistant/types';
 
 interface JournalEntry {
     id: number;
@@ -12,6 +14,7 @@ interface JournalEntry {
     answer: string | null;
     error: string | null;
     consultations: string[];
+    actions: AssistantAction[];
     created_at: string;
     duration_seconds: number | null;
 }
@@ -74,8 +77,28 @@ export default function Journal() {
                             {entry.duration_seconds !== null && <span>{entry.duration_seconds} s</span>}
                         </header>
                         <p className="assistant-journal__question">{entry.question}</p>
-                        {entry.answer && <p className="assistant-journal__answer">{entry.answer}</p>}
+                        {entry.answer && (
+                            <p className="assistant-journal__answer">
+                                <AssistantText text={entry.answer} />
+                            </p>
+                        )}
                         {entry.error && <p className="assistant-journal__failure">{entry.error}</p>}
+                        {entry.actions.length > 0 && (
+                            <ul className="assistant-journal__actions">
+                                {entry.actions.map((action) => (
+                                    <li key={action.id} className={`assistant-journal__action assistant-journal__action--${action.status}`}>
+                                        <strong>{action.status_label}</strong> · {action.type_label} : {action.summary}
+                                        {action.confirmed_by && action.confirmed_at && (
+                                            <span>
+                                                {' '}
+                                                (confirmé par {action.confirmed_by}, {formatDate(action.confirmed_at)})
+                                            </span>
+                                        )}
+                                        {action.error && <span> — {action.error}</span>}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                         {entry.consultations.length > 0 && (
                             <p className="assistant-journal__sources">Consulté : {entry.consultations.join(', ')}</p>
                         )}

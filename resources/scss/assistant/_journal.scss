@@ -72,6 +72,36 @@
     font-size: 0.8rem;
   }
 
+  &__actions {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__action {
+    margin: 0.25rem 0;
+    padding: 0.35rem 0.6rem;
+    border-left: 4px solid $color-planning-orange;
+    background: $color-bg-light;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+
+    &--executed {
+      border-left-color: $color-success-green;
+    }
+
+    &--failed {
+      border-left-color: $color-danger-red;
+    }
+
+    &--cancelled,
+    &--expired,
+    &--undone {
+      border-left-color: $color-border-medium;
+      color: $color-neutral-medium;
+    }
+  }
+
   &__pager {
     display: flex;
     justify-content: space-between;

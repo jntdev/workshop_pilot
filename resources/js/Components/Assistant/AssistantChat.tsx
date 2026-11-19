@@ -1,20 +1,10 @@
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { ApiError, apiGet, apiPost } from '@/utils/api';
-
-type AssistantStatus = 'pending' | 'processing' | 'answered' | 'failed';
-
-interface AssistantMessage {
-    id: number;
-    conversation_id: string;
-    question: string;
-    status: AssistantStatus;
-    answer: string | null;
-    error: string | null;
-    consultations: string[];
-    created_at: string;
-    answered_at: string | null;
-}
+import AssistantActionCard from './AssistantActionCard';
+import AssistantText from './AssistantText';
+import { readChatSnapshot, saveChatSnapshot } from './assistantStore';
+import type { AssistantAction, AssistantMessage } from './types';
 
 const STORAGE_KEY = 'assistant.conversation_id';
 const POLL_MESSAGES_MS = 2000;
@@ -51,10 +41,11 @@ function isUnfinished(message: AssistantMessage): boolean {
 }
 
 export default function AssistantChat() {
-    const [isOpen, setIsOpen] = useState(false);
+    // L'état de départ vient du stockage : la fenêtre est recréée à chaque changement de page.
+    const [isOpen, setIsOpen] = useState<boolean>(() => readChatSnapshot().isOpen);
     const [conversationId, setConversationId] = useState<string>(readConversationId);
-    const [messages, setMessages] = useState<AssistantMessage[]>([]);
-    const [draft, setDraft] = useState('');
+    const [messages, setMessages] = useState<AssistantMessage[]>(() => readChatSnapshot().messages);
+    const [draft, setDraft] = useState<string>(() => readChatSnapshot().draft);
     const [isSending, setIsSending] = useState(false);
     const [errorText, setErrorText] = useState<string | null>(null);
     const [isOnline, setIsOnline] = useState<boolean | null>(null);
@@ -62,6 +53,18 @@ export default function AssistantChat() {
     const bottomRef = useRef<HTMLDivElement>(null);
 
     const hasUnfinished = messages.some(isUnfinished);
+
+    useEffect(() => {
+        saveChatSnapshot({ isOpen });
+    }, [isOpen]);
+
+    useEffect(() => {
+        saveChatSnapshot({ draft });
+    }, [draft]);
+
+    useEffect(() => {
+        saveChatSnapshot({ messages });
+    }, [messages]);
 
     const loadMessages = useCallback(async () => {
         try {
@@ -154,6 +157,19 @@ export default function AssistantChat() {
         setErrorText(null);
     };
 
+    const updateAction = (messageId: number, updated: AssistantAction) => {
+        setMessages((previous) =>
+            previous.map((message) =>
+                message.id === messageId
+                    ? {
+                          ...message,
+                          actions: message.actions.map((action) => (action.id === updated.id ? updated : action)),
+                      }
+                    : message,
+            ),
+        );
+    };
+
     const isSlow = (message: AssistantMessage): boolean =>
         isUnfinished(message) && now - new Date(message.created_at).getTime() > SLOW_AFTER_MS;
 
@@ -165,7 +181,7 @@ export default function AssistantChat() {
                         <div>
                             <h2 className="assistant-chat__title">Assistant de l&apos;atelier</h2>
                             <p className="assistant-chat__subtitle">
-                                {isOnline === false ? 'Hors ligne' : 'Il lit les infos, il ne modifie rien'}
+                                {isOnline === false ? 'Hors ligne' : 'Il propose, tu confirmes'}
                             </p>
                         </div>
                         <div className="assistant-chat__header-actions">
@@ -189,7 +205,9 @@ export default function AssistantChat() {
                     <div className="assistant-chat__messages">
                         {messages.length === 0 && (
                             <p className="assistant-chat__empty">
-                                Pose une question sur un client, un devis, un forfait, une référence ou l&apos;agenda.
+                                Pose une question sur un client, un devis, un forfait, une pièce ou l&apos;agenda.
+                                Tu peux aussi lui demander de changer un statut ou de déplacer un rendez-vous : il le
+                                propose, rien ne bouge avant ton clic sur « Confirmer ».
                             </p>
                         )}
 
@@ -211,7 +229,7 @@ export default function AssistantChat() {
 
                                 {message.status === 'answered' && (
                                     <div className="assistant-chat__bubble assistant-chat__bubble--answer">
-                                        {message.answer}
+                                        <AssistantText text={message.answer ?? ''} />
                                         {message.consultations.length > 0 && (
                                             <p className="assistant-chat__sources">
                                                 Consulté : {message.consultations.join(', ')}
@@ -225,6 +243,14 @@ export default function AssistantChat() {
                                         {message.error ?? 'L’assistant n’a pas pu répondre.'} Demande à Jonathan.
                                     </div>
                                 )}
+
+                                {message.actions.map((action) => (
+                                    <AssistantActionCard
+                                        key={action.id}
+                                        action={action}
+                                        onChange={(updated) => updateAction(message.id, updated)}
+                                    />
+                                ))}
                             </div>
                         ))}
                         <div ref={bottomRef} />

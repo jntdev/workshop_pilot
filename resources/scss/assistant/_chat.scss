@@ -201,6 +201,18 @@
     font-size: 0.7rem;
   }
 
+  // Lien vers une page du workshop cité par l'assistant (le chat reste ouvert au clic)
+  &__ref {
+    color: $color-primary-blue;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: lighten($color-primary-blue, 12%);
+    }
+  }
+
   @media (max-width: 640px) {
     right: 0.5rem;
     bottom: 0.5rem;
@@ -209,6 +221,120 @@
       width: calc(100vw - 1rem);
       height: calc(100vh - 5rem);
     }
+  }
+}
+
+// Action proposée par l'assistant : rien ne change avant le clic sur « Confirmer »
+.assistant-action {
+  align-self: stretch;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid $color-border-medium;
+  border-left: 4px solid $color-planning-orange;
+  border-radius: 0.5rem;
+  background: $color-bg-white;
+  font-size: 0.85rem;
+
+  &--executed {
+    border-left-color: $color-success-green;
+  }
+
+  &--cancelled,
+  &--expired,
+  &--undone {
+    border-left-color: $color-border-medium;
+    color: $color-neutral-medium;
+  }
+
+  &--failed {
+    border-left-color: $color-danger-red;
+  }
+
+  &__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  &__type {
+    color: $color-neutral-medium;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  &__status {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  &--executed &__status {
+    color: $color-success-green;
+  }
+
+  &--failed &__status {
+    color: $color-danger-red;
+  }
+
+  &__summary {
+    margin: 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  &__warnings {
+    margin: 0.4rem 0 0;
+    padding: 0.35rem 0.5rem 0.35rem 1.2rem;
+    border-radius: 0.35rem;
+    background: #fff7ed;
+    color: #9a3412;
+    font-size: 0.78rem;
+  }
+
+  &__error {
+    margin: 0.4rem 0 0;
+    color: $color-danger-red;
+    font-size: 0.8rem;
+  }
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  &__confirm,
+  &__cancel {
+    padding: 0.35rem 0.8rem;
+    border-radius: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__confirm {
+    border: none;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+  }
+
+  &__cancel {
+    border: 1px solid $color-border-medium;
+    background: $color-bg-white;
+    color: $color-neutral-dark;
   }
 }
 

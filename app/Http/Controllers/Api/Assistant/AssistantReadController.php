@@ -9,6 +9,7 @@ use App\Models\Article;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteAppointment;
+use App\Models\QuoteLine;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -134,6 +135,7 @@ class AssistantReadController extends Controller
             'actual_time_minutes' => $quote->actual_time_minutes,
             'client' => $this->clientSummary($quote->client),
             'lines' => $quote->lines->map(fn ($line) => [
+                'id' => $line->id,
                 'title' => $line->title,
                 'reference' => $line->reference,
                 'quantity' => $line->quantity,
@@ -141,6 +143,7 @@ class AssistantReadController extends Controller
                 'line_total_ttc' => $line->line_total_ttc,
                 'estimated_time_minutes' => $line->estimated_time_minutes,
                 'needs_order' => (bool) $line->needs_order,
+                'order_status' => $line->needs_order ? $this->orderStatus($line) : null,
                 'ordered_at' => $line->ordered_at?->format('Y-m-d'),
                 'received_at' => $line->received_at?->format('Y-m-d'),
             ])->values(),
@@ -150,6 +153,7 @@ class AssistantReadController extends Controller
                 'created_at' => $this->local($comment->created_at),
             ])->values(),
             'appointments' => $quote->appointments->map(fn (QuoteAppointment $appointment) => [
+                'id' => $appointment->id,
                 'starts_at' => $this->local($appointment->starts_at),
                 'ends_at' => $this->local($appointment->ends_at),
                 'notes' => $appointment->notes,
@@ -179,6 +183,7 @@ class AssistantReadController extends Controller
             ->get()
             ->map(fn (QuoteAppointment $appointment) => [
                 'kind' => 'devis',
+                'id' => $appointment->id,
                 'sort' => $appointment->starts_at->toISOString(),
                 'quote_id' => $appointment->quote_id,
                 'quote_reference' => $appointment->quote->reference,
@@ -196,6 +201,7 @@ class AssistantReadController extends Controller
             ->get()
             ->map(fn (AgendaEvent $event) => [
                 'kind' => 'evenement',
+                'id' => $event->id,
                 'sort' => $event->starts_at->toISOString(),
                 'title' => $event->title,
                 'detail' => $event->detail,
@@ -239,6 +245,50 @@ class AssistantReadController extends Controller
             ]);
 
         return response()->json($articles);
+    }
+
+    /**
+     * Pièces à commander des devis (page « Pièces à commander »), avec le numéro de ligne
+     * nécessaire pour proposer de les marquer commandées ou reçues.
+     */
+    public function orderLines(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'include_received' => ['nullable', 'boolean'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $query = QuoteLine::query()->with('quote.client')->where('needs_order', true);
+
+        if (! $request->boolean('include_received')) {
+            $query->whereNull('received_at');
+        }
+
+        $lines = $query->orderBy('created_at')->limit($validated['limit'] ?? 50)->get()
+            ->map(fn (QuoteLine $line) => [
+                'line_id' => $line->id,
+                'quote_id' => $line->quote_id,
+                'quote_reference' => $line->quote?->reference,
+                'client' => $line->quote?->client ? trim($line->quote->client->prenom.' '.$line->quote->client->nom) : null,
+                'bike_description' => $line->quote?->bike_description,
+                'title' => $line->title,
+                'reference' => $line->reference,
+                'quantity' => $line->quantity,
+                'order_status' => $this->orderStatus($line),
+                'ordered_at' => $line->ordered_at?->format('Y-m-d'),
+                'received_at' => $line->received_at?->format('Y-m-d'),
+            ]);
+
+        return response()->json($lines);
+    }
+
+    private function orderStatus(QuoteLine $line): string
+    {
+        if ($line->received_at !== null) {
+            return 'received';
+        }
+
+        return $line->ordered_at !== null ? 'ordered' : 'to_order';
     }
 
     /**

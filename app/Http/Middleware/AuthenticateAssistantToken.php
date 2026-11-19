@@ -11,7 +11,7 @@ class AuthenticateAssistantToken
 {
     /**
      * Autorise la requête uniquement si le jeton Bearer correspond au jeton demandé
-     * (« read » ou « relay » dans config/assistant.php), et journalise chaque appel accepté.
+     * (« read », « propose » ou « relay » dans config/assistant.php), et journalise chaque appel accepté.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */

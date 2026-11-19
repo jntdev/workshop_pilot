@@ -1,13 +1,28 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import WeekAgendaGrid from '@/Components/Atelier/Agenda/WeekAgendaGrid';
 import AgendaItemDetailPanel from '@/Components/Atelier/Agenda/AgendaItemDetailPanel';
 import { addDays, startOfWeek, todayIso, weekdaysFrom, formatDateRangeLabel, AGENDA_HOURS_COL_PX, AGENDA_MIN_DAY_COL_PX } from '@/Components/Atelier/Agenda/agendaShared';
 import type { AgendaItem } from '@/types';
 
+/** Jour demandé dans l'adresse (?date=AAAA-MM-JJ), par exemple depuis un lien de l'assistant. */
+function dateFromUrl(): string | null {
+    const value = new URLSearchParams(window.location.search).get('date');
+
+    return value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
 export default function AgendaIndex() {
-    const [weekStart, setWeekStart] = useState(startOfWeek(todayIso()));
+    const { url } = usePage();
+    const [weekStart, setWeekStart] = useState(() => startOfWeek(dateFromUrl() ?? todayIso()));
+
+    useEffect(() => {
+        const requested = dateFromUrl();
+        if (requested !== null) {
+            setWeekStart(startOfWeek(requested));
+        }
+    }, [url]);
     const [items, setItems] = useState<AgendaItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

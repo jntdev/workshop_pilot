@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAssistantMessageRequest;
+use App\Models\AssistantAction;
 use App\Models\AssistantMessage;
+use App\Services\Assistant\Actions\AssistantActionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -19,6 +21,8 @@ class AssistantChatController extends Controller
 {
     public const RELAY_HEARTBEAT_CACHE_KEY = 'assistant.relay.last_seen';
 
+    public function __construct(private readonly AssistantActionService $actions) {}
+
     /**
      * Échanges d'une conversation de l'utilisateur connecté, du plus ancien au plus récent.
      */
@@ -29,8 +33,10 @@ class AssistantChatController extends Controller
         ]);
 
         AssistantMessage::failStale();
+        AssistantAction::expireStale();
 
         $messages = AssistantMessage::query()
+            ->with('actions.confirmer')
             ->where('user_id', $request->user()->id)
             ->where('conversation_id', $validated['conversation_id'])
             ->orderBy('id')
@@ -67,8 +73,9 @@ class AssistantChatController extends Controller
         abort_unless($message->user_id === $request->user()->id, 404);
 
         AssistantMessage::failStale();
+        AssistantAction::expireStale();
 
-        return response()->json($this->payload($message->refresh()));
+        return response()->json($this->payload($message->refresh()->load('actions.confirmer')));
     }
 
     /**
@@ -97,6 +104,7 @@ class AssistantChatController extends Controller
             'answer' => $message->answer,
             'error' => $message->error,
             'consultations' => $message->consultations ?? [],
+            'actions' => $message->actions->map(fn (AssistantAction $action) => $this->actions->present($action))->values(),
             'created_at' => $message->created_at->toISOString(),
             'answered_at' => $message->answered_at?->toISOString(),
         ];

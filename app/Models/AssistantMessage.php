@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Une question posée par un utilisateur à l'assistant de l'atelier, avec sa réponse.
@@ -50,6 +51,11 @@ class AssistantMessage extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function actions(): HasMany
+    {
+        return $this->hasMany(AssistantAction::class)->orderBy('id');
     }
 
     public function scopePending(Builder $query): Builder
