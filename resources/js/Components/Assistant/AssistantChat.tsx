@@ -1,15 +1,33 @@
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+    CSSProperties,
+    FormEvent,
+    KeyboardEvent,
+    MouseEvent as ReactMouseEvent,
+    PointerEvent as ReactPointerEvent,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import { Link } from '@inertiajs/react';
 import { ApiError, apiGet, apiPost } from '@/utils/api';
 import AssistantActionCard from './AssistantActionCard';
 import AssistantText from './AssistantText';
-import { readChatSnapshot, saveChatSnapshot } from './assistantStore';
+import { ChatOffset, readChatOffset, readChatSnapshot, saveChatOffset, saveChatSnapshot } from './assistantStore';
 import type { AssistantAction, AssistantMessage } from './types';
 
 const STORAGE_KEY = 'assistant.conversation_id';
 const POLL_MESSAGES_MS = 2000;
 const POLL_STATUS_MS = 30000;
 const SLOW_AFTER_MS = 90000;
+const VIEWPORT_MARGIN_PX = 8;
+const DOCKED_MARGIN_PX = 16;
+const MOBILE_QUERY = '(max-width: 640px)';
+
+/** Sur petit écran la fenêtre occupe presque tout l'écran : elle ne se déplace pas. */
+function isMobileViewport(): boolean {
+    return window.matchMedia(MOBILE_QUERY).matches;
+}
 
 function newConversationId(): string {
     return crypto.randomUUID();
@@ -50,9 +68,119 @@ export default function AssistantChat() {
     const [errorText, setErrorText] = useState<string | null>(null);
     const [isOnline, setIsOnline] = useState<boolean | null>(null);
     const [now, setNow] = useState<number>(() => Date.now());
+    const [offset, setOffset] = useState<ChatOffset>(() => readChatOffset());
     const bottomRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLElement>(null);
+    const offsetRef = useRef<ChatOffset>(offset);
+    const dragRef = useRef<{ pointerX: number; pointerY: number; origin: ChatOffset } | null>(null);
 
     const hasUnfinished = messages.some(isUnfinished);
+
+    const applyOffset = useCallback((next: ChatOffset, persist: boolean) => {
+        offsetRef.current = next;
+        setOffset(next);
+        if (persist) {
+            saveChatOffset(next);
+        }
+    }, []);
+
+    // Garde la fenêtre entièrement visible : la place d'origine se déduit de la position actuelle moins le décalage.
+    const clampOffset = useCallback((candidate: ChatOffset): ChatOffset => {
+        const panel = panelRef.current;
+        if (!panel) {
+            return candidate;
+        }
+
+        const rect = panel.getBoundingClientRect();
+        const originLeft = rect.left - offsetRef.current.x;
+        const originTop = rect.top - offsetRef.current.y;
+        const minX = VIEWPORT_MARGIN_PX - originLeft;
+        const maxX = window.innerWidth - rect.width - VIEWPORT_MARGIN_PX - originLeft;
+        const minY = VIEWPORT_MARGIN_PX - originTop;
+        const maxY = window.innerHeight - rect.height - VIEWPORT_MARGIN_PX - originTop;
+
+        return {
+            x: Math.min(Math.max(candidate.x, minX), Math.max(minX, maxX)),
+            y: Math.min(Math.max(candidate.y, minY), Math.max(minY, maxY)),
+        };
+    }, []);
+
+    // À l'ouverture et quand la fenêtre du navigateur change de taille : la fenêtre ne doit pas sortir de l'écran.
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        const keepVisible = () => {
+            if (isMobileViewport()) {
+                return;
+            }
+            const clamped = clampOffset(offsetRef.current);
+            if (clamped.x !== offsetRef.current.x || clamped.y !== offsetRef.current.y) {
+                applyOffset(clamped, true);
+            }
+        };
+
+        keepVisible();
+        window.addEventListener('resize', keepVisible);
+
+        return () => window.removeEventListener('resize', keepVisible);
+    }, [isOpen, applyOffset, clampOffset]);
+
+    const handleDragStart = (event: ReactPointerEvent<HTMLElement>) => {
+        if (event.button !== 0 || isMobileViewport() || (event.target as HTMLElement).closest('button, a')) {
+            return;
+        }
+
+        event.currentTarget.setPointerCapture(event.pointerId);
+        dragRef.current = { pointerX: event.clientX, pointerY: event.clientY, origin: offsetRef.current };
+    };
+
+    const handleDragMove = (event: ReactPointerEvent<HTMLElement>) => {
+        const drag = dragRef.current;
+        if (!drag) {
+            return;
+        }
+
+        applyOffset(
+            clampOffset({
+                x: drag.origin.x + event.clientX - drag.pointerX,
+                y: drag.origin.y + event.clientY - drag.pointerY,
+            }),
+            false,
+        );
+    };
+
+    const handleDragEnd = () => {
+        if (dragRef.current) {
+            dragRef.current = null;
+            saveChatOffset(offsetRef.current);
+        }
+    };
+
+    // Bouton « ⇄ » : à gauche si la fenêtre est à droite, et inversement (retour à la place d'origine).
+    const toggleSide = () => {
+        const panel = panelRef.current;
+        if (!panel || isMobileViewport()) {
+            return;
+        }
+
+        const rect = panel.getBoundingClientRect();
+        const isOnLeft = rect.left + rect.width / 2 < window.innerWidth / 2;
+        const originLeft = rect.left - offsetRef.current.x;
+
+        applyOffset(
+            clampOffset({ x: isOnLeft ? 0 : DOCKED_MARGIN_PX - originLeft, y: offsetRef.current.y }),
+            true,
+        );
+    };
+
+    const resetPosition = (event: ReactMouseEvent<HTMLElement>) => {
+        if ((event.target as HTMLElement).closest('button, a')) {
+            return;
+        }
+        applyOffset({ x: 0, y: 0 }, true);
+    };
 
     useEffect(() => {
         saveChatSnapshot({ isOpen });
@@ -176,8 +304,21 @@ export default function AssistantChat() {
     return (
         <div className="assistant-chat">
             {isOpen && (
-                <section className="assistant-chat__panel" aria-label="Assistant de l'atelier">
-                    <header className="assistant-chat__header">
+                <section
+                    ref={panelRef}
+                    className="assistant-chat__panel"
+                    aria-label="Assistant de l'atelier"
+                    style={{ '--assistant-dx': `${offset.x}px`, '--assistant-dy': `${offset.y}px` } as CSSProperties}
+                >
+                    <header
+                        className="assistant-chat__header"
+                        title="Glisse ce bandeau pour déplacer la fenêtre (double-clic : retour à la place d’origine)"
+                        onPointerDown={handleDragStart}
+                        onPointerMove={handleDragMove}
+                        onPointerUp={handleDragEnd}
+                        onPointerCancel={handleDragEnd}
+                        onDoubleClick={resetPosition}
+                    >
                         <div>
                             <h2 className="assistant-chat__title">Assistant de l&apos;atelier</h2>
                             <p className="assistant-chat__subtitle">
@@ -191,6 +332,15 @@ export default function AssistantChat() {
                             <Link href="/assistant/journal" className="assistant-chat__link">
                                 Journal
                             </Link>
+                            <button
+                                type="button"
+                                className="assistant-chat__side"
+                                onClick={toggleSide}
+                                aria-label="Mettre la fenêtre à gauche ou à droite"
+                                title="Mettre la fenêtre à gauche ou à droite"
+                            >
+                                &#8644;
+                            </button>
                             <button
                                 type="button"
                                 className="assistant-chat__close"
