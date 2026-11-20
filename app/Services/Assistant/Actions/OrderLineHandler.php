@@ -108,7 +108,7 @@ class OrderLineHandler implements AssistantActionHandler
             $line,
         ));
 
-        return ['state' => $this->state($line->refresh())];
+        return $this->lineState($line->refresh());
     }
 
     public function canUndo(AssistantAction $action): bool
@@ -134,12 +134,40 @@ class OrderLineHandler implements AssistantActionHandler
             'ordered_at' => $action->before['ordered_at'] ? Carbon::parse($action->before['ordered_at']) : null,
         ]);
 
-        return ['state' => $this->state($line->refresh())];
+        return $this->lineState($line->refresh());
     }
 
     public function link(AssistantAction $action): ?string
     {
         return '/atelier/pieces-a-commander';
+    }
+
+    public function effect(AssistantAction $action): ?array
+    {
+        if (! in_array($action->status, [AssistantActionStatus::Executed, AssistantActionStatus::Undone], true) || $action->after === null) {
+            return null;
+        }
+
+        return [
+            'type' => 'order_line',
+            'line_id' => $action->subject_id,
+            'quote_id' => $action->before['quote_id'] ?? null,
+            'supply_status' => $action->after['state'] ?? null,
+            'ordered_at' => $action->after['ordered_at'] ?? null,
+            'received_at' => $action->after['received_at'] ?? null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function lineState(QuoteLine $line): array
+    {
+        return [
+            'state' => $this->state($line),
+            'ordered_at' => $line->ordered_at?->toISOString(),
+            'received_at' => $line->received_at?->toISOString(),
+        ];
     }
 
     private function state(QuoteLine $line): string

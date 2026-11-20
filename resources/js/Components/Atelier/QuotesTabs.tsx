@@ -4,6 +4,7 @@ import { Quote, QuoteStatusSlug, QuoteCommentRecipient, QuoteTask } from '@/type
 import { EyeIcon, ArchiveIcon, TrashIcon, ChevronIcon } from './QuotesTableIcons';
 import PlanningSidePanel from './Agenda/PlanningSidePanel';
 import type { DragQuotePayload } from './Agenda/agendaShared';
+import { useAssistantEffects } from '@/hooks/useAssistantEffects';
 
 type TabType = 'quotes' | 'invoices' | 'clients' | 'archives';
 
@@ -689,6 +690,22 @@ export default function QuotesTabs({
     const [clientResults, setClientResults] = useState<Map<number, Quote[]>>(new Map());
     const [isSearching, setIsSearching] = useState(false);
     const [highlightedId, setHighlightedId] = useState<number | null>(null);
+
+    // L'assistant (dans son onglet) vient de changer le statut d'un devis : on l'affiche tout de suite, sans recharger.
+    useAssistantEffects((effect) => {
+        if (effect.type !== 'quote_status') {
+            return;
+        }
+
+        setQuotes(prev =>
+            prev.map(q =>
+                q.id === effect.quote_id
+                    ? { ...q, status: effect.status as QuoteStatusSlug | null, work_completed_notified: effect.work_completed_notified }
+                    : q,
+            ),
+        );
+        setHighlightedId(effect.quote_id);
+    });
 
     const handleTabChange = (tab: TabType) => {
         onTabChange(tab);

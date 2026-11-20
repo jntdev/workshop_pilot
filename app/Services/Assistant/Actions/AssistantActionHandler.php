@@ -37,4 +37,12 @@ interface AssistantActionHandler
      * Page du workshop à consulter pour cette action (adresse relative), si elle existe.
      */
     public function link(AssistantAction $action): ?string;
+
+    /**
+     * État de l'élément après l'action (faite ou défaite), dans le format que les pages ouvertes du workshop
+     * appliquent directement à leur état. Renvoie null tant que l'action n'a rien changé.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function effect(AssistantAction $action): ?array;
 }

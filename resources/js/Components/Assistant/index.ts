@@ -1,1 +1,1 @@
-export { default as AssistantChat } from './AssistantChat';
+export { default as AssistantLauncher } from './AssistantLauncher';

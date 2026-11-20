@@ -8,7 +8,9 @@ import { ReactNode } from 'react';
  * [[agenda:2026-11-24]] (avec un libellé facultatif : [[devis:2001|DEV-2001]]). L'écran les transforme
  * en liens vers les pages du workshop. Seules ces destinations existent, avec un numéro ou une date
  * vérifiés : une référence mal formée s'affiche comme du texte simple, jamais comme un lien.
- * Le clic change de page sans recharger, et la fenêtre de chat reste ouverte (voir assistantStore).
+ *
+ * Dans l'onglet de l'assistant, `onNavigate` ouvre la page dans l'onglet de travail ; ailleurs (journal),
+ * le lien navigue dans l'onglet courant.
  */
 const REFERENCE = /\[\[(devis|client|pieces|agenda)(?::([^\]|]*))?(?:\|([^\]]*))?\]\]/g;
 
@@ -49,9 +51,10 @@ function cleanLabel(label: string | undefined): string | null {
 
 interface AssistantTextProps {
     text: string;
+    onNavigate?: (href: string) => void;
 }
 
-export default function AssistantText({ text }: AssistantTextProps) {
+export default function AssistantText({ text, onNavigate }: AssistantTextProps) {
     const nodes: ReactNode[] = [];
     let cursor = 0;
     let key = 0;
@@ -67,9 +70,23 @@ export default function AssistantText({ text }: AssistantTextProps) {
         const target = resolveReference(kind, argument);
         const shown = cleanLabel(label) ?? target?.label ?? argument?.trim() ?? '';
 
-        if (target !== null) {
+        if (target !== null && onNavigate) {
             nodes.push(
-                <Link key={key++} href={target.href} className="assistant-chat__ref">
+                <a
+                    key={key++}
+                    href={target.href}
+                    className="assistant-ref"
+                    onClick={(event) => {
+                        event.preventDefault();
+                        onNavigate(target.href);
+                    }}
+                >
+                    {shown}
+                </a>,
+            );
+        } else if (target !== null) {
+            nodes.push(
+                <Link key={key++} href={target.href} className="assistant-ref">
                     {shown}
                 </Link>,
             );

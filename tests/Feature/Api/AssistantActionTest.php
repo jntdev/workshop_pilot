@@ -219,7 +219,12 @@ class AssistantActionTest extends TestCase
             ->assertOk()
             ->assertJsonPath('status', 'executed')
             ->assertJsonPath('can_undo', true)
-            ->assertJsonPath('link', "/atelier/devis/{$quote->id}");
+            ->assertJsonPath('link', "/atelier/devis/{$quote->id}")
+            ->assertJsonPath('effect.type', 'quote_status')
+            ->assertJsonPath('effect.quote_id', $quote->id)
+            ->assertJsonPath('effect.status', 'in_progress')
+            ->assertJsonPath('effect.status_label', 'En cours')
+            ->assertJsonPath('effect.work_completed_notified', false);
 
         $quote->refresh();
         $this->assertSame(QuoteStatus::InProgress, $quote->status);
@@ -316,7 +321,9 @@ class AssistantActionTest extends TestCase
         $this->actingAs($this->user)->postJson("/api/assistant/actions/{$action->id}/confirm")->assertOk();
 
         $this->actingAs($this->user)->postJson("/api/assistant/actions/{$action->id}/undo")
-            ->assertOk()->assertJsonPath('status', 'undone');
+            ->assertOk()->assertJsonPath('status', 'undone')
+            ->assertJsonPath('effect.status', 'done')
+            ->assertJsonPath('effect.work_completed_notified', true);
 
         $quote->refresh();
         $this->assertSame(QuoteStatus::Done, $quote->status);
@@ -363,11 +370,21 @@ class AssistantActionTest extends TestCase
         $action = AssistantAction::first();
         $this->assertNull($line->fresh()->ordered_at);
 
-        $this->actingAs($this->user)->postJson("/api/assistant/actions/{$action->id}/confirm")->assertOk();
+        $this->actingAs($this->user)->postJson("/api/assistant/actions/{$action->id}/confirm")
+            ->assertOk()
+            ->assertJsonPath('effect.type', 'order_line')
+            ->assertJsonPath('effect.line_id', $line->id)
+            ->assertJsonPath('effect.quote_id', $line->quote_id)
+            ->assertJsonPath('effect.supply_status', 'ordered')
+            ->assertJsonPath('effect.received_at', null)
+            ->assertJsonPath('effect.ordered_at', fn (?string $date) => $date !== null);
         $this->assertNotNull($line->fresh()->ordered_at);
         $this->assertNull($line->fresh()->received_at);
 
-        $this->actingAs($this->user)->postJson("/api/assistant/actions/{$action->id}/undo")->assertOk();
+        $this->actingAs($this->user)->postJson("/api/assistant/actions/{$action->id}/undo")
+            ->assertOk()
+            ->assertJsonPath('effect.supply_status', 'to_order')
+            ->assertJsonPath('effect.ordered_at', null);
         $this->assertNull($line->fresh()->ordered_at);
     }
 
@@ -444,7 +461,13 @@ class AssistantActionTest extends TestCase
         $this->assertTrue($appointment->fresh()->starts_at->equalTo($start));
 
         $this->actingAs($this->user)->postJson("/api/assistant/actions/{$action->id}/confirm")
-            ->assertOk()->assertJsonPath('link', "/atelier/devis/{$quote->id}");
+            ->assertOk()->assertJsonPath('link', "/atelier/devis/{$quote->id}")
+            ->assertJsonPath('effect.type', 'appointment_move')
+            ->assertJsonPath('effect.kind', 'quote')
+            ->assertJsonPath('effect.id', $appointment->id)
+            ->assertJsonPath('effect.quote_id', $quote->id)
+            ->assertJsonPath('effect.starts_at', $newStart->copy()->utc()->toISOString())
+            ->assertJsonPath('effect.ends_at', $newStart->copy()->addHour()->utc()->toISOString());
         $this->assertTrue($appointment->fresh()->starts_at->equalTo($newStart));
         $this->assertTrue($appointment->fresh()->ends_at->equalTo($newStart->copy()->addHour()));
     }
@@ -485,7 +508,9 @@ class AssistantActionTest extends TestCase
 
         $action = AssistantAction::first();
         $this->actingAs($this->user)->postJson("/api/assistant/actions/{$action->id}/confirm")
-            ->assertOk()->assertJsonPath('link', '/atelier/agenda');
+            ->assertOk()->assertJsonPath('link', '/atelier/agenda')
+            ->assertJsonPath('effect.kind', 'event')
+            ->assertJsonPath('effect.quote_id', null);
 
         $this->assertTrue($event->fresh()->starts_at->equalTo($newStart));
         $this->assertTrue($event->fresh()->ends_at->equalTo($newStart->copy()->addMinutes(30)));
@@ -563,7 +588,8 @@ class AssistantActionTest extends TestCase
             ->assertOk()
             ->assertJsonPath('0.actions.0.status', 'proposed')
             ->assertJsonPath('0.actions.0.type', 'quote_status')
-            ->assertJsonPath('0.actions.0.can_undo', false);
+            ->assertJsonPath('0.actions.0.can_undo', false)
+            ->assertJsonPath('0.actions.0.effect', null);
 
         $this->actingAs(User::factory()->create())
             ->getJson('/api/assistant/messages?conversation_id='.$this->message->conversation_id)
@@ -582,6 +608,13 @@ class AssistantActionTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.actions.0.status', 'executed')
             ->assertJsonPath('data.0.actions.0.confirmed_by', $this->user->name);
+    }
+
+    #[Test]
+    public function the_conversation_page_requires_a_logged_in_user(): void
+    {
+        $this->get('/assistant')->assertRedirect();
+        $this->actingAs($this->user)->get('/assistant')->assertOk();
     }
 
     // ---------------------------------------------------------------- lecture enrichie

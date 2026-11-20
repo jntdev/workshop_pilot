@@ -150,6 +150,23 @@ class AppointmentMoveHandler implements AssistantActionHandler
         return $quoteId ? '/atelier/devis/'.$quoteId : '/atelier/agenda';
     }
 
+    public function effect(AssistantAction $action): ?array
+    {
+        if (! in_array($action->status, [AssistantActionStatus::Executed, AssistantActionStatus::Undone], true) || $action->after === null) {
+            return null;
+        }
+
+        return [
+            'type' => 'appointment_move',
+            // mêmes valeurs que l'API de l'agenda : « quote » pour un rendez-vous de devis, « event » pour un événement libre
+            'kind' => $action->subject_type === 'quote_appointment' ? 'quote' : 'event',
+            'id' => $action->subject_id,
+            'quote_id' => $action->before['quote_id'] ?? null,
+            'starts_at' => Carbon::parse($action->after['starts_at'], 'UTC')->toISOString(),
+            'ends_at' => Carbon::parse($action->after['ends_at'], 'UTC')->toISOString(),
+        ];
+    }
+
     /**
      * @throws AssistantActionException
      */

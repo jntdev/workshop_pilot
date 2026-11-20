@@ -1,5 +1,5 @@
-import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { publishAssistantEffect } from '@/lib/assistantBus';
 import { ApiError, apiPost } from '@/utils/api';
 import type { AssistantAction } from './types';
 
@@ -8,13 +8,17 @@ type Verb = 'confirm' | 'cancel' | 'undo';
 interface AssistantActionCardProps {
     action: AssistantAction;
     onChange: (action: AssistantAction) => void;
+    /** Ouvre une page du workshop dans l'onglet de travail. */
+    onNavigate: (href: string) => void;
 }
 
 /**
  * Carte d'une action proposée par l'assistant. Rien n'est modifié tant que l'utilisateur
  * n'a pas cliqué sur « Confirmer » : le texte affiché vient du serveur, pas de l'assistant.
+ * Quand l'action est faite ou défaite, ce qui a changé est annoncé aux autres onglets,
+ * dont les pages se mettent à jour sans rafraîchir.
  */
-export default function AssistantActionCard({ action, onChange }: AssistantActionCardProps) {
+export default function AssistantActionCard({ action, onChange, onNavigate }: AssistantActionCardProps) {
     const [busy, setBusy] = useState<Verb | null>(null);
     const [errorText, setErrorText] = useState<string | null>(null);
 
@@ -29,9 +33,8 @@ export default function AssistantActionCard({ action, onChange }: AssistantActio
             const updated = await apiPost<AssistantAction>(`/api/assistant/actions/${action.id}/${verb}`);
             onChange(updated);
 
-            if (verb !== 'cancel') {
-                // Les pages construites par Inertia se mettent à jour ; les autres se rafraîchissent via le lien « Voir ».
-                router.reload();
+            if (updated.effect) {
+                publishAssistantEffect(updated.effect);
             }
         } catch (error) {
             if (error instanceof ApiError) {
@@ -105,9 +108,16 @@ export default function AssistantActionCard({ action, onChange }: AssistantActio
                 )}
 
                 {action.link && (action.status === 'executed' || isOpenProposal) && (
-                    <Link href={action.link} className="assistant-chat__ref">
+                    <a
+                        href={action.link}
+                        className="assistant-ref"
+                        onClick={(event) => {
+                            event.preventDefault();
+                            onNavigate(action.link as string);
+                        }}
+                    >
                         Voir
-                    </Link>
+                    </a>
                 )}
             </div>
         </div>

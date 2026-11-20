@@ -1,3 +1,5 @@
+import type { AssistantEffect } from '@/lib/assistantBus';
+
 export type AssistantStatus = 'pending' | 'processing' | 'answered' | 'failed';
 
 export type AssistantActionStatus =
@@ -24,6 +26,8 @@ export interface AssistantAction {
     confirmed_by: string | null;
     can_undo: boolean;
     link: string | null;
+    /** Ce qui a changé une fois l'action faite ou défaite : les autres onglets l'appliquent à leur état. */
+    effect: AssistantEffect | null;
 }
 
 export interface AssistantMessage {

@@ -3,7 +3,8 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import WeekAgendaGrid from '@/Components/Atelier/Agenda/WeekAgendaGrid';
 import AgendaItemDetailPanel from '@/Components/Atelier/Agenda/AgendaItemDetailPanel';
-import { addDays, startOfWeek, todayIso, weekdaysFrom, formatDateRangeLabel, AGENDA_HOURS_COL_PX, AGENDA_MIN_DAY_COL_PX } from '@/Components/Atelier/Agenda/agendaShared';
+import { addDays, dateIsoOf, startOfWeek, todayIso, weekdaysFrom, formatDateRangeLabel, AGENDA_HOURS_COL_PX, AGENDA_MIN_DAY_COL_PX } from '@/Components/Atelier/Agenda/agendaShared';
+import { useAssistantEffects } from '@/hooks/useAssistantEffects';
 import type { AgendaItem } from '@/types';
 
 /** Jour demandé dans l'adresse (?date=AAAA-MM-JJ), par exemple depuis un lien de l'assistant. */
@@ -83,6 +84,40 @@ export default function AgendaIndex() {
     useEffect(() => {
         load(days);
     }, [days, load]);
+
+    // L'assistant (dans son onglet) a déplacé un rendez-vous ou changé le statut d'un devis : la grille se met à jour
+    // tout de suite. On ne recharge les données que si un rendez-vous arrive dans la semaine affichée sans y être déjà.
+    useAssistantEffects((effect) => {
+        if (effect.type === 'quote_status') {
+            setItems(prev =>
+                prev.map(item =>
+                    item.kind === 'quote' && item.quote_id === effect.quote_id
+                        ? { ...item, status: effect.status as typeof item.status, status_label: effect.status_label }
+                        : item,
+                ),
+            );
+
+            return;
+        }
+
+        if (effect.type !== 'appointment_move') {
+            return;
+        }
+
+        const isShown = items.some(item => item.kind === effect.kind && item.id === effect.id);
+
+        if (isShown) {
+            setItems(prev =>
+                prev.map(item =>
+                    item.kind === effect.kind && item.id === effect.id
+                        ? { ...item, starts_at: effect.starts_at, ends_at: effect.ends_at }
+                        : item,
+                ),
+            );
+        } else if (days.includes(dateIsoOf(new Date(effect.starts_at)))) {
+            void load(days);
+        }
+    });
 
     const isCurrentWeek = weekStart === startOfWeek(todayIso());
 

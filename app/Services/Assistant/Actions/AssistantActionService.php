@@ -184,6 +184,8 @@ class AssistantActionService
             'confirmed_by' => $action->relationLoaded('confirmer') ? $action->confirmer?->name : null,
             'can_undo' => $action->status === AssistantActionStatus::Executed && $handler->canUndo($action),
             'link' => $handler->link($action),
+            // Ce qui a changé, au format que les pages ouvertes du workshop appliquent à leur état (voir assistantBus.ts).
+            'effect' => $handler->effect($action),
         ];
     }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
+import { useAssistantEffects } from '@/hooks/useAssistantEffects';
 
 interface OrderLine {
     quote_line_id: number;
@@ -69,6 +70,35 @@ export default function OrderLinesIndex() {
     useEffect(() => {
         loadLines();
     }, [loadLines]);
+
+    // L'assistant (dans son onglet) a changé l'état d'une pièce : la liste se met à jour tout de suite.
+    // Une pièce qui n'est pas dans la liste affichée (retour à « à commander ») demande de recharger les données.
+    useAssistantEffects((effect) => {
+        if (effect.type !== 'order_line') {
+            return;
+        }
+
+        if (!lines.some(line => line.quote_line_id === effect.line_id)) {
+            void loadLines();
+
+            return;
+        }
+
+        setLines(prev =>
+            prev.flatMap(line => {
+                if (line.quote_line_id !== effect.line_id) {
+                    return [line];
+                }
+
+                // La page masque les pièces reçues tant que « inclure les reçues » n'est pas coché.
+                if (effect.supply_status === 'received' && !includeReceived) {
+                    return [];
+                }
+
+                return [{ ...line, supply_status: effect.supply_status, ordered_at: effect.ordered_at, received_at: effect.received_at }];
+            }),
+        );
+    });
 
     const updateStatus = async (lineId: number, payload: Record<string, boolean>) => {
         if (pendingIds.has(lineId)) return;

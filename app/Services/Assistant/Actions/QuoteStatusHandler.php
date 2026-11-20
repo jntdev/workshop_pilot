@@ -139,6 +139,23 @@ class QuoteStatusHandler implements AssistantActionHandler
         return '/atelier/devis/'.$action->subject_id;
     }
 
+    public function effect(AssistantAction $action): ?array
+    {
+        if (! in_array($action->status, [AssistantActionStatus::Executed, AssistantActionStatus::Undone], true) || $action->after === null) {
+            return null;
+        }
+
+        $status = $action->after['status'] ?? null;
+
+        return [
+            'type' => 'quote_status',
+            'quote_id' => $action->subject_id,
+            'status' => $status,
+            'status_label' => $status ? QuoteStatus::tryFrom($status)?->label() : null,
+            'work_completed_notified' => (bool) ($action->after['work_completed_notified'] ?? false),
+        ];
+    }
+
     /**
      * @return array<string, mixed>
      */
