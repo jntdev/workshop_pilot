@@ -3,3 +3,4 @@ export { default as QuoteLinesTable } from './QuoteLinesTable';
 export { default as QuoteTotals } from './QuoteTotals';
 export { default as ConvertModal } from './ConvertModal';
 export { default as FieldConflictBanner } from './FieldConflictBanner';
+export { default as SaveErrorToast } from './SaveErrorToast';

@@ -1,8 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
-import { ClientSearch, QuoteLinesTable, QuoteTotals, ConvertModal, FieldConflictBanner } from '@/Components/Atelier/QuoteForm';
+import { ClientSearch, QuoteLinesTable, QuoteTotals, ConvertModal, FieldConflictBanner, SaveErrorToast } from '@/Components/Atelier/QuoteForm';
 import QuoteCommentsPanel from '@/Components/Atelier/QuoteCommentsPanel';
+import {
+    describeSaveErrors,
+    isComptoirModeActive,
+    quoteLineKey,
+    saveErrorTitle,
+    type LineFieldErrors,
+    type SaveErrorFeedback,
+    type SentLine,
+} from '@/utils/quoteSaveErrors';
 import {
     QuoteFormPageProps,
     QuoteLine,
@@ -233,6 +242,14 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     const [emailError, setEmailError] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [message, setMessage] = useState<string | null>(null);
+    // Échec d'enregistrement, affiché en rappel au-dessus des boutons, et cases en cause dans le tableau.
+    const [saveError, setSaveError] = useState<SaveErrorFeedback | null>(null);
+    const [lineErrors, setLineErrors] = useState<LineFieldErrors>({});
+
+    const showSaveError = (title: string, texts: string | string[]) => {
+        const items = (Array.isArray(texts) ? texts : [texts]).map(text => ({ text }));
+        setSaveError({ title, items });
+    };
 
     // Snapshot du devis tel qu'il était à l'ouverture (ou après la dernière sauvegarde
     // réussie) : sert de "base" pour la détection de conflit d'édition concurrente.
@@ -288,6 +305,20 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     };
 
     const handleLineChange = (index: number, field: keyof QuoteLine, value: string) => {
+        const lineKey = lines[index] ? quoteLineKey(lines[index]) : null;
+        if (lineKey && lineErrors[lineKey]?.[field]) {
+            setLineErrors(prev => {
+                const { [field]: _corrected, ...remaining } = prev[lineKey] ?? {};
+                const next = { ...prev };
+                if (Object.keys(remaining).length) {
+                    next[lineKey] = remaining;
+                } else {
+                    delete next[lineKey];
+                }
+                return next;
+            });
+        }
+
         setLines(prev => {
             const newLines = [...prev];
             newLines[index] = { ...newLines[index], [field]: value };
@@ -441,11 +472,15 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
     };
 
     // Filtre les lignes vides (sans titre) et les fantômes de conflit non résolus avant l'envoi.
-    const getFilledLines = () => {
+    // Garde le numéro de chaque ligne dans le tableau : le serveur, lui, ne voit que les lignes envoyées.
+    const getSentLines = (): SentLine[] => {
         return lines
-            .filter(line => !line._conflict)
-            .filter(line => line.title && line.title.trim() !== '');
+            .map((line, index) => ({ line, rowNumber: index + 1 }))
+            .filter(({ line }) => !line._conflict)
+            .filter(({ line }) => line.title && line.title.trim() !== '');
     };
+
+    const getFilledLines = () => getSentLines().map(({ line }) => line);
 
     const buildSavePayload = () => {
         const resolvedConflicts = (Object.keys(resolvedFieldValues).length || Object.keys(resolvedLineValues).length)
@@ -490,19 +525,24 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
         | { ok: false; becameInvoice: true };
 
     const persistQuote = async (): Promise<PersistResult> => {
+        setSaveError(null);
+        setLineErrors({});
+
         if (hasUnresolvedConflicts) {
-            setMessage('Veuillez résoudre les conflits affichés avant d\'enregistrer.');
+            showSaveError('Devis non enregistré', 'Veuillez résoudre les conflits affichés avant d\'enregistrer.');
             return { ok: false };
         }
 
         const trimmedPhone = client.telephone.trim();
         if (!trimmedPhone) {
-            setMessage('Le téléphone du client est obligatoire.');
+            setErrors({ client_telephone: 'Le téléphone du client est obligatoire.' });
+            showSaveError(saveErrorTitle(1), 'Le téléphone du client est obligatoire.');
             return { ok: false };
         }
 
         const url = isEdit ? '/api/quotes/' + quote!.id : '/api/quotes';
         const method = isEdit ? 'PUT' : 'POST';
+        const sentLines = getSentLines();
         const payload = buildSavePayload();
 
         const response = await fetch(url, {
@@ -534,25 +574,34 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             }
 
             const count = fields.length + lineConflictsList.length;
-            setMessage(`${count} conflit${count > 1 ? 's' : ''} à résoudre ci-dessous avant de pouvoir enregistrer.`);
+            showSaveError('Devis non enregistré', `${count} conflit${count > 1 ? 's' : ''} à résoudre dans le formulaire avant de pouvoir enregistrer.`);
             return { ok: false, conflict: { fields, lines: lineConflictsList } };
         }
 
         if (response.status === 422 && errorData.became_invoice) {
-            setMessage(errorData.message ?? 'Ce devis a été transformé en facture entre-temps.');
+            showSaveError('Devis non enregistré', errorData.message ?? 'Ce devis a été transformé en facture entre-temps.');
             return { ok: false, becameInvoice: true };
         }
 
         if (errorData.errors) {
-            const formattedErrors: Record<string, string> = {};
-            Object.entries(errorData.errors).forEach(([key, value]) => {
-                formattedErrors[key] = Array.isArray(value) ? value[0] : String(value);
-            });
-            setErrors(formattedErrors);
+            const described = describeSaveErrors(errorData.errors, sentLines, isComptoirModeActive());
+            setErrors(described.fieldErrors);
+            setLineErrors(described.lineErrors);
+            setSaveError({ title: saveErrorTitle(described.items.length), items: described.items });
         } else {
-            setMessage(errorData.message || 'Une erreur est survenue.');
+            showSaveError('Devis non enregistré', errorData.message || 'Une erreur est survenue.');
         }
         return { ok: false };
+    };
+
+    // Depuis le rappel d'erreur : amène la ligne en cause à l'écran et place le curseur dans la case à corriger.
+    const handleShowErrorLine = (lineKey: string) => {
+        const row = document.querySelector<HTMLElement>(`[data-line-key="${CSS.escape(lineKey)}"]`);
+        if (!row) {
+            return;
+        }
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.querySelector<HTMLInputElement>('.quote-lines-table__input--error')?.focus({ preventScroll: true });
     };
 
     // Resynchronise le snapshot de base (et, sur succès complet, les states du formulaire)
@@ -593,7 +642,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             }
         } catch (error) {
             console.error('Save error:', error);
-            setMessage('Une erreur est survenue lors de la sauvegarde.');
+            showSaveError('Devis non enregistré', 'Une erreur est survenue lors de la sauvegarde.');
         } finally {
             setIsSaving(false);
         }
@@ -622,9 +671,13 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                 setQuoteStatus(newStatus);
                 setWorkCompletedNotified(data.work_completed_notified);
                 setMessage('Statut mis à jour.');
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                showSaveError('Statut non modifié', errorData.message || 'Le devis est enregistré, mais le statut n\'a pas pu être changé.');
             }
         } catch (error) {
             console.error('Status update error:', error);
+            showSaveError('Statut non modifié', 'Une erreur est survenue lors du changement de statut.');
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -655,11 +708,11 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                 router.visit('/atelier/devis/' + quote.id);
             } else {
                 const errorData = await convertResponse.json();
-                setMessage(errorData.message || 'Une erreur est survenue lors de la conversion.');
+                showSaveError('Facture non créée', errorData.message || 'Une erreur est survenue lors de la conversion.');
             }
         } catch (error) {
             console.error('Convert error:', error);
-            setMessage('Une erreur est survenue lors de la conversion.');
+            showSaveError('Facture non créée', 'Une erreur est survenue lors de la conversion.');
         } finally {
             setIsConverting(false);
             setShowConvertModal(false);
@@ -681,7 +734,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             window.location.href = '/atelier/devis/' + quote.id + '/pdf';
         } catch (error) {
             console.error('PDF download error:', error);
-            setMessage('Une erreur est survenue.');
+            showSaveError('Devis non enregistré', 'Une erreur est survenue avant le téléchargement du PDF.');
         } finally {
             setIsSaving(false);
         }
@@ -701,7 +754,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
             setShowEmailModal(true);
         } catch (error) {
             console.error('Save before email error:', error);
-            setMessage('Une erreur est survenue.');
+            showSaveError('Devis non enregistré', 'Une erreur est survenue avant l\'envoi par e-mail.');
         } finally {
             setIsSaving(false);
         }
@@ -901,17 +954,6 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                 {message && (
                     <div className={`quote-form__alert ${message.includes('erreur') ? 'quote-form__alert--error' : 'quote-form__alert--success'}`}>
                         {message}
-                    </div>
-                )}
-
-                {Object.keys(errors).length > 0 && (
-                    <div className="quote-form__alert quote-form__alert--error">
-                        <strong>Veuillez corriger les erreurs suivantes :</strong>
-                        <ul className="quote-form__error-list">
-                            {Object.entries(errors).map(([field, error]) => (
-                                <li key={field}>{Array.isArray(error) ? error[0] : error}</li>
-                            ))}
-                        </ul>
                     </div>
                 )}
 
@@ -1180,6 +1222,7 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                             onRemoveLine={handleRemoveLine}
                             onRemoveConflictLine={handleRemoveConflictLine}
                             disabled={isReadOnly}
+                            lineErrors={lineErrors}
                         />
                     </section>
 
@@ -1259,6 +1302,14 @@ export default function QuoteForm({ quote }: QuoteFormPageProps) {
                             </div>
                         </div>
                     </section>
+
+                    {saveError && (
+                        <SaveErrorToast
+                            feedback={saveError}
+                            onClose={() => setSaveError(null)}
+                            onShowLine={handleShowErrorLine}
+                        />
+                    )}
 
                     {/* Actions */}
                     <div className="quote-form__actions">

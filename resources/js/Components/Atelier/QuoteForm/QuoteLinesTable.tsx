@@ -4,6 +4,7 @@ import type { Article } from '@/types';
 import Input from '@/Components/ui/Input';
 import ArticleAutocomplete from '@/Components/Stock/ArticleAutocomplete';
 import CataloguePickerModal from '@/Components/Stock/CataloguePickerModal';
+import { quoteLineKey, type LineFieldErrors } from '@/utils/quoteSaveErrors';
 
 interface QuoteLinesTableProps {
     lines: QuoteLine[];
@@ -15,6 +16,7 @@ interface QuoteLinesTableProps {
     onRemoveLine: (index: number) => void;
     onRemoveConflictLine: (index: number) => void;
     disabled?: boolean;
+    lineErrors?: LineFieldErrors;
 }
 
 // Calcul local des totaux de ligne
@@ -65,7 +67,24 @@ export default function QuoteLinesTable({
     onRemoveLine,
     onRemoveConflictLine,
     disabled,
+    lineErrors = {},
 }: QuoteLinesTableProps) {
+    // Premier message d'erreur trouvé parmi les champs indiqués (ex. PV TTC porte aussi les erreurs de PV HT).
+    const fieldError = (line: QuoteLine, ...fields: string[]): string | undefined => {
+        const errorsOfLine = lineErrors[quoteLineKey(line)];
+        return errorsOfLine ? fields.map(field => errorsOfLine[field]).find(Boolean) : undefined;
+    };
+
+    const errorProps = (error: string | undefined) => (error
+        ? { title: error, 'aria-invalid': true as const }
+        : {});
+
+    const inputClass = (error: string | undefined, extra = '') => [
+        'quote-lines-table__input',
+        extra,
+        error ? 'input--error quote-lines-table__input--error' : '',
+    ].join(' ').replace(/\s+/g, ' ').trim();
+
     const [pickerForLine, setPickerForLine] = useState<number | null>(null);
     const dragFromRef = useRef<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -195,15 +214,25 @@ export default function QuoteLinesTable({
                     );
                 }
 
+                const lineKey = quoteLineKey(line);
+                const titleError = fieldError(line, 'title');
+                const referenceError = fieldError(line, 'reference', 'article_id');
+                const purchaseError = fieldError(line, 'purchase_price_ht', 'line_purchase_ht', 'margin_amount_ht', 'margin_rate', 'line_margin_ht');
+                const saleError = fieldError(line, 'sale_price_ttc', 'sale_price_ht', 'tva_rate', 'line_total_ht', 'line_total_ttc');
+                const quantityError = fieldError(line, 'quantity');
+                const timeError = fieldError(line, 'estimated_time_minutes');
+
                 return (
                 <div
                     key={line.id ?? line.client_key ?? index}
+                    data-line-key={lineKey}
                     className={[
                         'quote-lines-table__row',
                         draggingIndex === index ? 'quote-lines-table__row--dragging' : '',
                         dragOverIndex === index ? 'quote-lines-table__row--drag-over' : '',
                         line._conflict?.role === 'mine' ? 'quote-lines-table__row--conflict-mine' : '',
                         line._conflict?.role === 'theirs' ? 'quote-lines-table__row--conflict-theirs' : '',
+                        lineErrors[lineKey] ? 'quote-lines-table__row--error' : '',
                     ].join(' ').trim()}
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDrop={(e) => handleDrop(e, index)}
@@ -225,13 +254,17 @@ export default function QuoteLinesTable({
                             value={line.title}
                             onChange={(e) => handleFieldChange(index, 'title', e.target.value)}
                             onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input"
+                            className={inputClass(titleError)}
                             placeholder="Intitulé"
                             disabled={disabled}
+                            {...errorProps(titleError)}
                         />
                     </div>
                     {/* Réf. / Catalogue */}
-                    <div className="quote-lines-table__cell quote-lines-table__cell--catalogue">
+                    <div
+                        className={`quote-lines-table__cell quote-lines-table__cell--catalogue${referenceError ? ' quote-lines-table__cell--error' : ''}`}
+                        {...errorProps(referenceError)}
+                    >
                         {disabled ? (
                             <span className="quote-lines-table__ref-text">{line.reference || ''}</span>
                         ) : (
@@ -260,12 +293,13 @@ export default function QuoteLinesTable({
                         <Input
                             type="number"
                             step="0.01"
-                            value={line.purchase_price_ht}
+                            value={line.purchase_price_ht ?? ''}
                             onChange={(e) => handleFieldChange(index, 'purchase_price_ht', e.target.value)}
                             onBlur={() => handleRecalculate(index)}
                             onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input"
+                            className={inputClass(purchaseError)}
                             disabled={disabled}
+                            {...errorProps(purchaseError)}
                         />
                     </div>
                     {/* TVA % (readonly) */}
@@ -281,8 +315,9 @@ export default function QuoteLinesTable({
                             onChange={(e) => handleFieldChange(index, 'sale_price_ttc', e.target.value)}
                             onBlur={() => handleRecalculate(index)}
                             onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input"
+                            className={inputClass(saleError)}
                             disabled={disabled}
+                            {...errorProps(saleError)}
                         />
                     </div>
                     {/* Qté */}
@@ -294,9 +329,10 @@ export default function QuoteLinesTable({
                             onChange={(e) => handleFieldChange(index, 'quantity', e.target.value)}
                             onBlur={() => handleRecalculate(index)}
                             onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input"
+                            className={inputClass(quantityError)}
                             required
                             disabled={disabled}
+                            {...errorProps(quantityError)}
                         />
                     </div>
                     {/* Total PA HT (readonly) */}
@@ -334,9 +370,10 @@ export default function QuoteLinesTable({
                                 handleFieldChange(index, 'estimated_time_minutes', String(minutes));
                             }}
                             onKeyDown={handleKeyDown}
-                            className="quote-lines-table__input quote-lines-table__input--narrow"
+                            className={inputClass(timeError, 'quote-lines-table__input--narrow')}
                             placeholder="h"
-                            title="Temps estimé en heures"
+                            title={timeError ?? 'Temps estimé en heures'}
+                            aria-invalid={timeError ? true : undefined}
                             disabled={disabled}
                         />
                     </div>

@@ -1703,3 +1703,148 @@
     }
 }
 
+
+// Rappel d'échec d'enregistrement, juste au-dessus des boutons. Collé en bas de l'écran tant
+// que le formulaire est visible, pour rester lisible pendant qu'on remonte corriger une ligne.
+.quote-save-toast {
+    position: sticky;
+    bottom: 1rem;
+    z-index: 20;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    width: fit-content;
+    max-width: min(640px, 100%);
+    margin: 1.5rem 0 0 auto;
+    padding: 0.9rem 0.75rem 0.9rem 0.9rem;
+    background: $color-bg-white;
+    border: 1px solid lighten($color-danger-red, 30%);
+    border-left: 4px solid $color-danger-red;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    color: $color-neutral-dark;
+    animation: quote-save-toast-in 0.25s ease-out;
+
+    // Pointe vers les boutons
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: -7px;
+        right: 2.5rem;
+        width: 12px;
+        height: 12px;
+        background: $color-bg-white;
+        border-right: 1px solid lighten($color-danger-red, 30%);
+        border-bottom: 1px solid lighten($color-danger-red, 30%);
+        transform: rotate(45deg);
+    }
+
+    & + .quote-form__actions {
+        margin-top: 0.85rem;
+    }
+
+    &__icon {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 50%;
+        background: $color-danger-red;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    &__body {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    &__title {
+        margin: 0.2rem 0 0.4rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: darken($color-danger-red, 10%);
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    &__link {
+        padding: 0;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-color: lighten($color-danger-red, 25%);
+        text-underline-offset: 2px;
+
+        &:hover {
+            color: darken($color-danger-red, 10%);
+        }
+    }
+
+    &__close {
+        flex: 0 0 auto;
+        padding: 0.1rem 0.4rem;
+        border: none;
+        border-radius: 4px;
+        background: none;
+        color: $color-neutral-medium;
+        font-size: 1.3rem;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            background: $color-neutral-light;
+            color: $color-neutral-dark;
+        }
+    }
+}
+
+@keyframes quote-save-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+// Ligne en erreur après un enregistrement refusé
+.quote-lines-table__row--error {
+    background-color: lighten($color-danger-red, 46%);
+    box-shadow: inset 3px 0 0 $color-danger-red;
+
+    &:hover {
+        background-color: lighten($color-danger-red, 44%);
+    }
+}
+
+.quote-lines-table__input--error {
+    border-color: $color-danger-red !important;
+    background-color: $color-bg-white;
+    box-shadow: 0 0 0 2px rgba($color-danger-red, 0.18);
+}
+
+.quote-lines-table__cell--error {
+    outline: 2px solid $color-danger-red;
+    outline-offset: 1px;
+    border-radius: 4px;
+}
