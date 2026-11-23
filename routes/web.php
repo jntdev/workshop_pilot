@@ -705,6 +705,15 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('MessagesSettings');
     })->name('messages.settings');
 
+    // Assistant de l'atelier : page de conversation, ouverte dans son propre onglet
+    Route::get('/assistant', function () {
+        return Inertia::render('Assistant/Chat');
+    })->name('assistant.chat');
+
+    Route::get('/assistant/journal', function () {
+        return Inertia::render('Assistant/Journal');
+    })->name('assistant.journal');
+
     Route::get('/counter', function () {
         return view('counter-demo');
     })->name('counter');

@@ -1,9 +1,11 @@
 import { Link, usePage, router } from '@inertiajs/react';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { PageProps } from '@/types';
 import { useServerWarmup } from '@/hooks/useServerWarmup';
 import { usePrivacyMode } from '@/hooks/usePrivacyMode';
 import { MessagingButton } from '@/Components/Messaging';
+import { AssistantLauncher } from '@/Components/Assistant';
+import { serveNavigationRequests } from '@/lib/assistantBus';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -16,6 +18,9 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
 
     // Warmup silencieux du serveur pour les hébergements mutualisés
     useServerWarmup();
+
+    // L'assistant (autre onglet) peut demander d'ouvrir une page ici : cet onglet de travail se rend joignable.
+    useEffect(() => serveNavigationRequests((url) => router.visit(url)), []);
 
     const handleLogout = (e: React.FormEvent) => {
         e.preventDefault();
@@ -100,6 +105,8 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
             )}
 
             <main className="layout-main">{children}</main>
+
+            <AssistantLauncher />
         </div>
     );
 }

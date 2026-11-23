@@ -8,6 +8,12 @@ use App\Http\Controllers\Api\Ai\AiReservationController;
 use App\Http\Controllers\Api\ArticleCategoryController;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\ArticleSubcategoryController;
+use App\Http\Controllers\Api\Assistant\AssistantReadController;
+use App\Http\Controllers\Api\AssistantActionController;
+use App\Http\Controllers\Api\AssistantChatController;
+use App\Http\Controllers\Api\AssistantJournalController;
+use App\Http\Controllers\Api\AssistantProposeController;
+use App\Http\Controllers\Api\AssistantRelayController;
 use App\Http\Controllers\Api\AtelierController;
 use App\Http\Controllers\Api\BikeCategoryController;
 use App\Http\Controllers\Api\BikeController;
@@ -92,7 +98,41 @@ Route::prefix('ai')->middleware('ai.token')->group(function () {
     Route::post('/articles/{article}/stock-movements', [StockMovementController::class, 'store']);
 });
 
+// Assistant de l'atelier : lecture seule, jeton dédié (ASSISTANT_READ_TOKEN), uniquement des GET.
+Route::prefix('assistant-read')->middleware('assistant.token:read')->group(function () {
+    Route::get('/clients', [AssistantReadController::class, 'clients']);
+    Route::get('/clients/{id}', [AssistantReadController::class, 'client'])->whereNumber('id');
+    Route::get('/quotes', [AssistantReadController::class, 'quotes']);
+    Route::get('/quotes/{id}', [AssistantReadController::class, 'quote'])->whereNumber('id');
+    Route::get('/agenda', [AssistantReadController::class, 'agenda']);
+    Route::get('/articles', [AssistantReadController::class, 'articles']);
+    Route::get('/order-lines', [AssistantReadController::class, 'orderLines']);
+});
+
+// Assistant de l'atelier : propositions d'actions, jeton dédié (ASSISTANT_PROPOSE_TOKEN).
+// Ne modifie aucune donnée du workshop : l'utilisateur confirme dans la fenêtre de chat.
+Route::prefix('assistant-propose')->middleware('assistant.token:propose')->group(function () {
+    Route::post('/actions', AssistantProposeController::class)->middleware('throttle:60,1');
+});
+
+// Assistant de l'atelier : relais du Mac (relève les questions, renvoie les réponses), jeton ASSISTANT_RELAY_TOKEN.
+Route::prefix('assistant-relay')->middleware('assistant.token:relay')->group(function () {
+    Route::post('/claim', [AssistantRelayController::class, 'claim']);
+    Route::post('/messages/{message}/answer', [AssistantRelayController::class, 'answer']);
+    Route::post('/messages/{message}/fail', [AssistantRelayController::class, 'fail']);
+});
+
 Route::middleware(['web', 'auth'])->group(function () {
+    // Assistant de l'atelier (fenêtre de chat)
+    Route::get('/assistant/status', [AssistantChatController::class, 'status']);
+    Route::get('/assistant/journal', AssistantJournalController::class);
+    Route::get('/assistant/messages', [AssistantChatController::class, 'index']);
+    Route::post('/assistant/messages', [AssistantChatController::class, 'store'])->middleware('throttle:30,1');
+    Route::get('/assistant/messages/{message}', [AssistantChatController::class, 'show']);
+    Route::post('/assistant/actions/{assistantAction}/confirm', [AssistantActionController::class, 'confirm'])->middleware('throttle:30,1');
+    Route::post('/assistant/actions/{assistantAction}/cancel', [AssistantActionController::class, 'cancel'])->middleware('throttle:30,1');
+    Route::post('/assistant/actions/{assistantAction}/undo', [AssistantActionController::class, 'undo'])->middleware('throttle:30,1');
+
     // Dashboard API routes
     Route::post('/dashboard/kpis/rebuild', [AtelierController::class, 'rebuildAllKpis']);
     Route::get('/dashboard/payments-history', [AtelierController::class, 'paymentsHistory']);

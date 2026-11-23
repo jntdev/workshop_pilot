@@ -1,13 +1,29 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import WeekAgendaGrid from '@/Components/Atelier/Agenda/WeekAgendaGrid';
 import AgendaItemDetailPanel from '@/Components/Atelier/Agenda/AgendaItemDetailPanel';
-import { addDays, startOfWeek, todayIso, weekdaysFrom, formatDateRangeLabel, AGENDA_HOURS_COL_PX, AGENDA_MIN_DAY_COL_PX } from '@/Components/Atelier/Agenda/agendaShared';
+import { addDays, dateIsoOf, startOfWeek, todayIso, weekdaysFrom, formatDateRangeLabel, AGENDA_HOURS_COL_PX, AGENDA_MIN_DAY_COL_PX } from '@/Components/Atelier/Agenda/agendaShared';
+import { useAssistantEffects } from '@/hooks/useAssistantEffects';
 import type { AgendaItem } from '@/types';
 
+/** Jour demandé dans l'adresse (?date=AAAA-MM-JJ), par exemple depuis un lien de l'assistant. */
+function dateFromUrl(): string | null {
+    const value = new URLSearchParams(window.location.search).get('date');
+
+    return value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
 export default function AgendaIndex() {
-    const [weekStart, setWeekStart] = useState(startOfWeek(todayIso()));
+    const { url } = usePage();
+    const [weekStart, setWeekStart] = useState(() => startOfWeek(dateFromUrl() ?? todayIso()));
+
+    useEffect(() => {
+        const requested = dateFromUrl();
+        if (requested !== null) {
+            setWeekStart(startOfWeek(requested));
+        }
+    }, [url]);
     const [items, setItems] = useState<AgendaItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -68,6 +84,40 @@ export default function AgendaIndex() {
     useEffect(() => {
         load(days);
     }, [days, load]);
+
+    // L'assistant (dans son onglet) a déplacé un rendez-vous ou changé le statut d'un devis : la grille se met à jour
+    // tout de suite. On ne recharge les données que si un rendez-vous arrive dans la semaine affichée sans y être déjà.
+    useAssistantEffects((effect) => {
+        if (effect.type === 'quote_status') {
+            setItems(prev =>
+                prev.map(item =>
+                    item.kind === 'quote' && item.quote_id === effect.quote_id
+                        ? { ...item, status: effect.status as typeof item.status, status_label: effect.status_label }
+                        : item,
+                ),
+            );
+
+            return;
+        }
+
+        if (effect.type !== 'appointment_move') {
+            return;
+        }
+
+        const isShown = items.some(item => item.kind === effect.kind && item.id === effect.id);
+
+        if (isShown) {
+            setItems(prev =>
+                prev.map(item =>
+                    item.kind === effect.kind && item.id === effect.id
+                        ? { ...item, starts_at: effect.starts_at, ends_at: effect.ends_at }
+                        : item,
+                ),
+            );
+        } else if (days.includes(dateIsoOf(new Date(effect.starts_at)))) {
+            void load(days);
+        }
+    });
 
     const isCurrentWeek = weekStart === startOfWeek(todayIso());
 

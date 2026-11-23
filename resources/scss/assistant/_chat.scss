@@ -1,0 +1,363 @@
+@use '../base/colors' as *;
+
+// Assistant de l'atelier : bouton dans les pages du workshop + page de conversation dans son propre onglet
+
+// ---------------------------------------------------------------- bouton « Assistant » (ouvre l'onglet)
+.assistant-launcher {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 900;
+
+  &__button {
+    display: inline-block;
+    padding: 0.6rem 1.1rem;
+    border-radius: 999px;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+
+    &:hover {
+      background: lighten($color-primary-blue, 8%);
+      color: $color-bg-white;
+    }
+  }
+
+  @media (max-width: 640px) {
+    right: 0.5rem;
+    bottom: 0.5rem;
+  }
+}
+
+// Mode comptoir : des clients peuvent voir l'écran, l'assistant (infos clients, prix) est masqué
+[data-privacy-mode="comptoir"] .assistant-launcher {
+  display: none;
+}
+
+// ---------------------------------------------------------------- lien vers une page du workshop cité par l'assistant
+.assistant-ref {
+  color: $color-primary-blue;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+
+  &:hover {
+    color: lighten($color-primary-blue, 12%);
+  }
+}
+
+// ---------------------------------------------------------------- page de conversation (/assistant)
+.assistant-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: $color-bg-light;
+  color: $color-neutral-dark;
+
+  &__header {
+    flex: 0 0 auto;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+  }
+
+  &__header-inner,
+  &__thread,
+  &__form-inner {
+    width: 100%;
+    max-width: 54rem;
+    margin: 0 auto;
+  }
+
+  &__header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  &__subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.8rem;
+    opacity: 0.85;
+  }
+
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 1rem;
+  }
+
+  &__link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: $color-bg-white;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  &__notice {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0.4rem 1rem;
+    background: #eff6ff;
+    color: $color-primary-blue;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  &__messages {
+    flex: 1;
+    min-height: 0;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+
+  &__empty {
+    margin: 0;
+    color: $color-neutral-medium;
+    line-height: 1.5;
+  }
+
+  &__exchange {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+  }
+
+  &__form {
+    flex: 0 0 auto;
+    padding: 0.7rem 1rem 0.6rem;
+    border-top: 1px solid $color-border-light;
+    background: $color-bg-white;
+  }
+
+  &__form-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: stretch;
+  }
+
+  &__form-error {
+    margin: 0 0 0.4rem;
+    color: $color-danger-red;
+    font-size: 0.85rem;
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid $color-border-medium;
+    border-radius: 0.5rem;
+    font: inherit;
+    resize: none;
+  }
+
+  &__send {
+    padding: 0 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__disclaimer {
+    margin: 0.4rem 0 0;
+    color: $color-neutral-medium;
+    font-size: 0.75rem;
+  }
+
+  &__locked {
+    max-width: 34rem;
+    margin: 4rem auto;
+    padding: 0 1rem;
+    text-align: center;
+
+    h1 {
+      font-size: 1.3rem;
+    }
+
+    p {
+      color: $color-neutral-medium;
+      line-height: 1.5;
+    }
+  }
+}
+
+// Bulles de conversation
+.assistant-bubble {
+  max-width: 88%;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  &--question {
+    align-self: flex-end;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+  }
+
+  &--answer {
+    align-self: flex-start;
+    background: $color-bg-white;
+    border: 1px solid $color-border-light;
+  }
+
+  &--waiting {
+    align-self: flex-start;
+    background: $color-neutral-light;
+    color: $color-neutral-medium;
+    font-style: italic;
+  }
+
+  &--error {
+    align-self: flex-start;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: $color-danger-red;
+  }
+
+  &__sources {
+    margin: 0.4rem 0 0;
+    color: $color-neutral-medium;
+    font-size: 0.78rem;
+  }
+}
+
+// Action proposée par l'assistant : rien ne change avant le clic sur « Confirmer »
+.assistant-action {
+  align-self: stretch;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid $color-border-medium;
+  border-left: 4px solid $color-planning-orange;
+  border-radius: 0.5rem;
+  background: $color-bg-white;
+  font-size: 0.9rem;
+
+  &--executed {
+    border-left-color: $color-success-green;
+  }
+
+  &--cancelled,
+  &--expired,
+  &--undone {
+    border-left-color: $color-border-medium;
+    color: $color-neutral-medium;
+  }
+
+  &--failed {
+    border-left-color: $color-danger-red;
+  }
+
+  &__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  &__type {
+    color: $color-neutral-medium;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  &__status {
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  &--executed &__status {
+    color: $color-success-green;
+  }
+
+  &--failed &__status {
+    color: $color-danger-red;
+  }
+
+  &__summary {
+    margin: 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  &__warnings {
+    margin: 0.4rem 0 0;
+    padding: 0.35rem 0.5rem 0.35rem 1.2rem;
+    border-radius: 0.35rem;
+    background: #fff7ed;
+    color: #9a3412;
+    font-size: 0.82rem;
+  }
+
+  &__error {
+    margin: 0.4rem 0 0;
+    color: $color-danger-red;
+    font-size: 0.85rem;
+  }
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  &__confirm,
+  &__cancel {
+    padding: 0.4rem 0.9rem;
+    border-radius: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__confirm {
+    border: none;
+    background: $color-primary-blue;
+    color: $color-bg-white;
+  }
+
+  &__cancel {
+    border: 1px solid $color-border-medium;
+    background: $color-bg-white;
+    color: $color-neutral-dark;
+  }
+}
