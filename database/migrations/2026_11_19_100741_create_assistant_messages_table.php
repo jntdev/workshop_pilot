@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('assistant_messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->index();
             $table->uuid('conversation_id')->index();
             $table->text('question');
             $table->string('status', 20)->default('pending')->index();

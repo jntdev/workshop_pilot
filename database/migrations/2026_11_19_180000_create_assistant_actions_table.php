@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('assistant_actions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('assistant_message_id')->constrained('assistant_messages')->cascadeOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('assistant_message_id')->index();
+            $table->foreignId('user_id')->nullable()->index();
             $table->uuid('conversation_id')->index();
             $table->string('type', 30);
             $table->string('subject_type', 30);
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('error')->nullable();
             $table->timestamp('expires_at');
             $table->timestamp('confirmed_at')->nullable();
-            $table->foreignId('confirmed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('confirmed_by')->nullable();
             $table->timestamp('undone_at')->nullable();
             $table->timestamps();
 
