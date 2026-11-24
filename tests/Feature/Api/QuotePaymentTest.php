@@ -122,6 +122,37 @@ class QuotePaymentTest extends TestCase
     }
 
     #[Test]
+    public function it_records_a_payment_on_an_already_invoiced_quote_and_marks_it_paid(): void
+    {
+        $quote = Quote::factory()->invoiced()->create(['total_ttc' => 1519, 'paid_at' => null]);
+
+        $response = $this->actingAs($this->user)->postJson("/api/quotes/{$quote->id}/payments", [
+            'amount' => 1519,
+            'method' => 'virement',
+            'paid_at' => '2026-11-18 10:00',
+        ]);
+
+        $response->assertCreated();
+        $this->assertSame('2026-11-18', $response->json('paid_at'));
+        $this->assertSame('2026-11-18', $quote->fresh()->paid_at->format('Y-m-d'));
+        $this->assertTrue($quote->fresh()->isInvoice());
+        $this->assertDatabaseHas('quote_payments', ['quote_id' => $quote->id, 'method' => 'virement']);
+    }
+
+    #[Test]
+    public function it_opens_the_invoice_page_that_hosts_the_payments_panel(): void
+    {
+        $quote = Quote::factory()->invoiced()->create();
+
+        $this->actingAs($this->user)->get("/atelier/devis/{$quote->id}")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Atelier/Quotes/Show')
+                ->where('quote.id', $quote->id)
+                ->where('quote.is_invoice', true));
+    }
+
+    #[Test]
     public function it_clears_paid_at_when_a_payment_is_removed_and_total_is_no_longer_reached(): void
     {
         $quote = Quote::factory()->create(['total_ttc' => 100]);
