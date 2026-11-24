@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import QuoteCommentsPanel from '@/Components/Atelier/QuoteCommentsPanel';
+import QuotePaymentsPanel from '@/Components/Atelier/QuotePaymentsPanel';
 import { QuoteShowPageProps } from '@/types';
 
 function formatCurrency(value: string | number): string {
@@ -248,6 +249,10 @@ export default function QuoteShow({ quote }: QuoteShowPageProps) {
                             </div>
                         )}
                     </div>
+                </section>
+
+                <section className="quote-show__section">
+                    <QuotePaymentsPanel quoteId={quote.id} totalTtc={parseFloat(String(quote.total_ttc)) || 0} />
                 </section>
 
                 <QuoteCommentsPanel quoteId={quote.id} />
