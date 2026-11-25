@@ -60,6 +60,11 @@ Route::prefix('ai')->middleware('ai.token')->group(function () {
     Route::get('/quotes/{quote}', [AiQuoteController::class, 'show']);
     Route::get('/quotes/{quote}/tasks', [AiQuoteController::class, 'tasks']);
     Route::patch('/quotes/{quote}/status', [AiQuoteController::class, 'updateStatus']);
+    // Travail d'un devis (pas d'une facture) : en-tête et lignes, totaux recalculés ; dry_run pour un aperçu sans enregistrement
+    Route::patch('/quotes/{quote}', [AiQuoteController::class, 'updateFields']);
+    Route::post('/quotes/{quote}/lines', [AiQuoteController::class, 'addLine']);
+    Route::patch('/quotes/{quote}/lines/{line}', [AiQuoteController::class, 'updateLine'])->scopeBindings();
+    Route::delete('/quotes/{quote}/lines/{line}', [AiQuoteController::class, 'deleteLine'])->scopeBindings();
     Route::get('/quotes/{quote}/comments', [QuoteCommentController::class, 'index']);
     Route::post('/quotes/{quote}/comments', [QuoteCommentController::class, 'store']);
 
