@@ -14,27 +14,30 @@ class QuoteMailLogTest extends TestCase
 {
     use RefreshDatabase;
 
-    private string $logPath;
+    private string $dir;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->logPath = sys_get_temp_dir().'/laravel-mails-'.uniqid().'.log';
+        $this->dir = sys_get_temp_dir().'/actions-'.uniqid();
+        mkdir($this->dir);
         config([
-            'logging.channels.mails.path' => $this->logPath,
+            'logging.channels.actions.path' => $this->dir.'/laravel-actions.log',
             'mail.default' => 'array',
         ]);
     }
 
     protected function tearDown(): void
     {
-        @unlink($this->logPath);
+        array_map('unlink', glob($this->dir.'/*') ?: []);
+        @rmdir($this->dir);
         parent::tearDown();
     }
 
+    /** Contenu du journal des actions (un fichier par jour). */
     private function log(): string
     {
-        return is_file($this->logPath) ? (string) file_get_contents($this->logPath) : '';
+        return implode('', array_map('file_get_contents', glob($this->dir.'/laravel-actions*.log') ?: []));
     }
 
     #[Test]
@@ -57,6 +60,7 @@ class QuoteMailLogTest extends TestCase
         $this->assertStringContainsString('"to":["cliente@example.com"]', $log);
         $this->assertStringContainsString('"attachments":["devis-20260923-5.pdf"]', $log);
         $this->assertStringContainsString('"type":"devis"', $log);
+        $this->assertStringContainsString('"records":["Quote#'.$quote->id.'"]', $log);
         $this->assertStringContainsString('"lines_count":1', $log);
         $this->assertStringContainsString('"lines":["Bosch Intuvia Control Unit × 1 = 52.33 € TTC"]', $log);
         $this->assertStringContainsString('"email_note":"Pi', $log);
@@ -97,6 +101,7 @@ class QuoteMailLogTest extends TestCase
         $this->assertStringContainsString('.ERROR: Échec de l\'envoi du mail : Devis 20261125-2', $log);
         $this->assertStringContainsString('"quote_id":'.$quote->id, $log);
         $this->assertStringNotContainsString('Mail envoyé', $log);
+        $this->assertStringContainsString('.ERROR: Action : POST /api/quotes/'.$quote->id.'/send-email → 500', $log);
     }
 
     #[Test]

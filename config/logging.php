@@ -73,12 +73,14 @@ return [
             'replace_placeholders' => true,
         ],
 
-        // Mails envoyés par le workshop et échecs d'envoi (App\Mail\SentMailLogger), gardés quel que soit LOG_LEVEL.
-        // Le nom en laravel-*.log les rend lisibles par GET /api/ai/logs.
-        'mails' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/laravel-mails.log'),
+        // Journal des actions : chaque requête qui modifie quelque chose (App\Http\Middleware\LogAction),
+        // chaque mail envoyé et chaque échec d'envoi (App\Mail\SentMailLogger), gardés quel que soit LOG_LEVEL.
+        // Un fichier par jour (laravel-actions-AAAA-MM-JJ.log), lisible par GET /api/ai/logs.
+        'actions' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/laravel-actions.log'),
             'level' => 'info',
+            'days' => env('LOG_ACTIONS_DAYS', 365),
             'replace_placeholders' => true,
         ],
 

@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Trace de chaque mail envoyé (canal de log « mails »)
+        // Trace de chaque mail envoyé (journal des actions, canal de log « actions »)
         Event::listen(MessageSent::class, SentMailLogger::class);
     }
 }

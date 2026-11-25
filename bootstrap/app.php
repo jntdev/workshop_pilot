@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Journal des actions : toute requête qui modifie quelque chose (canal de log « actions »)
+        $middleware->append(\App\Http\Middleware\LogAction::class);
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);

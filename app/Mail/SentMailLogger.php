@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Quote;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\Mime\Address;
@@ -11,8 +12,8 @@ use Symfony\Component\Mime\Part\DataPart;
 use Throwable;
 
 /**
- * Trace de chaque mail parti du workshop dans le canal de log « mails » (storage/logs/laravel-mails.log) :
- * destinataires, objet, pièces jointes et, pour un devis ou une facture, son contenu résumé.
+ * Trace de chaque mail parti du workshop dans le journal des actions (canal « actions ») :
+ * destinataires, objet, pièces jointes, fiches concernées et, pour un devis ou une facture, son contenu résumé.
  * Sans cette trace, rien ne permet de savoir après coup si un devis ou une facture a été envoyé.
  */
 class SentMailLogger
@@ -25,7 +26,7 @@ class SentMailLogger
         $data = $event->data;
 
         if (! $message instanceof Email) {
-            Log::channel('mails')->info('Mail envoyé', ['mailable' => $data['__laravel_mailable'] ?? null]);
+            Log::channel('actions')->info('Mail envoyé', ['mailable' => $data['__laravel_mailable'] ?? null]);
 
             return;
         }
@@ -40,10 +41,11 @@ class SentMailLogger
                 array_filter($message->getAttachments(), fn (DataPart $part) => $part->getDisposition() !== 'inline'),
             )),
             'mailable' => $data['__laravel_mailable'] ?? null,
+            'records' => $this->records($data),
             'quote' => ($data['quote'] ?? null) instanceof Quote ? $this->quoteSummary($data['quote']) : null,
         ], fn ($value) => $value !== null && $value !== []);
 
-        Log::channel('mails')->info('Mail envoyé : '.$message->getSubject(), $context);
+        Log::channel('actions')->info('Mail envoyé : '.$message->getSubject(), $context);
     }
 
     /**
@@ -51,7 +53,7 @@ class SentMailLogger
      */
     public static function failed(Quote $quote, string $to, Throwable $e): void
     {
-        Log::channel('mails')->error('Échec de l\'envoi du mail : '.($quote->isInvoice() ? 'Facture' : 'Devis').' '.$quote->reference, [
+        Log::channel('actions')->error('Échec de l\'envoi du mail : '.($quote->isInvoice() ? 'Facture' : 'Devis').' '.$quote->reference, [
             'to' => [$to],
             'quote_id' => $quote->id,
             'error' => $e->getMessage(),
@@ -65,6 +67,20 @@ class SentMailLogger
     private function addresses(array $addresses): array
     {
         return array_map(fn (Address $address) => $address->getAddress(), $addresses);
+    }
+
+    /**
+     * Fiches passées au mail (devis, réservation, contrat…), sous la forme « Quote#613 ».
+     *
+     * @param  array<string, mixed>  $data
+     * @return list<string>
+     */
+    private function records(array $data): array
+    {
+        return array_values(array_map(
+            fn (Model $model) => class_basename($model).'#'.$model->getKey(),
+            array_filter($data, fn ($value) => $value instanceof Model),
+        ));
     }
 
     /**
