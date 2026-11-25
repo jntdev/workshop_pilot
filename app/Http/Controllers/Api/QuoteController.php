@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\QuoteStatus;
 use App\Http\Controllers\Controller;
 use App\Mail\QuoteMail;
+use App\Mail\SentMailLogger;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteLine;
@@ -291,6 +292,8 @@ class QuoteController extends Controller
                 'message' => 'Email envoyé avec succès',
             ]);
         } catch (\Exception $e) {
+            SentMailLogger::failed($quote, $validated['email'], $e);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de l\'envoi de l\'email',

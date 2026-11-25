@@ -73,6 +73,15 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Mails envoyés par le workshop et échecs d'envoi (App\Mail\SentMailLogger), gardés quel que soit LOG_LEVEL.
+        // Le nom en laravel-*.log les rend lisibles par GET /api/ai/logs.
+        'mails' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/laravel-mails.log'),
+            'level' => 'info',
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
