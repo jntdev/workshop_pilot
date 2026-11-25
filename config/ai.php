@@ -14,4 +14,15 @@ return [
 
     'token' => env('AI_API_TOKEN'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Dossier des journaux lus par GET /api/ai/logs
+    |--------------------------------------------------------------------------
+    |
+    | Fichiers laravel*.log de ce dossier (canal single et canal daily).
+    |
+    */
+
+    'logs_path' => storage_path('logs'),
+
 ];

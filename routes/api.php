@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AgendaController;
 use App\Http\Controllers\Api\AgendaEventController;
 use App\Http\Controllers\Api\AgendaRescheduleController;
+use App\Http\Controllers\Api\Ai\AiLogController;
 use App\Http\Controllers\Api\Ai\AiQuoteController;
 use App\Http\Controllers\Api\Ai\AiReservationController;
 use App\Http\Controllers\Api\ArticleCategoryController;
@@ -65,6 +66,9 @@ Route::prefix('ai')->middleware('ai.token')->group(function () {
     // Locations (lecture seule) : réservations par client, période ou statut, et détail d'une réservation
     Route::get('/reservations', [AiReservationController::class, 'index']);
     Route::get('/reservations/{id}', [AiReservationController::class, 'show']);
+
+    // Journaux de l'application (lecture seule) : erreurs, avertissements et appels à l'API AI, du plus récent au plus ancien
+    Route::get('/logs', AiLogController::class);
 
     // Statistiques du site public (lecture seule) : les mêmes chiffres que l'onglet « Visites du site » du tableau de bord
     Route::get('/website/visits', WebsiteVisitsController::class);
