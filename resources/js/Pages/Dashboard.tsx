@@ -6,13 +6,15 @@ import { KpiCell, RangeCell, type MetierKpi, type RangeKpi, formatCurrency } fro
 import DailyPaymentsPanel from '@/Components/Dashboard/DailyPaymentsPanel';
 import WebsiteClicksPanel from '@/Components/Dashboard/WebsiteClicksPanel';
 import WebsiteVisitsPanel from '@/Components/Dashboard/WebsiteVisitsPanel';
+import PilotagePanel from '@/Components/Dashboard/PilotagePanel';
 
-type DashboardTab = 'activite' | 'visites';
+type DashboardTab = 'activite' | 'visites' | 'pilotage';
 
 const ACTIVE_TAB_STORAGE_KEY = 'dashboard.activeTab';
 const TABS: { key: DashboardTab; label: string }[] = [
     { key: 'activite', label: 'Activité' },
     { key: 'visites', label: 'Visites du site' },
+    { key: 'pilotage', label: 'Pilotage' },
 ];
 
 function getStoredActiveTab(): DashboardTab {
@@ -200,7 +202,9 @@ export default function Dashboard({ kpis, period, season_kpis, season, yearly_kp
                     ))}
                 </div>
 
-                {activeTab === 'visites' ? (
+                {activeTab === 'pilotage' ? (
+                    <PilotagePanel />
+                ) : activeTab === 'visites' ? (
                     <>
                         <WebsiteVisitsPanel />
                         <WebsiteClicksPanel />
